@@ -1,0 +1,23 @@
+<%- include("../partials/header") %>
+<div class="container">
+	<div class="row">
+		
+		<h1 style="text-align: center;">Add A New Comment to <%= campground.name %></h1>
+<!--Put an input form in a div with css style to group them together  -->
+		<div style="width: 30%; margin: 50px auto;">
+			<form action="/campgrounds/<%= campground._id %>/comments" method="POST">
+<!-- Put each input in a div.formgroup to give a little spacing between them	 -->
+				<div class="form-group">
+					<input class="form-control" type="text" name="comment[text]" placeholder="Comment">
+				</div>
+				<div class="form-group">
+					<button class= "btn btn-md btn-primary btn-block">Submit Comment!</button>
+				</div>
+			</form>	
+<!-- Keep this link in the div to group this with the input -->
+			<a href="/campgrounds">Go Back To Campgrounds.</a>
+		</div>
+	</div>
+</div>
+
+<%- include("../partials/footer") %>
