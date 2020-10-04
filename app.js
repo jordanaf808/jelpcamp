@@ -72,4 +72,5 @@ app.use(indexRoutes);
 app.use("/campgrounds/:id/comments", commentsRoutes);
 app.use("/campgrounds", campgroundRoutes);
 
-app.listen(port, () => console.log(`YelpCamp listening at ${port}`))
+app.listen(process.env.PORT || 3000) 
+console.log(`YelpCamp listening at ${port}`)
