@@ -1,7 +1,7 @@
 <%- include("../partials/header") %>
 <div class="container">
 	<div class="row">
-		<div class="col-md-3">
+		<div class="col-md-4 map-box">
 			<p class="lead">YelpCamp</p>
 			<div class="list-group">
 				<li class="list-group-item active">Info 1</li>
@@ -10,7 +10,7 @@
 			</div>
 			<div id="map"></div>
 		</div>
-		<div class="col-md-9">
+		<div class="col-md-8">
 			<div class="thumbnail">
 				<img class = "img-responsive" src="<%= campground.image %>">
 				<div class="caption">
@@ -87,7 +87,7 @@
 		});
 	}
 </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6rjTHh3h2h4ekebPZYTlE6TxODKdqmbk&callback=initMap" type="text/javascript"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJss5OZ9rprm3qA-4F1XiH0OYvrLBKPE8&callback=initMap" type="text/javascript"></script>
 
 <a href="/campgrounds">Go Back To Campgrounds.</a>
 <%- include("../partials/footer") %>

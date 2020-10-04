@@ -1,8 +1,69 @@
-.thumbnail img {
-	width: 100%;
+
+body {
+	background: rgb(136, 164, 224);
+	padding-top: 70px;
+	background: 
+		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
+	background-position: bottom;
+	background-size: cover;
 }
+
+.navbar {
+	background: rgba(227, 231, 240, 0.75);
+}
+
+.jumbotron {
+	color: white;
+	background: 
+		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
+	background-position: center;
+	background-size: cover;
+	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+}
+
+@media screen and (max-width: 600px) { 
+	.campcards {
+		flex-direction: column;
+		justify-content: center;
+	}
+	.thumbnail img {
+		height: 100%;
+	}
+
+	#map {
+		width: 80%;
+	}
+
+} 
+
+.campcards {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.thumbnail img {
+	height: 250px;
+	object-fit: cover;
+	width: 100%;
+	background: rgba(162, 224, 215, .5); 
+	border: 1px solid #949494;
+}
+
 .thumbnail {
+	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	padding: 0;
+	background: rgb(162, 224, 215, 0.9); 
+}
+
+/* google maps api */
+#map {
+	height: 300px;
+	width: 100%;
+	margin-bottom: 1.5em;
 }
 
 /* .thumbnail .caption-full {
@@ -11,10 +72,4 @@
 
 .delete-form {
 	display: inline;
-}
-
-/* google maps api */
-#map {
-	height: 400px;
-	width: 100%;
 }
