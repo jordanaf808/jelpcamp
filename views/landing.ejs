@@ -27,11 +27,13 @@
     </div>
     
     <ul class="slideshow">
+    <% campgrounds.forEach((campground) => { %>
+      <li style="background-image: url(<%=campground.image%>)"></li>
+    <% }); %>  
       <li></li>
       <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
+      <!-- <li></li>
+      <li></li> -->
     </ul>
 
 <%- include("./partials/footer") %>

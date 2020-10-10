@@ -3,10 +3,21 @@
 	<div class="row">
 		<div class="col-md-4 map-box">
 			<p class="lead">YelpCamp</p>
-			<div class="list-group">
-				<li class="list-group-item active">Info 1</li>
-				<li class="list-group-item">Info 2</li>
-				<li class="list-group-item">Info 3</li>
+			<div class="dropdown">
+				<a class="btn btn-success btn-lg dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Camp Info.
+				</a>
+				<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+						<a class="btn btn-lg dropdown-toggle pr-5" href="#" role="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Info 1</a>
+						<ul class="dropdown-menu" id="sub-dropdown-menu" aria-labelledby="dropdownMenuLink" >
+							<!-- <a class="btn dropdown-item text-break" data-toggle="tooltip" data-placement="right" title="Tooltip on right">
+								Lorem ipsum dolor sit, amet consectetur adipisicing elit. Iste error veniam cum assumenda amet, voluptate modi placeat adipisci officia. Quas!
+							</a> -->
+							<li class="dropdown-item" style="white-space: normal;" >Lorem ipsum dolor sit, amet consectetur adipisicing elit. Iste error veniam cum assumenda amet, voluptate modi placeat adipisci officia. Quas!</li>
+							<!-- <a class="dropdown-item" href="#">Info 2</a>
+							<a class="dropdown-item" href="#">Info 3</a> -->
+							</ul>
+				</div>
 			</div>
 			<div id="map"></div>
 		</div>

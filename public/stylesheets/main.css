@@ -1,29 +1,57 @@
 
 body {
-	background: rgb(136, 164, 224);
 	padding-top: 70px;
 	background: 
 		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
+	background-color: #525252;
+	background-blend-mode: overlay;
 	background-position: bottom;
+	/* background-position: center; */
 	background-size: cover;
-
+	background-repeat: no-repeat;
 	overflow-x: hidden; /* Prevent scroll on narrow devices */
+	text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
+	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .9);
+}
+
+.height-fix {
+	height: 100vh;
+}
+
+.navbar-brand {
+	font-size: 1.5rem;
+	text-shadow: none;
+}
+
+.navbar-brand i {
+	font-size: 1.4rem;
+	transform: translateY(-11%);
 }
 
 .navbar {
 	background: rgba(227, 231, 240, 0.75);
+	opacity: 85%;
 }
 
 .jumbotron {
 	color: white;
 	background: 
 		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
+	background-color: #545454;
+	background-blend-mode: overlay;
 	background-position: center;
 	background-size: cover;
 	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .9);
+	
 }
+
+/* .container {
+	width: 110%;
+} */
 
 @media screen and (max-width: 600px) { 
 	.campcards {
@@ -40,9 +68,12 @@ body {
 
 } 
 
+
+
 .campcards {
 	display: flex;
 	flex-wrap: wrap;
+	
 }
 
 .thumbnail img {
@@ -51,6 +82,7 @@ body {
 	width: 100%;
 	background: rgba(162, 224, 215, .5); 
 	border: 1px solid #949494;
+	border-radius: 2%;
 }
 
 .thumbnail {
@@ -58,7 +90,7 @@ body {
 	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	padding: 0;
-	background: rgb(162, 224, 215, 0.9); 
+	background: rgba(207, 220, 218, 0.9); 
 }
 
 /* google maps api */
@@ -77,7 +109,7 @@ body {
 }
 
 
-@media (max-width: 991.98px) {
+@media (max-width: 765px) {
   .offcanvas-collapse {
     position: fixed;
     top: 56px; /* Height of navbar */
@@ -88,7 +120,7 @@ body {
     padding-left: 1rem;
     overflow-y: auto;
     visibility: hidden;
-    background-color: #838383bb;
+    background-color:#f8f9fae7;
     transition: visibility .3s ease-in-out, -webkit-transform .3s ease-in-out;
     transition: transform .3s ease-in-out, visibility .3s ease-in-out;
     transition: transform .3s ease-in-out, visibility .3s ease-in-out, -webkit-transform .3s ease-in-out;
@@ -98,4 +130,9 @@ body {
     -webkit-transform: translateX(-30%);
     transform: translateX(-30%);
   }
+}
+
+
+#sub-dropdown-menu {
+	position: relative;
 }

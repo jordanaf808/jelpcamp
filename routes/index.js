@@ -1,13 +1,19 @@
-
-const express = require("express"),
-	  passport = require("passport"),
- 	  User = require("../models/user");
-const router = express.Router();
+const express 		= require("express"),
+	  	passport 		= require("passport"),
+		 	User 				= require("../models/user"),
+	 		Campground 	= require("../models/campground");
+const router 			= express.Router();
  
 
 router.get("/", (req, res) => {
-		res.render("landing");
-		});
+	// 	get all campgrounds from DB
+	Campground.find({}, (err, allCampgrounds) => {
+	  if (err) return console.error(err);
+	  else {
+		  res.render("landing", {campgrounds:allCampgrounds});
+		};
+	});
+});
 
 // ========================
 // AUTH ROUTES

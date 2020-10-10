@@ -1,13 +1,17 @@
 <%- include("./partials/header") %>
-<h1>
-	Sign Up!
-</h1>
 
-<form action="/register" method="POST">
-	<input type="text" name="username" placeholder="username">
-	<input type="password" name="password" placeholder="password">
-	<button>
-		Register Here!
-	</button>
-</form>
+<div class="container-fluid m-0 text-center height-fix">
+	<div class="col-12 m-3">
+		<h1>Sign Up!</h1>
+
+		<form action="/register" method="POST">
+			<input type="text" name="username" placeholder="username">
+			<input type="password" name="password" placeholder="password">
+			<button>
+				Register Here!
+			</button>
+		</form>
+	</div>
+</div>
+
 <%- include("./partials/footer") %>
