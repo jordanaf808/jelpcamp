@@ -1,10 +1,10 @@
 <%- include("../partials/header") %>
-<div class="container">
+<div class="container height-fix">
 	<div class="row">
 		
 		<h1 style="text-align: center;">Edit <%= comment.author.username %> Comment</h1>
 <!--Put an input form in a div with css style to group them together  -->
-		<div style="width: 30%; margin: 50px auto;">
+		<div style="width: 50%; margin: 50px auto;">
 			<form action="/campgrounds/<%= campground_id %>/comments/<%=comment._id%>?_method=PUT" method="POST">
 <!-- Put each input in a div.formgroup to give a little spacing between them	 -->
 				<div class="form-group">

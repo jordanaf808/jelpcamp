@@ -3,16 +3,16 @@
 
 <div class="container-fluid px-4">
 	<header class ="jumbotron py-2">
-		<div class="container px-0">
+		<div class="container px-0 text-center">
 			<h1 class="display-4 font-weight-bolder text-center pt-4">
 			Welcome To YelpCamp. 
 			</h1>
-			<h1 class="display-4 text-center"><i class="fas fa-campground"></i></h1>
-			<p class="h6 pt-5 pl-0">
+			<h1 class="display-4 "><i class="fas fa-campground"></i></h1>
+			<!-- <p class="h6 pt-5 pl-0">
 				View some of our hand-picked campgrounds
-			</p>
+			</p> -->
 			<p>
-				<a class="btn btn-primary btn-md pb-2" href="/campgrounds/new">Submit A New Campground!</a>
+				<a class="btn btn-primary btn-md mt-5 pb-2" href="/campgrounds/new">Submit A New Campground!</a>
 			</p>
 		</div>
 	</header>
@@ -23,9 +23,9 @@
 			<div class="card mb-3 p-2 thumbnail">
 				<img src="<%=campground.image%>" class="card-img-top" alt="<%=campground.name%>">
 				<div class="card-body">
-					<h5 class="card-title"><%=campground.name%></h5>
+					<h4 class="card-title"><%=campground.name%></h4>
 					<p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-					<a href="/campgrounds/<%= campground._id %>" class="btn btn-primary">More Info</a>
+					<a href="/campgrounds/<%= campground._id %>" class="btn btn-primary btn-lg">More Info</a>
 				</div>
 			</div>			
 		</div>

@@ -1,32 +1,29 @@
 <%- include("../partials/header") %>
-<div class="container">
-	<div class="row">
-		<div class="col-md-4 map-box">
-			<p class="lead">YelpCamp</p>
-			<div class="dropdown">
-				<a class="btn btn-success btn-lg dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-					Camp Info.
-				</a>
-				<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-						<a class="btn btn-lg dropdown-toggle pr-5" href="#" role="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Info 1</a>
-						<ul class="dropdown-menu" id="sub-dropdown-menu" aria-labelledby="dropdownMenuLink" >
-							<!-- <a class="btn dropdown-item text-break" data-toggle="tooltip" data-placement="right" title="Tooltip on right">
-								Lorem ipsum dolor sit, amet consectetur adipisicing elit. Iste error veniam cum assumenda amet, voluptate modi placeat adipisci officia. Quas!
-							</a> -->
-							<li class="dropdown-item" style="white-space: normal;" >Lorem ipsum dolor sit, amet consectetur adipisicing elit. Iste error veniam cum assumenda amet, voluptate modi placeat adipisci officia. Quas!</li>
-							<!-- <a class="dropdown-item" href="#">Info 2</a>
-							<a class="dropdown-item" href="#">Info 3</a> -->
-							</ul>
-				</div>
+<div class="container-fluid">
+	<div class="row mx-2">
+		<div class="col-md-5 mt-5 map-box">
+			<div class="card w-50 border-0 pop-card" style="background-color: rgba(0, 0, 0, 0);">
+			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="right" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
+				Camp Information.
+			</button>
+			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="right" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
+				Camp Information 2.
+			</button>
+			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="right" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
+				Camp Information 3.
+			</button>
 			</div>
+			
 			<div id="map"></div>
+
 		</div>
-		<div class="col-md-8">
-			<div class="thumbnail">
-				<img class = "img-responsive" src="<%= campground.image %>">
+
+		<div class="col-md-7 mt-2">
+			<div class="card mb-4 p-3 thumbnail">
+				<img class= "img-responsive mb-2" src="<%= campground.image %>">
 				<div class="caption">
-					<h4 class="pull-right">$<%= campground.price %>/night</h4>
-					<h4><a><%=campground.name%></a></h4>
+					<h5 class="pull-right">$<%= campground.price %>/night</h5>
+					<h3><a><%=campground.name%></a></h3>
 					<p><%= campground.description %></p>
 					<p>
 						<em>Submitted By: <%= campground.author.username %></em>
@@ -44,34 +41,40 @@
 					<% } %>
 				</div>
 			</div>
+			
 			<div class="well">
 				<div class="text-right">
 						<a class="btn btn-success" href="/campgrounds/<%= campground._id %>/comments/new">Add A New Comment</a>
 				</div>
 				<hr>
 				<% campground.comments.forEach((comment)=>{ %>
-					<div class="row">
-						<div class="col-md-12">
-							<strong><%= comment.author.username %></strong>
-							<span class="pull-right">10 days ago</span>
-							<p><%= comment.text %></p>
+					<!-- <div class="rounded thumbnail"> -->
+						<!-- <div class="col-md-7 px-3 "> -->
+						<div class="card w-75 thumbnail" style="border-radius: 3%;">	
+						<div class="card-body p-2"> 	
+							<strong class="card-title"><%= comment.author.username %></strong>
+							<span class="pull-right text-muted">10 days ago</span>
+							<p class="card-text"><%= comment.text %></p>
 							<% if(currentUser && comment.author.id.equals(currentUser._id)){ %>
-							<a class="btn btn-xs btn-warning" href="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>/edit">
+							<a class="btn btn-xs btn-outline-warning" href="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>/edit">
 								Edit Comment
 							</a>
 							<form class="delete-form" action="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>?_method=DELETE" method=POST>
-								<input type="submit" class="btn btn-xs btn-danger" value="Delete">
+								<input type="submit" class="btn btn-xs btn-outline-danger" value="Delete">
 							</form>
 							<% } %>
 						</div>
 					</div>
 				<% }); %>
+				</div>
 			</div>
 		</div>
 	</div>	
 </div>
 
 <script>
+	
+
 	function initMap(){
 		const lat = <%= campground.lat %>;
 		const lng = <%= campground.lng %>;
