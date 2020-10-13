@@ -1,25 +1,25 @@
 require('dotenv').config();
 
-const express    	 =  require("express"),
-	  app        	 = express(),
-	  axios      	 = require("axios").default,
-	  bodyParser 	 = require("body-parser"),
-	  mongoose   	 = require("mongoose"),
-	  passport	 	 = require("passport"),
-	  LocalStrategy  = require("passport-local"),
-	  methodOverride = require("method-override"),
-	  flash			 = require("connect-flash"),
-	  numeral		 = require("numeral"),
-	  Campground 	 = require("./models/campground"),
-	  Comment	 	 = require("./models/comment"),
-	  User		 	 = require("./models/user"),
-	  seedDB	 	 = require("./seeds"),
-	  port       	 = process.env.PORT || 3000;
+const express    	 		=  require("express"),
+	  	app        	 		= express(),
+	  	axios      	 		= require("axios").default,
+	  	bodyParser 	 		= require("body-parser"),
+	  	mongoose   	 		= require("mongoose"),
+	  	passport	 	 		= require("passport"),
+	  	LocalStrategy  	= require("passport-local"),
+	  	methodOverride 	= require("method-override"),
+	  	flash			 			= require("connect-flash"),
+	  	numeral		 			= require("numeral"),
+	  	Campground 	 		= require("./models/campground"),
+	  	Comment	 	 			= require("./models/comment"),
+	  	User		 	 			= require("./models/user"),
+	  	seedDB	 	 			= require("./seeds"),
+	  	port       	 		= process.env.PORT || 3000;
 
 //Require Routes.
-const commentsRoutes 	= require("./routes/comments"),
-	  campgroundRoutes 	= require("./routes/campgrounds"),
-	  indexRoutes 		= require("./routes/index");
+const commentsRoutes 		= require("./routes/comments"),
+	  	campgroundRoutes 	= require("./routes/campgrounds"),
+	 	 	indexRoutes 			= require("./routes/index");
 
 const connectDB = async () =>{
 	try {
@@ -63,8 +63,8 @@ passport.deserializeUser(User.deserializeUser());
 // every 'app.'... request will append this, like a middleware.
 app.use((req, res, next)=>{
 	res.locals.currentUser 	= req.user;
-	res.locals.error 		= req.flash("error");
-	res.locals.success 		= req.flash("success");
+	res.locals.error 				= req.flash("error");
+	res.locals.success 			= req.flash("success");
 	next();
 });
 
