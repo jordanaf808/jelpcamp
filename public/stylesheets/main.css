@@ -80,17 +80,20 @@ body {
 
 /* Show Campground */
 
-.popcard {
+.pop-card {
 	background: rgba(245, 255, 254, 0.2); 
-
+	width: 75%;
+	margin: 0 auto;
 }
+
+
 
 /* google maps api */
 
 #map {
 	height: 300px;
 	width: 100%;
-	margin-bottom: 1.5em;
+	margin: 1.5em auto;
 }
 
 /* .thumbnail .caption-full {
@@ -116,6 +119,11 @@ body {
 		width: 80%;
 	}
 
+	.pop-card button {
+		width: 100%;
+		padding: 1rem;
+	}
+
 } 
 
 /* Collapsible Menu */
@@ -123,7 +131,7 @@ body {
 @media (max-width: 765px) {
   .offcanvas-collapse {
     position: fixed;
-    top: 56px; /* Height of navbar */
+    top: 50px; /* Height of navbar */
     bottom: 0;
     left: 100%;
     width: 100%;
@@ -140,5 +148,11 @@ body {
     visibility: visible;
     -webkit-transform: translateX(-30%);
     transform: translateX(-30%);
-  }
+	}
+
+	.pop-card button {
+		width: 100%;
+		padding: 2rem;
+	}
+	
 }
