@@ -1,6 +1,69 @@
 <%- include("../partials/header") %>
-<div class="container-fluid">
+<div class="container-fluid height-fix">
 	<div class="row mx-2">
+		<div class="col-md-7 mt-2">
+			<div class="card mb-4 p-3 thumbnail">
+				<img class= "img-responsive mb-2" src="<%= campground.image %>">
+				<div class="caption">
+					<h5 class="pull-right">$<%= campground.price %>/night</h5>
+					<h3><a><%=campground.name%></a></h3>
+					<p><%= campground.description %></p>
+					<p>
+						<em>Submitted By: <%= campground.author.username %></em>
+					</p>
+					 <!-- display 'edit' and 'delete' btn only when original user is logged in. 
+						You must first check if someone is logged in, '&&' if so, whether their
+						ID matches the original poster. -->
+					<% if(currentUser && campground.author.id.equals(currentUser._id)){ %>
+						<a class="btn btn-xs btn-outline-warning" href="/campgrounds/<%= campground._id %>/edit">Edit</a>
+						<form class="delete-form" action="/campgrounds/<%= campground._id %>?_method=DELETE" method="POST">
+							<button class="btn btn-xs btn-outline-danger">
+								Delete
+							</button>
+						</form>
+					<% } %>
+				</div>
+			</div>
+			
+			<div class="container">
+				<div class="text-center">
+						<a class="btn btn-success" href="/campgrounds/<%= campground._id %>/comments/new">Add A New Comment</a>
+				</div>
+				<hr>
+				<div class="accordion" id="accordionExample">
+				<div class="card w-75 rounded thumbnail" style="border-radius: 2%;">	
+					<div class="card-header" id="headingOne">
+						<h2 class="mb-0">
+							<button class="btn btn-link w-100" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+								See Comments
+							</button>
+						</h2>
+					</div>
+					<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
+				<% campground.comments.forEach((comment)=>{ %>
+						<div class="card-body mb-2 p-0"> 
+							<div class="card-header p-1" style="justify-content: space-between;">	
+							<strong class="card-title"><%= comment.author.username %></strong>							
+							<span class="text-muted">10 days ago</span>
+							</div>
+							<p class="card-text my-2"><%= comment.text %></p>
+							<% if(currentUser && comment.author.id.equals(currentUser._id)){ %>
+							<a class="btn btn-xs btn-outline-warning" href="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>/edit">
+								Edit Comment
+							</a>
+							<form class="delete-form" action="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>?_method=DELETE" method=POST>
+								<input type="submit" class="btn btn-xs btn-outline-danger" value="Delete">
+							</form>
+							<% } %>
+						</div>
+				<% }); %>
+					</div>
+				</div>
+				</div>
+			</div>
+		</div>
+
+
 		<div class="col-md-5 mt-2 map-box">
 			<div class="accordion m-1" id="accordionExample">
 
@@ -47,73 +110,12 @@
 							<div id="map"></div>						
 						</div>
 					</div>
-				</div>
-				
-			</div>
-			<!-- <div class="card border-0 text-center pop-card" style="background-color: rgba(0, 0, 0, 0);">
-			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="bottom" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
-				Camp Information.
-			</button>
-			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="bottom" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
-				Camp Information 2.
-			</button>
-			<button type="button" class="btn btn-sm btn-success rounded my-2" data-container="body" data-toggle="popover" data-placement="bottom" data-animation="true" title="Popover title" data-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
-				Camp Information 3.
-			</button> -->
+				</div>				
 			</div>
 
-		<div class="col-md-7 mt-2">
-			<div class="card mb-4 p-3 thumbnail">
-				<img class= "img-responsive mb-2" src="<%= campground.image %>">
-				<div class="caption">
-					<h5 class="pull-right">$<%= campground.price %>/night</h5>
-					<h3><a><%=campground.name%></a></h3>
-					<p><%= campground.description %></p>
-					<p>
-						<em>Submitted By: <%= campground.author.username %></em>
-					</p>
-					 <!-- display 'edit' and 'delete' btn only when original user is logged in. 
-						You must first check if someone is logged in, '&&' if so, whether their
-						ID matches the original poster. -->
-					<% if(currentUser && campground.author.id.equals(currentUser._id)){ %>
-						<a class="btn btn-xs btn-warning" href="/campgrounds/<%= campground._id %>/edit">Edit</a>
-						<form class="delete-form" action="/campgrounds/<%= campground._id %>?_method=DELETE" method="POST">
-							<button class="btn btn-xs btn-danger">
-								Delete
-							</button>
-						</form>
-					<% } %>
-				</div>
-			</div>
-			
-			<div class="well">
-				<div class="text-center">
-						<a class="btn btn-success" href="/campgrounds/<%= campground._id %>/comments/new">Add A New Comment</a>
-				</div>
-				<hr>
-				<% campground.comments.forEach((comment)=>{ %>
-					<!-- <div class="rounded thumbnail"> -->
-						<!-- <div class="col-md-7 px-3 "> -->
-						<div class="card w-75 thumbnail" style="border-radius: 2%;">	
-						<div class="card-body p-2"> 	
-							<strong class="card-title"><%= comment.author.username %></strong>
-							<span class="pull-right text-muted">10 days ago</span>
-							<p class="card-text"><%= comment.text %></p>
-							<% if(currentUser && comment.author.id.equals(currentUser._id)){ %>
-							<a class="btn btn-xs btn-outline-warning" href="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>/edit">
-								Edit Comment
-							</a>
-							<form class="delete-form" action="/campgrounds/<%=campground._id%>/comments/<%=comment._id%>?_method=DELETE" method=POST>
-								<input type="submit" class="btn btn-xs btn-outline-danger" value="Delete">
-							</form>
-							<% } %>
-						</div>
-					</div>
-				<% }); %>
-				</div>
-			</div>
 		</div>
-	</div>	
+	</div>
+</div>	
 
 
 <script>
