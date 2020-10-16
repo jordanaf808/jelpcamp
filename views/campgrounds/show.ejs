@@ -1,5 +1,5 @@
 <%- include("../partials/header") %>
-<div class="container-fluid height-fix">
+<div class="container-fluid" style="height: 100%;">
 	<div class="row mx-2">
 		<div class="col-md-7 mt-2">
 			<div class="card mb-4 p-3 thumbnail">
@@ -32,14 +32,14 @@
 				<hr>
 				<div class="accordion" id="accordionExample">
 				<div class="card w-75 rounded thumbnail" style="border-radius: 2%;">	
-					<div class="card-header" id="headingOne">
+					<div class="card-header" id="headingFour">
 						<h2 class="mb-0">
-							<button class="btn btn-link w-100" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+							<button class="btn btn-link w-100" type="button" data-toggle="collapse" data-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
 								See Comments
 							</button>
 						</h2>
 					</div>
-					<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
+					<div id="collapseFour" class="collapse" aria-labelledby="collapseFour" data-parent="#accordionExample">
 				<% campground.comments.forEach((comment)=>{ %>
 						<div class="card-body mb-2 p-0"> 
 							<div class="card-header p-1" style="justify-content: space-between;">	
