@@ -15,6 +15,11 @@ body {
 	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .9); */
 }
 
+button:focus {
+	outline: none;
+	background: rgba(0, 0, 0, 0.1);
+}
+
 .btn {
 font-weight: 700;
 text-shadow:none;
@@ -40,6 +45,7 @@ text-shadow:none;
 	background: rgba(227, 231, 240, 0.75);
 	opacity: 85%;
 	text-shadow: none;
+	height: 51px;
 }
 
 .navbar-brand {
@@ -50,6 +56,55 @@ text-shadow:none;
 .navbar-brand i {
 	font-size: 1.4rem;
 	transform: translateY(-11%);
+}
+
+/* Hamburger */
+
+.hamburger {
+  display: block;
+	position: relative;
+}
+
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+  background: rgb(69, 69, 69);
+  width: 2em;
+  height: 3px;
+  border-radius: 1em;
+	transition: transform 250ms ease-in-out;
+	z-index: 9999;
+}
+
+.hamburger::before,
+.hamburger::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.hamburger::before {
+  top: 6px;
+}
+.hamburger::after {
+  bottom: 6px;
+}
+
+.nav-open .hamburger {
+  background: black;
+  transform: rotate(.625turn);
+}
+
+.nav-open .hamburger::before {
+  background: black;
+  transform: rotate(90deg) translateX(-6px);
+}
+
+.nav-open .hamburger::after {
+  background: black;
+  opacity: 0;
+  /* transform: rotate() */
 }
 
 /* Index Page */
@@ -149,7 +204,7 @@ text-shadow:none;
 @media (max-width: 765px) {
   .offcanvas-collapse {
     position: fixed;
-    top: 40px; /* Height of navbar */
+    top: 51px; /* Height of navbar */
     bottom: 0;
     left: 100%;
     width: 100%;
