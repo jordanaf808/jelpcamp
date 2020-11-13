@@ -1,7 +1,9 @@
 const express 		= require("express"),
 	  	passport 		= require("passport"),
 		 	User 				= require("../models/user"),
-	 		Campground 	= require("../models/campground");
+			Campground 	= require("../models/campground"),
+			Campsite 		= require("../models/campsite"),
+			mapboxgl 		= require('mapbox-gl/dist/mapbox-gl.js');
 const router 			= express.Router();
  
 
@@ -33,7 +35,7 @@ router.post("/register", (req,res)=>{
 		} 
 		passport.authenticate("local")(req, res, ()=>{
 			req.flash("success", "Welcome To YelpCamp " + user.username);		
-			res.redirect("/campgrounds");
+			res.redirect("/campsites");
 		});
 	});
 });
@@ -45,7 +47,7 @@ router.get("/login", (req,res)=>{
 // handle LOGIN logic
 router.post("/login", passport.authenticate("local", 
 	{
-		successRedirect: "/campgrounds",
+		successRedirect: "/campsites",
 		failureRedirect: "/login"
 	}), (req,res)=>{
 });

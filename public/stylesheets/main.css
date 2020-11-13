@@ -1,18 +1,38 @@
 /*  HTML  */
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+html {
+	font-size: 18px;
+	box-sizing: border-box;
+}
+
 body {
+	
+	margin: 0;
 	padding-top: 70px;
-	background: 
-		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
 	background-color: #525252;
 	background-blend-mode: overlay;
-	background-position: bottom;
-	/* background-position: center; */
-	background-size: cover;
-	background-repeat: no-repeat;
+	background-image: linear-gradient(-225deg, #5D9FFF 0%, #B8DCFF 48%, #6BBBFF 100%);	/* background-image: 
+		url(/images/topgraphy-background-by-pikisuperstar.svg);
+	background-position: center;
+	background-size: cover; 
+	background-size: 100%;
+	background-repeat: no-repeat; */
 	overflow-x: hidden; /* Prevent scroll on narrow devices */
-	text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
-	/* box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
-	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .9); */
+	/* text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5); */
+	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+	box-shadow: inset 0 0 5rem rgba(0, 0, 0, .9);
+}
+
+h1 {
+	font-family: 'Paytone One', sans-serif;
+	font-size: 2.5em;
+	color: white;
 }
 
 button:focus {
@@ -26,13 +46,13 @@ text-shadow:none;
 }
 
 .btn-outline-warning {
-	background-color:rgba(255, 255, 255, 0.502);
-	color: orange;
-	border-color:orange;
+	background-color:rgba(128, 128, 128, 0.1);
+	color: rgb(255, 185, 35);
+	border-color:rgb(255, 185, 35);
 }
 
 .btn-outline-danger {
-	background-color:rgba(255, 255, 255, 0.502);
+	background-color:rgba(128, 128, 128, 0.1);
 }
 
 .height-fix {
@@ -42,7 +62,7 @@ text-shadow:none;
 /* Navbar */
 
 .navbar {
-	background: rgba(227, 231, 240, 0.75);
+	background: rgba(227, 231, 240, 0.9);
 	opacity: 85%;
 	text-shadow: none;
 	height: 51px;
@@ -110,54 +130,76 @@ text-shadow:none;
 /* Index Page */
 
 .jumbotron {
+	max-width: 1200px;
+	margin: 0 auto;
 	color: white;
 	background: 
-		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
-	background-color: #464646;
+		/* url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80"); */
+		url("../images/CampsiteVector1.png");
+
+	background-color: #5c5c5cb2;
 	background-blend-mode: overlay;
 	background-position: center;
 	background-size: cover;
+	background-repeat: no-repeat;
 	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: inset 0 0 3rem rgba(0, 0, 0, .7);
-	
 }
+
+.jumbotron h1 {
+	font-family: 'Paytone One', sans-serif;
+	font-size: 3em;
+}
+
+.portfolio__item:focus {
+  position: relative;
+  z-index: 2;
+}
+
+.campcard:hover,
+.campcard:focus {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
 
 .campcards {
-	display: flex;
-	flex-wrap: wrap;	
+	max-width: 1200px;
+	margin: 0 auto;
 }
 
-.thumbnail img {
-	height: 250px;
-	object-fit: cover;
-	width: 100%;
-	background: rgba(162, 224, 215, .5); 
-	border: 1px solid #949494;
-	border-radius: 2%;
-}
-
-.thumbnail {
+.campcard {
+	min-width: 280px;
+	max-height: 400px;
+	padding: 0;
+	border-radius: 10px;
 	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
-	padding: 0;
-	background: rgba(245, 255, 254, 0.85); 
-	border-radius: 2%;
+	background: rgba(245, 255, 254, 0.95); 
+	overflow: hidden;
+	opacity: .75;
+  transition: 
+  transform 750ms cubic-bezier(.5,0,.5,1),
+  opacity 350ms linear;
 }
 
 .card-body {
 	padding: 1rem 0;
 }
 
-/* Show Campground */
+.campcard img {
+	height: 250px;
+	width: 100%;
+	object-fit: cover;
+	background: rgba(162, 224, 215, .5); 
+	border: 1px solid #949494;
+	border-radius: 15px;
+}
 
-/* .pop-card {
-	background: rgba(245, 255, 254, 0.2); 
-	width: 75%;
-	margin: 0 auto;
-} */
+/* Show Campground */
 
 .accordion button {
 	width: 100%;
@@ -168,18 +210,36 @@ text-shadow:none;
 	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
 	padding: 0;
-	background: rgba(248, 254, 253, 0.85); 
+	background: rgba(248, 254, 253, 0.95); 
 	width: 90%;
 	margin: .5em auto;
 	text-align: center;
 }
 
-/* google maps api */
+/*  Carousel  */
+
+.carousel-inner img {
+	height: 500px; 
+	object-fit: cover;
+}
+
+#carousel {
+	width: 90%;
+	margin: 0 auto;
+}
+
+/* google maps */
 
 #map {
-	height: 300px;
+	min-height: 400px;
 	width: 100%;
-	margin: 1.5em auto;
+	margin: 1em auto;
+}
+
+.map-box {
+	/* max-height: 500px; */
+	/* width: 80%; */
+	margin: 0 auto;
 }
 
 .delete-form {
@@ -189,13 +249,13 @@ text-shadow:none;
 /* Media Queries */
 
 @media screen and (max-width: 600px) { 
-	.campcards {
+	/* .campcards {
 		flex-direction: column;
 		justify-content: center;
-	}
-	.thumbnail img {
+	} */
+	/* .thumbnail img {
 		height: 100%;
-	}
+	} */
 
 } 
 

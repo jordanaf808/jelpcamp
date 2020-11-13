@@ -23,15 +23,13 @@
     
     <div id="landing-header">
  		<h1>Welcome to YelpCamp!</h1>
-		<a href="/campgrounds" class="btn btn-lg btn-success">View All Campgrounds</a>
+		<a href="/campsites" class="btn btn-lg btn-success">Find Your Next Adventure!</a>
     </div>
     
     <ul class="slideshow">
     <% campgrounds.forEach((campground) => { %>
       <li style="background-image: url(<%=campground.image%>)"></li>
     <% }); %>  
-      <li></li>
-      <li></li>
       <!-- <li></li>
       <li></li> -->
     </ul>

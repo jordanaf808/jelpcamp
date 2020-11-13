@@ -11,6 +11,7 @@ const express    	 		=  require("express"),
 	  	flash			 			= require("connect-flash"),
 	  	numeral		 			= require("numeral"),
 	  	Campground 	 		= require("./models/campground"),
+	  	Campsite 	 			= require("./models/campsite"),
 	  	Comment	 	 			= require("./models/comment"),
 	  	User		 	 			= require("./models/user"),
 	  	seedDB	 	 			= require("./seeds"),
@@ -19,7 +20,9 @@ const express    	 		=  require("express"),
 //Require Routes.
 const commentsRoutes 		= require("./routes/comments"),
 	  	campgroundRoutes 	= require("./routes/campgrounds"),
-	 	 	indexRoutes 			= require("./routes/index");
+			indexRoutes 			= require("./routes/index"),
+			campsitesRoutes		= require("./routes/campsites");
+				
 
 const connectDB = async () =>{
 	try {
@@ -45,7 +48,7 @@ app.use(methodOverride("_method"));
 app.use(flash());
 
 // seed the DB
-seedDB(); 
+// seedDB(); 
 
 //PASSPORT configuration
 app.use(require("express-session")({
@@ -70,7 +73,9 @@ app.use((req, res, next)=>{
 
 app.use(indexRoutes);
 app.use("/campgrounds/:id/comments", commentsRoutes);
+app.use("/campsites/:id/comments", commentsRoutes);
 app.use("/campgrounds", campgroundRoutes);
+app.use("/campsites", campsitesRoutes);
 
 app.listen(process.env.PORT || 3000) 
 console.log(`YelpCamp listening at ${port}`)
