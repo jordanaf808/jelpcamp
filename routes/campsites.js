@@ -24,8 +24,6 @@ axios.defaults.headers = {
   'Access-Control-Allow-Origin' : '*',
   'Access-Control-Allow-Methods' : 'GET, PUT, POST, DELETE, OPTIONS',
 }
-
-// const url = "https://ridb.recreation.gov/api/v1/activities/"
 // const url = '/recareas';
 
 // ==========|  INDEX  |========== \\
@@ -65,7 +63,7 @@ router.get('/search', async (req, res) => {
       {properties: {title: item.FacilityName}, geometry: item.GEOJSON, id: item.FacilityID}));
     console.log(response.data.METADATA);
     // console.log(recData)
-    res.render("campsites/index", {recData, mapData});
+    res.render("campsites/results", {recData, mapData, searchParams});
   } catch (e) {
     console.log("oh no.", e)
   }

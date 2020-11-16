@@ -11,10 +11,16 @@ html {
 	box-sizing: border-box;
 }
 
+@media (max-width: 390px) {
+	html {
+		font-size: 12px;
+	}
+}
+
 body {
-	
+	min-width: 252px;
 	margin: 0;
-	padding-top: 70px;
+	/* padding-top: 70px; */
 	background-color: #525252;
 	background-blend-mode: overlay;
 	background-image: linear-gradient(-225deg, #5D9FFF 0%, #B8DCFF 48%, #6BBBFF 100%);	/* background-image: 
@@ -62,6 +68,7 @@ text-shadow:none;
 /* Navbar */
 
 .navbar {
+	width: 100%;
 	background: rgba(227, 231, 240, 0.9);
 	opacity: 85%;
 	text-shadow: none;
@@ -130,13 +137,11 @@ text-shadow:none;
 /* Index Page */
 
 .jumbotron {
-	max-width: 1200px;
-	margin: 0 auto;
+	width: 100%;
 	color: white;
 	background: 
-		/* url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80"); */
-		url("../images/CampsiteVector1.png");
-
+		url("https://images.unsplash.com/photo-1544187989-1f95cb59f593?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1331&q=80");
+		/* url("../images/CampsiteVector1.png"); */
 	background-color: #5c5c5cb2;
 	background-blend-mode: overlay;
 	background-position: center;
@@ -150,7 +155,24 @@ text-shadow:none;
 
 .jumbotron h1 {
 	font-family: 'Paytone One', sans-serif;
-	font-size: 3em;
+	font-size: 3.5em;
+	opacity: 80%;
+}
+
+/* Search Body */
+
+.search-body {
+	max-width: 1100px;
+}
+
+.form-row {
+	margin: 0 auto;
+	justify-content: center;
+}
+
+.form-group select{
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
 }
 
 .portfolio__item:focus {
@@ -292,3 +314,29 @@ text-shadow:none;
 	}
 }
 
+.nav-footer {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	list-style-type: none;
+	margin: 0 auto;
+	padding: 0;
+}
+
+.nav-footer li  svg {
+	height: 3em;
+	width: 3em;
+}
+
+@media (max-width: 500px) {
+	.nav-footer {
+		display: none;
+	}
+}
+
+@media (max-width: 973px) {
+	.nav-footer li  svg {
+		height: 2em;
+		width: 2em;
+	}
+}
