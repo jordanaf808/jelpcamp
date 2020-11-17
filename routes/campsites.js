@@ -30,7 +30,7 @@ axios.defaults.headers = {
 
 router.get('/', async (req, res) => {
   try {
-    const params = {query: "camping", limit: 50, sort: "Date"} // state: "CA", full: false,
+    const params = {query: "hiking", limit: 50, full: false, sort: "Date"} // state: "CA"
     const response = await axios.get('/facilities', {params});
     console.log(response.status);
     const recData = response.data.RECDATA;

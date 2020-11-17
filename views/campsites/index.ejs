@@ -131,9 +131,9 @@
 							<option value="WY">Wyoming</option>
 						</select>
 					</div>
-					<div class="form-group col-10 col-sm-4 col-md-3">
+					<!-- <div class="form-group col-10 col-sm-4 col-md-3">
 						<input class="form-control"	type="text"	name="location"	id="location"	placeholder="e.g. Yosemite National Park, CA"/>
-					</div>
+					</div> -->
 					<div class="form-group col-10 col-sm-4 col-md-3">
 						<select class="custom-select my-1 mr-sm-2"	id="limit-results" 	name="limit"	aria-label="Select Activity">
 							<option value="" selected>Limit Results</option>
@@ -162,7 +162,7 @@
 	<div class="row text-center">
 		<div class="card-deck campcards container-fluid">
 			<% for(let name of recData){ %>
-				<div class="card mb-3 mx-xs-4 p-2 campcard">
+				<div class="card m-3 p-4 campcard">
 						<h2 class="card-title"><%=name.FacilityName%></h2>
 						<div class="card-body" >
 							<%-name.FacilityDescription%>

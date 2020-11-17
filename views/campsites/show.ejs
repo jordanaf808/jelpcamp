@@ -129,6 +129,7 @@
 		const lat = <%- data.recData.GEOJSON.COORDINATES[1] %>;
 		const lng = <%- data.recData.GEOJSON.COORDINATES[0] %>;
 		const center = {lat: lat, lng: lng };
+		console.log(center)
 		const map = new google.maps.Map(document.getElementById("map"), {
 			zoom: 8,
 			center: center,
