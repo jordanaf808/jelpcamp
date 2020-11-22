@@ -55,7 +55,7 @@ router.get('/search', async (req, res) => {
     const state = req.query.state
     const activity = req.query.activities
     const limit = req.query.limit
-    const searchParams = {query: search, activity, state, limit, sort: "Date", query: search}
+    const searchParams = {query: search, activity, state, limit, sort: "Date",}
     const response = await axios.get('/facilities', {params: searchParams});
     const recData = response.data.RECDATA;
     const maps = recData.filter(item => (item.GEOJSON.COORDINATES));

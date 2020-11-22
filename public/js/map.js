@@ -4,8 +4,8 @@ mapboxgl.accessToken = mapToken;
 const map = new mapboxgl.Map({
 container: 'map',
 style: 'mapbox://styles/mapbox/dark-v10',
-center: [-74.5, 40], // starting position [lng, lat]
-zoom: 1 // starting zoom
+center: [-113.7870, 48.7596], // starting position [lng, lat] Glacial Nat'l Park.
+zoom: 1.6 // starting zoom
 });
 
 map.on('load', function () {
