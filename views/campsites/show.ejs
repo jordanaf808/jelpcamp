@@ -53,6 +53,11 @@
 						<button class="btn btn-primary" style="width: auto; padding: .375em 2.2em;" type="button" data-toggle="collapse" data-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
 							See Comments
 						</button>
+						<%if(currentUser){%>
+							<form class="add-favorite" action="/user/<%=currentUser._id%>/<%=foundCampsite.id%>/" method="POST">
+								<input type="submit" class="btn btn-outline-warning" value="Add Favorite &#11088;">
+							</form>								
+						<% } %>
 					</div>
 					<div id="collapseFour" class="collapse" aria-labelledby="collapseFour" data-parent="#accordionExample">
 						<% foundCampsite.comments.forEach((comment)=>{ %>

@@ -5,6 +5,7 @@ const express 		= require("express"),
 			Campsite 		= require("../models/campsite"),
 			mapboxgl 		= require('mapbox-gl/dist/mapbox-gl.js');
 const router 			= express.Router();
+const middleware = require("../middleware");
  
 
 router.get("/", (req, res) => {
@@ -39,6 +40,37 @@ router.post("/register", (req,res)=>{
 		});
 	});
 });
+
+// User Profile
+router.get("/user/:id", middleware.isLoggedIn, function(req, res){
+	User.findById(req.params.id, function(err, foundUser){
+		if(err){
+			req.flash("error", "user not found")
+			return res.redirect('/')
+		} 
+		console.log(foundUser)
+		res.render('users/show', {user: foundUser});
+	});
+});
+
+// Add Favorite
+router.post("/user/:id/:campsite", middleware.isLoggedIn, (req,res)=>{
+	//lookup campground using id
+	// const { id } = req.params;
+	console.log(req.params)
+	User.findById(req.params._id, function(err, foundUser){
+		if(err){
+			req.flash("error", "user not found")
+			return res.redirect('/')
+		}  else {
+					foundUser.favorites.push(req.params._campsite);
+					foundUser.save();
+					console.log(foundUser);
+					res.redirect('/campsites/show/' + req.params._campsite);
+				}
+	});
+});
+
 
 // show LOGIN form
 router.get("/login", (req,res)=>{
