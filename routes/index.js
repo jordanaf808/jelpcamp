@@ -43,31 +43,45 @@ router.post("/register", (req,res)=>{
 
 // User Profile
 router.get("/user/:id", middleware.isLoggedIn, function(req, res){
-	User.findById(req.params.id, function(err, foundUser){
-		if(err){
-			req.flash("error", "user not found")
-			return res.redirect('/')
-		} 
-		console.log(foundUser)
-		res.render('users/show', {user: foundUser});
-	});
+	User.findById(req.params.id).populate("favorites").exec((err, user) => {
+			if(err || !user){
+				req.flash("error", "Campground Not Found...")
+				res.redirect("back");
+			} else {
+				console.log(user);
+			//render show template with that campground
+			res.render("users/show", {user: user});		
+			}
+		});
 });
 
 // Add Favorite
 router.post("/user/:id/:campsite", middleware.isLoggedIn, (req,res)=>{
 	//lookup campground using id
 	// const { id } = req.params;
-	console.log(req.params)
-	User.findById(req.params._id, function(err, foundUser){
+	console.log(req.params.campsite)
+	const campId = req.params.campsite;
+	Campsite.findOne({'id': campId}, (err, campsite)=>{
 		if(err){
-			req.flash("error", "user not found")
-			return res.redirect('/')
-		}  else {
-					foundUser.favorites.push(req.params._campsite);
+			req.flash("error", "Error Creating Favorite.");
+			console.log(err);
+			res.redirect(`/campsites/${campId}`);
+		} else {
+			User.findById(req.params.id, function(err, foundUser){
+				if(err){
+					req.flash("error", "user not found")
+					return res.redirect('/')
+				}  else {
+					// need to check if favorite camp already exists ***
+					console.log(foundUser);
+					foundUser.favorites.push(campsite._id);
 					foundUser.save();
 					console.log(foundUser);
-					res.redirect('/campsites/show/' + req.params._campsite);
-				}
+					// req.flash("success", campsite.name + " has been added to your favorites!");		
+					// res.redirect('/campsites/show/' + req.params.campsite);
+				}	
+			});
+		}	
 	});
 });
 
@@ -82,6 +96,7 @@ router.post("/login", passport.authenticate("local",
 		successRedirect: "/campsites",
 		failureRedirect: "/login"
 	}), (req,res)=>{
+		// req.flash("success", "Welcome To YelpCamp " + user.username);		
 });
 
 // Logout ROUTE

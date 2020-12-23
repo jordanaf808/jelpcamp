@@ -58,7 +58,7 @@ text-shadow:none;
 }
 
 .btn-outline-warning {
-	background-color:rgba(128, 128, 128, 0.1);
+	background-color:rgb(247, 247, 247);
 	color: rgb(255, 185, 35);
 	border-color:rgb(255, 185, 35);
 }
@@ -70,6 +70,21 @@ text-shadow:none;
 .height-fix {
 	height: 100vh;
 }
+
+.alert {
+	margin-top: 51px;
+}
+
+.main-body {
+	margin-top: 51px;
+}
+/* 
+.footer {
+	position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: rgba(227, 231, 240, 0.9);
+} */
 
 /* Navbar */
 
@@ -349,3 +364,21 @@ text-shadow:none;
 		width: 2rem;
 	}
 } */
+
+.favorites-list {
+	-webkit-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	-moz-box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	box-shadow: 10px 10px 8px 0px rgba(0,0,0,0.50);
+	padding: 0;
+	background: rgba(248, 254, 253, 0.95); 
+	width: 90%;
+	margin: .5em auto;
+}
+
+.favorites-list .card-body {
+	border: 1px solid rgba(0,0,0,0.50);
+}
+
+.favorite-item:nth-child(odd) {
+	background-color: rgba(0, 0, 0, .07);
+}

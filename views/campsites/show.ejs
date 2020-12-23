@@ -1,5 +1,5 @@
 <%- include("../partials/header") %>
-<div class="container-fluid" style="height: 100%;">
+<div class="container-fluid main-body" style="height: 100%;">
 	<div class="row mx-2">
 		<div class="col-lg-7 mt-2">
 			<div class="card m-xs-0 m-sm-5 p-3 thumbnail">
@@ -55,7 +55,7 @@
 						</button>
 						<%if(currentUser){%>
 							<form class="add-favorite" action="/user/<%=currentUser._id%>/<%=foundCampsite.id%>/" method="POST">
-								<input type="submit" class="btn btn-outline-warning" value="Add Favorite &#11088;">
+								<input type="submit" class="btn btn-outline-warning m-2" value="Add Favorite &#11088;">
 							</form>								
 						<% } %>
 					</div>

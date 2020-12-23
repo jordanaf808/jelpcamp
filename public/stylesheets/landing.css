@@ -76,3 +76,14 @@ body {
     opacity: 0
   }
 }
+
+.alert {
+	margin-top: 51px;
+}
+
+.footer {
+	position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* background-color: rgba(227, 231, 240, 0.9); */
+}
