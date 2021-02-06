@@ -77,8 +77,8 @@ router.post("/user/:id/:campsite", middleware.isLoggedIn, (req,res)=>{
 					foundUser.favorites.push(campsite._id);
 					foundUser.save();
 					console.log(foundUser);
-					// req.flash("success", campsite.name + " has been added to your favorites!");		
-					// res.redirect('/campsites/show/' + req.params.campsite);
+					req.flash("success", campsite.name + " has been added to your favorites!");		
+					res.redirect('/campsites/show/' + req.params.campsite);
 				}	
 			});
 		}	
