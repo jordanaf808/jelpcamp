@@ -34,9 +34,10 @@ router.get('/', async (req, res) => {
     const params = { query: 'hiking', limit: 25, full: false, sort: 'Date' }; // state: "CA"
     const response = await axios.get('/facilities', { params });
     console.log('initial response status: ' + response.status);
-    const recData = response.data.RECDATA;
+    const data = response.data.RECDATA;
     // filter out any data withOUT GEOJSON
-    const maps = recData.filter(item => item.GEOJSON.COORDINATES);
+    const maps = data.filter(item => item.GEOJSON.COORDINATES);
+    const recData = maps;
     const mapData = maps.map(item => ({
       properties: {
         title: item.FacilityName,
@@ -70,8 +71,9 @@ router.get('/search', async (req, res) => {
       sort: 'Date',
     };
     const response = await axios.get('/facilities', { params: searchParams });
-    const recData = response.data.RECDATA;
-    const maps = recData.filter(item => item.GEOJSON.COORDINATES);
+    const data = response.data.RECDATA;
+    const maps = data.filter(item => item.GEOJSON.COORDINATES);
+    const recData = maps;
     const mapData = maps.map(item => ({
       properties: {
         title: item.FacilityName,
