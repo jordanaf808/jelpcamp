@@ -1,67 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
 
-		<title>Yelp Camp 2020</title>
+    <title>Yelp Camp 2020</title>
 
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-		<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
-		<link rel="preconnect" href="https://fonts.gstatic.com">
-		<link href="https://fonts.googleapis.com/css2?family=Paytone+One&family=Special+Elite&display=swap" rel="stylesheet">
-		<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
-		<link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
-		<link rel="stylesheet" href="/stylesheets/main.css">		
-	</head>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
+      crossorigin="anonymous"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Paytone+One&family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/stylesheets/main.css" />
+  </head>
 
-	<body>
-	<div class="container-fluid">
-		<nav class="navbar navbar-expand-md fixed-top navbar-light bg-light py-0">
-			<%if(!currentUser){%>
-				<a class="navbar-brand px-0" href="/campsites">YelpCamp <i class="fas fa-campground mx-1"></i> </a>
-				<% } else { %>
-				<a class="navbar-brand px-0" href="/campsites">YelpCamp <i class="fas fa-campground mx-1"></i></a>
-				<% } %>	
-			<button class="navbar-toggler p-4 border-0" type="button" data-toggle="offcanvas" data-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-				<span class="hamburger"></span>
-				<!-- <span class="navbar-toggler-icon"></span> -->
-			</button>
-			
-			<div class="navbar-collapse offcanvas-collapse justify-content-end" id="navbarNav">
-				<ul class="navbar-nav ">
-					<%if(!currentUser){%>
-					<li class="nav-item my-3 my-lg-0">
-						<a class="nav-link text-body" href="/login">Login</a>
-					</li>
-					<li class="nav-item my-3 my-lg-0">
-						<a class="nav-link text-body" href="/register">Register</a>
-					</li>
-					<% } else { %>
-					<li class="nav-item my-3 my-lg-0">
-						<a class="nav-link text-body" href="/user/<%=currentUser._id%>"><%=currentUser.username%></a>
-					</li>
-					<li class="nav-item my-3 my-lg-0">
-						<a class="nav-link text-body" href="/logout">Logout</a>
-					</li>
-					<% } %>
-				</ul>
-			</div>
-		</nav>
-	</div>		
+  <body>
+    <div class="container-fluid">
+      <nav class="navbar navbar-expand-md fixed-top navbar-light bg-light py-0">
+        <%if(!currentUser){%>
+        <a class="navbar-brand px-0" href="/campsites"
+          >YelpCamp <i class="fas fa-campground mx-1"></i>
+        </a>
+        <% } else { %>
+        <a class="navbar-brand px-0" href="/campsites"
+          >YelpCamp <i class="fas fa-campground mx-1"></i
+        ></a>
+        <% } %>
+        <a href="javascript:history.back()">Go Back.</a>
 
-<div class="container">
-<!-- since our flash warning is always displayed our 'if' statement relies on whether
+        <button
+          class="navbar-toggler p-4 border-0"
+          type="button"
+          data-toggle="offcanvas"
+          data-target="#navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="hamburger"></span>
+          <!-- <span class="navbar-toggler-icon"></span> -->
+        </button>
+
+        <div
+          class="navbar-collapse offcanvas-collapse justify-content-end"
+          id="navbarNav"
+        >
+          <ul class="navbar-nav">
+            <%if(!currentUser){%>
+            <li class="nav-item my-3 my-lg-0">
+              <a class="nav-link text-body" href="/login">Login</a>
+            </li>
+            <li class="nav-item my-3 my-lg-0">
+              <a class="nav-link text-body" href="/register">Register</a>
+            </li>
+            <% } else { %>
+            <li class="nav-item my-3 my-lg-0">
+              <a class="nav-link text-body" href="/user/<%=currentUser._id%>"
+                ><%=currentUser.username%></a
+              >
+            </li>
+            <li class="nav-item my-3 my-lg-0">
+              <a class="nav-link text-body" href="/logout">Logout</a>
+            </li>
+            <% } %>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+      <!-- since our flash warning is always displayed our 'if' statement relies on whether
 there is any content in the 'error' or not. if so display, if not, dont display. -->
-	<% if(error && error.length > 0){ %>
-	<div class="alert alert-danger" role="alert">
-	<h4><%= error %></h4>
-	</div>
-	<% } %>
-	<% if(success && success.length > 0){ %>
-	<div class="alert alert-success" role="alert">
-	<h4><%= success %></h4>
-	</div>
-	<% } %>
-</div>
+      <% if(error && error.length > 0){ %>
+      <div class="alert alert-danger" role="alert">
+        <h4><%= error %></h4>
+      </div>
+      <% } %> <% if(success && success.length > 0){ %>
+      <div class="alert alert-success" role="alert">
+        <h4><%= success %></h4>
+      </div>
+      <% } %>
+    </div>
+  </body>
+</html>

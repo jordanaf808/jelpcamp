@@ -1,18 +1,18 @@
 <%- include("./partials/header") %>
 
-<div class="container-fluid m-0 text-center height-fix">
-	<div class="col-12 m-3">
-		<h1>Sign Up!</h1>
+<div class="container-fluid m-0 text-center height-fix py-5">
+  <div class="col-12 m-3">
+    <h1>Sign Up!</h1>
 
-		<form action="/register" method="POST">
-			<input type="text" name="username" placeholder="username">
-			<input type="password" name="password" placeholder="password">
-			<input type="submit" value="Register!">
-			<!-- <button>
+    <form action="/register" method="POST">
+      <input type="text" name="username" placeholder="username" />
+      <input type="password" name="password" placeholder="password" />
+      <input type="submit" value="Register!" />
+      <!-- <button>
 				Register Here!
 			</button> -->
-		</form>
-	</div>
+    </form>
+  </div>
 </div>
 
 <%- include("./partials/footer") %>
