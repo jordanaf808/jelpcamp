@@ -27,11 +27,12 @@ axios.defaults.headers = {
 
 // ==========|  INDEX  |========== \\
 
+// *** Try to save the response to Local Storage
 // *** Try to use campsite data in mongoDB to populate the homepage map and maybe cards... maybe need description data not in mongoDB.
 
 router.get('/', async (req, res) => {
   try {
-    const params = { query: 'hiking', limit: 25, full: false, sort: 'Date' }; // state: "CA"
+    const params = { query: 'hiking', limit: 25, full: 'false', sort: 'Date' }; // state: "CA"
     const response = await axios.get('/facilities', { params });
     console.log('initial response status: ' + response.status);
     const data = response.data.RECDATA;
@@ -99,21 +100,21 @@ router.get('/show/:id', async (req, res) => {
     const { id } = req.params;
     console.log('show facility id#' + id);
     const url = `/facilities/${id}`;
-    const mediaURL = `/facilities/${id}/media`;
-    const linkURL = `/facilities/${id}/links`;
+    const mediaURL = `${url}/media`;
+    const linkURL = `${url}/links`;
     const response = await axios.get(url, { showParams });
     const medias = await axios.get(mediaURL);
     const links = await axios.get(linkURL);
-    const linksData = links.data.RECDATA;
     const recData = response.data;
-    mediaData = medias.data.RECDATA;
+    const linksData = links.data.RECDATA;
+    const mediaData = medias.data.RECDATA;
     const parentRecAreaID = recData.ParentRecAreaID;
     console.log('parent RecArea ID#' + parentRecAreaID);
     const parentRecAreaURL = `/recareas/${parentRecAreaID}`;
     const parentRecAreaResponse = await axios.get(parentRecAreaURL);
     const parentRecArea = parentRecAreaResponse.data;
     console.log('Parent RecArea Name' + parentRecArea);
-    data = { recData, mediaData, parentRecArea, linksData };
+    const data = { recData, mediaData, parentRecArea, linksData };
     const newCampsite = {
       name: recData.FacilityName,
       id: id,

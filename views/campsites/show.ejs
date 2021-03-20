@@ -1,21 +1,21 @@
-<%- include("../partials/header") %>
+<%- include("../partials/headerBack") %>
 <div class="container-fluid main-body" style="height: 100%">
-  <div class="row mx-2">
-    <div class="col-lg-7 mt-2">
-      <div class="card m-xs-0 m-sm-5 p-3 thumbnail">
+  <div class="row mx-auto showpage">
+    <div class="col-lg-7 mt-4">
+      <div class="card m-xs-0 m-sm-2 p-2 thumbnail">
         <h1 class="campsite-title">
           <b><%=data.recData["FacilityName"]%></b>
         </h1>
         <!-- // ==========|  Carousel  |========== \\ -->
-        <% if(mediaData != null && mediaData.length>0){ %>
+        <% if(data.mediaData != null && data.mediaData.length>0){ %>
         <div id="carousel" class="carousel slide" data-ride="carousel">
           <ol class="carousel-indicators">
-            <% for(let media in mediaData){ %>
+            <% for(let media in data.mediaData){ %>
             <li data-target="#carousel" data-slide-to="<%-media%>"></li>
             <% }; %>
           </ol>
           <div class="carousel-inner">
-            <% for(let media of mediaData){ %>
+            <% for(let media of data.mediaData){ %>
             <div class="carousel-item">
               <img src="<%=media.URL%>" class="d-block w-100" alt="..." />
               <div class="carousel-caption d-none d-md-block">
@@ -55,8 +55,8 @@
       </div>
     </div>
 
-    <div class="col-lg-5 p-0 mt-3 mt-lg-5 map-box">
-      <div class="accordion m-1" id="accordionExample">
+    <div class="col-lg-5 p-0 mt-4 map-box">
+      <div class="accordion" id="accordionExample">
         <div class="card camp-info rounded">
           <div class="card-header" id="headingFour">
             <button
@@ -72,13 +72,13 @@
             </button>
             <%if(currentUser){%>
             <form
-              class="add-favorite"
+              class="add-favorite w-90"
               action="/user/<%=currentUser._id%>/<%=foundCampsite.id%>/"
               method="POST"
             >
               <input
                 type="submit"
-                class="btn btn-outline-warning m-2 w-90"
+                class="btn btn-outline-warning w-90"
                 value="Add Favorite &#11088;"
               />
             </form>
@@ -137,7 +137,7 @@
           <div class="card-header" id="headingTwo">
             <h2 class="mb-0">
               <button
-                class="btn btn-outline-info collapsed"
+                class="btn btn-outline-info collapsed w-90"
                 type="button"
                 data-toggle="collapse"
                 data-target="#collapseTwo"
@@ -174,7 +174,7 @@
           <div class="card-header" id="headingThree">
             <h2 class="mb-0">
               <button
-                class="btn btn-outline-success collapsed"
+                class="btn btn-outline-success collapsed w-90"
                 type="button"
                 data-toggle="collapse"
                 data-target="#collapseThree"

@@ -11,6 +11,9 @@ html {
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
 }
+html ul {
+  list-style: none;
+}
 
 @media (max-width: 390px) {
   html {
@@ -20,6 +23,21 @@ html {
 @media (max-width: 590px) {
   html {
     font-size: 14px;
+  }
+}
+@media (max-width: 790px) {
+  html {
+    font-size: 16px;
+  }
+}
+@media (max-width: 990px) {
+  html {
+    font-size: 18px;
+  }
+}
+@media (max-width: 1190px) {
+  html {
+    font-size: 20px;
   }
 }
 body {
@@ -90,6 +108,8 @@ button:focus {
 } */
 /* Navbar */
 .navbar {
+  -ms-flex-wrap: nowrap;
+      flex-wrap: nowrap;
   width: 100%;
   background: rgba(227, 231, 240, 0.9);
   opacity: 85%;
@@ -189,7 +209,7 @@ button:focus {
 
 /* Search Body */
 .search-body {
-  max-width: 1100px;
+  max-width: 1800px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -198,36 +218,117 @@ button:focus {
       -ms-flex-direction: column;
           flex-direction: column;
 }
-
-.search-description {
-  width: 60%;
-  min-width: 300px;
-  background: #ffffff80;
-  border-radius: 10px;
-  margin: 0 auto;
-  padding: 1rem;
+.search-body > * {
+  margin-bottom: 2rem;
 }
-.search-description p {
+.search-body .search-description {
+  width: 80%;
+  min-width: 300px;
+  max-width: 760px;
+  background: #eeeffce0;
+  border-radius: 10px;
+  margin: 0 auto 2rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.search-body .search-description > * {
+  padding: 0 0 1.5rem 0;
+}
+.search-body .search-description h1 {
+  color: #212529;
+}
+.search-body .search-description hr {
+  margin: 0;
+}
+.search-body .search-description p {
   margin-bottom: 0;
 }
-
-.form-row {
+.search-body .search-description p:last-child {
+  padding: 0;
+}
+.search-body .badges ul {
+  padding: 0 2rem;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: distribute;
+      justify-content: space-around;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  list-style-type: none;
+  margin: 0 auto;
+}
+.search-body .badges ul li {
+  padding: 0.5rem 0.25rem;
+}
+.search-body .badges ul li svg {
+  width: 3rem;
+  height: 3rem;
+}
+.search-body .search-form {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+}
+.search-body .search-form .form-group > * {
+  font-size: 0.85rem;
+}
+.search-body .form-row {
   margin: 0 auto;
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
 }
-
-.form-group select {
+.search-body .form-group select {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
-
-.portfolio__item:focus {
-  position: relative;
-  z-index: 2;
+@media (max-width: 790px) {
+  .search-body .search-description {
+    padding: 1.5rem 1rem;
+    margin: 0 auto 1rem;
+  }
+  .search-body .badges ul {
+    -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+  }
+}
+@media (max-width: 590px) {
+  .search-body .search-description {
+    text-align: center;
+  }
+}
+@media (max-width: 390px) {
+  .search-body .badges {
+    display: none;
+  }
 }
 
+.description-images {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-pack: distribute;
+      justify-content: space-around;
+  padding: 1rem 0;
+}
+.description-images .description-img {
+  height: 200px;
+  width: 30%;
+  overflow: hidden;
+  -o-object-position: center;
+     object-position: center;
+}
+.description-images .description-img img {
+  height: 100%;
+  width: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+
+/***       Camp Cards       ***/
 .campcard:hover,
 .campcard:focus {
   -webkit-transform: scale(1.03);
@@ -236,21 +337,26 @@ button:focus {
 }
 
 .campcards {
-  max-width: 1200px;
+  width: 90%;
+  min-width: 300px;
   margin: 0 auto;
+  padding: 2rem;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
 }
 
 .campcard {
-  min-width: 280px;
-  max-width: 500px;
+  min-width: 350px;
+  max-width: 450px;
   max-height: 400px;
   padding: 0;
   border-radius: 10px;
   -webkit-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
-  background: rgba(245, 255, 254, 0.95);
+  background: #eeeffc;
   overflow: hidden;
-  opacity: 0.75;
+  opacity: 0.85;
   -webkit-transition: opacity 350ms linear, -webkit-transform 750ms cubic-bezier(0.5, 0, 0.5, 1);
   transition: opacity 350ms linear, -webkit-transform 750ms cubic-bezier(0.5, 0, 0.5, 1);
   transition: transform 750ms cubic-bezier(0.5, 0, 0.5, 1), opacity 350ms linear;
@@ -272,6 +378,13 @@ button:focus {
 }
 
 /* Show Campground */
+.showpage {
+  max-width: 1500px;
+}
+.showpage .card {
+  background: #edeeff;
+}
+
 .campsite-title {
   color: black;
   margin: 1rem auto;
@@ -394,36 +507,13 @@ button:focus {
     transform: translateX(-50%);
   }
 }
-.nav-footer {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-pack: distribute;
-      justify-content: space-around;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  list-style-type: none;
-  margin: 0 auto;
-  padding: 0;
-}
-
-.nav-footer li svg {
-  height: 2rem;
-  width: 2rem;
-}
-
-@media (max-width: 390px) {
-  .nav-footer {
-    display: none;
-  }
-}
 /* @media (max-width: 973px) {
 	.nav-footer li  svg {
 		height: 2rem;
 		width: 2rem;
 	}
 } */
+/***       Favorites Page       ***/
 .favorites-list {
   -webkit-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);

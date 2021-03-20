@@ -9,6 +9,10 @@
 html {
   font-size: 18px;
   box-sizing: border-box;
+
+  ul {
+    list-style: none;
+  }
 }
 
 @media (max-width: 390px) {
@@ -20,6 +24,24 @@ html {
 @media (max-width: 590px) {
   html {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 790px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 990px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 1190px) {
+  html {
+    font-size: 20px;
   }
 }
 
@@ -93,6 +115,7 @@ button:focus {
 /* Navbar */
 
 .navbar {
+  flex-wrap: nowrap;
   width: 100%;
   background: rgba(227, 231, 240, 0.9);
   opacity: 85%;
@@ -188,38 +211,121 @@ button:focus {
 /* Search Body */
 
 .search-body {
-  max-width: 1100px;
+  max-width: 1800px;
   display: flex;
   flex-direction: column;
-}
 
-.search-description {
-  width: 60%;
-  min-width: 300px;
-  background: #ffffff80;
-  border-radius: 10px;
-  margin: 0 auto;
-  padding: 1rem;
+  & > * {
+    margin-bottom: 2rem;
+  }
 
-  p {
-    margin-bottom: 0;
+  .search-description {
+    width: 80%;
+    min-width: 300px;
+    max-width: 760px;
+    background: #eeeffce0;
+    border-radius: 10px;
+    margin: 0 auto 2rem;
+    padding: 2.5rem 2rem;
+    text-align: center;
+
+    & > * {
+      padding: 0 0 1.5rem 0;
+    }
+    h1 {
+      color: #212529;
+    }
+
+    hr {
+      margin: 0;
+    }
+
+    p {
+      margin-bottom: 0;
+      &:last-child {
+        padding: 0;
+      }
+    }
+  }
+
+  .badges ul {
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    list-style-type: none;
+    margin: 0 auto;
+    li {
+      padding: 0.5rem 0.25rem;
+      svg {
+        width: 3rem;
+        height: 3rem;
+      }
+    }
+  }
+
+  .search-form {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 0.5rem;
+    .form-group > * {
+      font-size: 0.85rem;
+    }
+  }
+
+  .form-row {
+    margin: 0 auto;
+    justify-content: center;
+  }
+
+  .form-group select {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  @media (max-width: 790px) {
+    .search-description {
+      padding: 1.5rem 1rem;
+      margin: 0 auto 1rem;
+    }
+    .badges ul {
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: 590px) {
+    .search-description {
+      text-align: center;
+    }
+  }
+  @media (max-width: 390px) {
+    .badges {
+      display: none;
+    }
   }
 }
 
-.form-row {
-  margin: 0 auto;
-  justify-content: center;
+.description-images {
+  display: flex;
+  justify-content: space-around;
+  padding: 1rem 0;
+
+  .description-img {
+    height: 200px;
+    width: 30%;
+    overflow: hidden;
+    object-position: center;
+
+    img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+  }
 }
 
-.form-group select {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-.portfolio__item:focus {
-  position: relative;
-  z-index: 2;
-}
+/***       Camp Cards       ***/
 
 .campcard:hover,
 .campcard:focus {
@@ -228,24 +334,33 @@ button:focus {
 }
 
 .campcards {
-  max-width: 1200px;
+  width: 90%;
+  min-width: 300px;
   margin: 0 auto;
+  padding: 2rem;
+  justify-content: center;
 }
 
 .campcard {
-  min-width: 280px;
-  max-width: 500px;
+  min-width: 350px;
+  max-width: 450px;
   max-height: 400px;
   padding: 0;
   border-radius: 10px;
   -webkit-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
-  background: rgba(245, 255, 254, 0.95);
+  background: #eeeffc;
   overflow: hidden;
-  opacity: 0.75;
+  opacity: 0.85;
   transition: transform 750ms cubic-bezier(0.5, 0, 0.5, 1), opacity 350ms linear;
 }
+
+// @media (max-width: 930px) {
+//   .campcards {
+//     justify-content: center;
+//   }
+// }
 
 .card-body {
   padding: 1rem 0;
@@ -261,6 +376,14 @@ button:focus {
 }
 
 /* Show Campground */
+
+.showpage {
+  max-width: 1500px;
+
+  .card {
+    background: #edeeff;
+  }
+}
 
 .campsite-title {
   color: black;
@@ -395,25 +518,25 @@ button:focus {
   }
 }
 
-.nav-footer {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  list-style-type: none;
-  margin: 0 auto;
-  padding: 0;
-}
+// .nav-footer {
+//   display: flex;
+//   justify-content: space-around;
+//   align-items: center;
+//   list-style-type: none;
+//   margin: 0 auto;
+//   padding: 0;
+// }
 
-.nav-footer li svg {
-  height: 2rem;
-  width: 2rem;
-}
+// .nav-footer li svg {
+//   height: 2rem;
+//   width: 2rem;
+// }
 
-@media (max-width: 390px) {
-  .nav-footer {
-    display: none;
-  }
-}
+// @media (max-width: 390px) {
+//   .nav-footer {
+//     display: none;
+//   }
+// }
 
 /* @media (max-width: 973px) {
 	.nav-footer li  svg {
@@ -421,6 +544,8 @@ button:focus {
 		width: 2rem;
 	}
 } */
+
+/***       Favorites Page       ***/
 
 .favorites-list {
   -webkit-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
