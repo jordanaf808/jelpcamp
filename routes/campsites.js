@@ -23,7 +23,6 @@ axios.defaults.headers = {
   // 'Access-Control-Allow-Origin' : '*',
   // 'Access-Control-Allow-Methods' : 'GET, PUT, POST, DELETE, OPTIONS',
 };
-// const url = '/recareas';
 
 // ==========|  INDEX  |========== \\
 
@@ -37,9 +36,9 @@ router.get('/', async (req, res) => {
     console.log('initial response status: ' + response.status);
     const data = response.data.RECDATA;
     // filter out any data withOUT GEOJSON
-    const maps = data.filter(item => item.GEOJSON.COORDINATES);
-    const recData = maps;
-    const mapData = maps.map(item => ({
+    const filterGEO = data.filter(item => item.GEOJSON.COORDINATES);
+    const recData = filterGEO;
+    const mapData = filterGEO.map(item => ({
       properties: {
         title: item.FacilityName,
         type: item.FacilityTypeDescription,
@@ -47,7 +46,7 @@ router.get('/', async (req, res) => {
       geometry: item.GEOJSON,
       id: item.FacilityID,
     }));
-    // console.log(recData);
+    console.log(recData);
     res.render('campsites/index', { recData, mapData });
   } catch (e) {
     console.log('oh no.', e);

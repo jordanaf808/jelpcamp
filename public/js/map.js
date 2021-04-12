@@ -30,19 +30,21 @@ map.on('load', function () {
     paint: {
       // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
       // with three steps to implement three types of circles:
-      //   * Blue, 20px circles when point count is less than 100
-      //   * Yellow, 30px circles when point count is between 100 and 750
-      //   * Pink, 40px circles when point count is greater than or equal to 750
+      //   * Yellow, 15px circles when point count is less than 5 greater than 2
+      //   * Green, 18px circles when point count is between 5 and 15
+      //   * Pink, 22px circles when point count is greater than or equal to 15
       'circle-color': [
         'step',
         ['get', 'point_count'],
         '#51bbd6',
-        100,
+        2,
         '#f1f075',
-        750,
+        5,
+        '#76e07f',
+        10,
         '#f28cb1',
       ],
-      'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40],
+      'circle-radius': ['step', ['get', 'point_count'], 15, 5, 18, 15, 22],
     },
   });
 
@@ -65,7 +67,7 @@ map.on('load', function () {
     filter: ['!', ['has', 'point_count']],
     paint: {
       'circle-color': '#11b4da',
-      'circle-radius': 4,
+      'circle-radius': 6,
       'circle-stroke-width': 1,
       'circle-stroke-color': '#fff',
     },
@@ -99,9 +101,9 @@ map.on('load', function () {
     const type = e.features[0].properties.type;
     const id = e.features[0].id;
     const geo = e.features[0].geometry.coordinates;
-    const loc = `located at longitude: ${geo[0].toFixed(
+    const loc = `located at <br>longitude: ${geo[0].toFixed(
       2
-    )}, latitude: ${geo[1].toFixed(2)}`;
+    )}&#176;,<br> latitude: ${geo[1].toFixed(2)} &#176;`;
 
     // Ensure that if the map is zoomed out such that
     // multiple copies of the feature are visible, the
@@ -113,7 +115,7 @@ map.on('load', function () {
     new mapboxgl.Popup()
       .setLngLat(coordinates)
       .setHTML(
-        `<b style="text-transform: capitalize;">${name}</b><hr>${loc}<hr>Type: ${type}<hr><a href="/campsites/show/${id}" class="btn btn-outline-primary btn-sm show-btn mapbox-btn">More Information.</a>`
+        `<b style="text-transform: capitalize;">${name}</b><hr>${loc}<br>Type: ${type}<hr><a href="/campsites/show/${id}" class="btn btn-outline-primary btn-sm show-btn mapbox-btn">More Information.</a>`
       )
       .addTo(map);
   });

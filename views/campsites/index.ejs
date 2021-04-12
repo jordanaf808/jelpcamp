@@ -4,7 +4,7 @@
   <header class="jumbotron">
     <div class="container px-0 text-center">
       <h1 class="display-4 font-weight-bolder text-center pt-4">
-        Welcome To YelpCamp.
+        Welcome To JelpCamp.
       </h1>
       <h1 class="display-4"><i class="fas fa-campground"></i></h1>
       <!-- <p class="h6 pt-5 pl-0">
@@ -16,12 +16,10 @@
     </div>
   </header>
 
-  <div class="container-fluid search-body">
-    <div class="search-description">
+  <div class="container-fluid search-body px-3">
+    <!-- <div class="search-description">
       <h1 style="text-align: center">Find a new &#127956;dventure!</h1>
-      <h5>
-        ...from hiking and climbing, to horseback riding or even clam-digging!
-      </h5>
+      <h5>...from hiking and climbing, to horseback riding or clam-digging!</h5>
       <div class="description-images">
         <div class="description-img">
           <img
@@ -37,13 +35,13 @@
         </div>
       </div>
       <p>
-        Search the Recreation Information Database (R.I.D.B.) A single source
-        for the latest information on federal parks, recreation areas, camping,
-        museums, and more! Available through federal agencies like the National
-        Park Service, Bureau of Land Management, and The Smithsonian.
+        Find activities like these and much more, by searching the Recreation
+        Information Database (R.I.D.B.) for the latest information on federal
+        parks, recreation areas, camping, tours and museums available through
+        federal agencies like the National Park Service, Bureau of Land
+        Management, and The Smithsonian!
       </p>
-    </div>
-    <%- include("../partials/badges") %>
+    </div> -->
     <div class="search-description">
       <p>
         Use the Keyword, Activity, and/or State option to help you find the
@@ -126,7 +124,7 @@
               id="stateSelect"
               aria-label="Select A State"
             >
-              <option value="" selected>Choose A State</option>
+              <option value="" selected>Select State</option>
               <option value="AL">Alabama</option>
               <option value="AK">Alaska</option>
               <option value="AZ">Arizona</option>
@@ -227,6 +225,7 @@
       <% }; %>
     </div>
   </div>
+  <div class="search-body"><%- include("../partials/badges") %></div>
 </div>
 <script>
   const mapToken = '<%-process.env.MAPBOX_API_1%>';

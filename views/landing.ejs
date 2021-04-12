@@ -37,20 +37,57 @@
       <% } %>
     </div>
 
-    <div id="landing-header">
+    <!-- <div id="landing-header">
       <h1>Welcome to JelpCamp!</h1>
       <a href="/campsites" class="btn btn-lg btn-success"
         >Find Your Next Adventure!</a
       >
+    </div> -->
+    <div class="container-fluid search-body">
+      <div class="search-description">
+        <a href="/campsites" class="btn btn-lg btn-success">
+          <h2>Welcome To</h2>
+          <h1>JelpCamp!</h1>
+        </a>
+        <h5>
+          ...from hiking and climbing, to horseback riding or clam-digging!
+        </h5>
+        <div class="description-images">
+          <div class="description-img">
+            <img
+              src="/images/clam-diggin-esther-ann.jpg"
+              alt="Clam Digging. photo: Esther-Ann"
+            />
+          </div>
+          <div class="description-img">
+            <img src="/images/hiking-holly-mandarich.jpg" alt="" />
+          </div>
+          <div class="description-img">
+            <img src="/images/MBiking-Cropped.jpg" alt="" />
+          </div>
+        </div>
+        <div class="description-body">
+          <p>
+            Find activities like these and much more, by searching the
+            Recreation Information Database (R.I.D.B.) for the latest
+            information on federal parks, recreation areas, camping, tours and
+            museums available through federal agencies like the National Park
+            Service, Bureau of Land Management, and The Smithsonian!
+          </p>
+        </div>
+        <a href="/campsites" class="btn btn-lg btn-success"
+          >Find Your Next &#127956;dventure!</a
+        >
+        <%- include("partials/badges") %>
+      </div>
+      <ul class="slideshow">
+        <% campgrounds.forEach((campground) => { %>
+        <li style="background-image: url(<%=campground.image%>)"></li>
+        <% }); %>
+        <!-- <li></li>
+        <li></li> -->
+      </ul>
     </div>
-
-    <ul class="slideshow">
-      <% campgrounds.forEach((campground) => { %>
-      <li style="background-image: url(<%=campground.image%>)"></li>
-      <% }); %>
-      <!-- <li></li>
-      <li></li> -->
-    </ul>
 
     <%- include("./partials/footer") %>
   </body>

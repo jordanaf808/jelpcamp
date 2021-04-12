@@ -6,42 +6,39 @@
   box-sizing: inherit;
 }
 
+:root {
+  font-size: 10px !important;
+}
+
+@media (min-width: 390px) {
+  :root {
+    font-size: 14px !important;
+  }
+}
+
+@media (min-width: 590px) {
+  :root {
+    font-size: 16px !important;
+  }
+}
+
+@media (min-width: 790px) {
+  :root {
+    font-size: 18px !important;
+  }
+}
+
+@media (min-width: 991px) {
+  :root {
+    font-size: 20px !important;
+  }
+}
+
 html {
-  font-size: 18px;
   box-sizing: border-box;
 
   ul {
     list-style: none;
-  }
-}
-
-@media (max-width: 390px) {
-  html {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 590px) {
-  html {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 790px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 990px) {
-  html {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 1190px) {
-  html {
-    font-size: 20px;
   }
 }
 
@@ -70,7 +67,7 @@ body {
 
 h1 {
   font-family: 'Paytone One', sans-serif;
-  font-size: 2.5em;
+  font-size: 2rem;
   color: white;
 }
 
@@ -181,7 +178,9 @@ button:focus {
   /* transform: rotate() */
 }
 
-/* Index Page */
+/*    Index Page   */
+
+/*    JumboTron    */
 
 .jumbotron {
   height: 100%;
@@ -203,12 +202,12 @@ button:focus {
 
 .jumbotron h1 {
   font-family: 'Paytone One', sans-serif;
-  font-size: 3.5em;
+  font-size: 2.5rem;
   opacity: 80%;
   text-shadow: 1px 2px 4px #181818e0;
 }
 
-/* Search Body */
+/*    Search Body    */
 
 .search-body {
   max-width: 1800px;
@@ -221,16 +220,16 @@ button:focus {
 
   .search-description {
     width: 80%;
-    min-width: 300px;
-    max-width: 760px;
-    background: #eeeffce0;
+    min-width: 280px;
+    max-width: 960px;
+    background: #fdfdfde0;
     border-radius: 10px;
     margin: 0 auto 2rem;
-    padding: 2.5rem 2rem;
+    padding: 1rem 2rem 2rem;
     text-align: center;
 
     & > * {
-      padding: 0 0 1.5rem 0;
+      padding: 0 0 1rem 0;
     }
     h1 {
       color: #212529;
@@ -242,31 +241,48 @@ button:focus {
 
     p {
       margin-bottom: 0;
+      padding: 0 0 1rem 0;
+      max-width: 860px;
       &:last-child {
         padding: 0;
       }
     }
   }
 
-  .badges ul {
-    padding: 0 2rem;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    list-style-type: none;
+  .badges {
+    width: 90vw;
+    max-width: 1800px;
     margin: 0 auto;
-    li {
-      padding: 0.5rem 0.25rem;
-      svg {
-        width: 3rem;
-        height: 3rem;
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-items: center;
+      list-style-type: none;
+      padding: 0 2rem;
+
+      li {
+        // display: inline-block;
+        padding: 0.5rem 0.8rem;
+        transition: transform 350ms cubic-bezier(0.5, 0, 0.5, 1),
+          opacity 550ms ease-in-out;
+        svg {
+          width: 3rem;
+          height: 3rem;
+          opacity: 0.65;
+        }
+        &:hover,
+        &:focus {
+          transform: scale(1.5);
+          opacity: 1;
+        }
       }
     }
   }
 
   .search-form {
-    width: 90%;
-    max-width: 1200px;
+    width: 80%;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 0 0.5rem;
     .form-group > * {
@@ -289,9 +305,6 @@ button:focus {
       padding: 1.5rem 1rem;
       margin: 0 auto 1rem;
     }
-    .badges ul {
-      flex-wrap: wrap;
-    }
   }
 
   @media (max-width: 590px) {
@@ -309,7 +322,7 @@ button:focus {
 .description-images {
   display: flex;
   justify-content: space-around;
-  padding: 1rem 0;
+  margin: 1rem 0;
 
   .description-img {
     height: 200px;
@@ -336,6 +349,7 @@ button:focus {
 .campcards {
   width: 90%;
   min-width: 300px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 2rem;
   justify-content: center;
@@ -350,9 +364,9 @@ button:focus {
   -webkit-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
   box-shadow: 10px 10px 8px 0px rgba(0, 0, 0, 0.5);
-  background: #eeeffc;
+  background: #fdfdfd;
   overflow: hidden;
-  opacity: 0.85;
+  opacity: 0.9;
   transition: transform 750ms cubic-bezier(0.5, 0, 0.5, 1), opacity 350ms linear;
 }
 
@@ -467,6 +481,17 @@ button:focus {
   /* max-height: 500px; */
   /* width: 80%; */
   margin: 0 auto;
+
+  .mapboxgl-popup-content {
+    opacity: 0.85;
+    font-size: 0.6rem;
+    b {
+      font-size: 0.85rem;
+    }
+    hr {
+      margin: 0.4rem auto;
+    }
+  }
 }
 
 .delete-form {

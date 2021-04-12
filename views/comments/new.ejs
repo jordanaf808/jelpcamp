@@ -1,26 +1,33 @@
-<%- include("../partials/header") %>
+<%- include("../partials/headerBack") %>
 
-<div class="container-fluid m-0 text-center height-fix main-body">
-	<div class="col-12 m-3">
-<!-- <div class="container">
+<div class="container-fluid text-center height-fix main-body">
+  <div class="col-12 m-3">
+    <!-- <div class="container">
 	<div class="row"> -->
-		
-		<h1 class="text-white ">Add A New Comment to <%= campsite.name %></h1>
-<!--Put an input form in a div with css style to group them together  -->
-		<div style="width: 30%; margin: 50px auto;">
-			<form action="/campsites/<%= campsite.id %>/comments/" method="POST">
-<!-- Put each input in a div.formgroup to give a little spacing between them	 -->
-				<div class="form-group">
-					<input class="form-control" type="text" name="comment[text]" placeholder="Comment">
-				</div>
-				<div class="form-group">
-					<button class= "btn btn-md btn-primary btn-block">Submit Comment!</button>
-				</div>
-			</form>	
-<!-- Keep this link in the div to group this with the input -->
-			<a href="/campsites">Go Back To campsites.</a>
-		</div>
-	</div>
+
+    <h1 class="text-white">Add A New Comment to <%= campsite.name %></h1>
+    <!--Put an input form in a div with css style to group them together  -->
+    <div style="width: 30%; margin: 50px auto">
+      <form action="/campsites/<%= campsite.id %>/comments/" method="POST">
+        <!-- Put each input in a div.formgroup to give a little spacing between them	 -->
+        <div class="form-group">
+          <input
+            class="form-control"
+            type="text"
+            name="comment[text]"
+            placeholder="Comment"
+          />
+        </div>
+        <div class="form-group">
+          <button class="btn btn-md btn-primary btn-block">
+            Submit Comment!
+          </button>
+        </div>
+      </form>
+      <!-- Keep this link in the div to group this with the input -->
+      <!-- <a href="/campsites">Go Back To campsites.</a> -->
+    </div>
+  </div>
 </div>
 
 <%- include("../partials/footer") %>
