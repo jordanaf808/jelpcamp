@@ -37,7 +37,7 @@ h1 {
 
 .search-body {
   max-width: 1800px;
-  padding-top: 50px;
+  padding-top: 1rem 0;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -45,33 +45,33 @@ h1 {
   -webkit-box-direction: normal;
       -ms-flex-direction: column;
           flex-direction: column;
+  color: #f1f1f1;
+}
+.search-body .btn {
+  font-weight: 900;
+  font-size: 1.5rem;
+  text-shadow: 2px 1px 4px #181818c0;
+  opacity: 0.9;
+  padding: 0.5rem 4rem !important;
+  margin: 1rem auto;
+  text-align: center;
+  z-index: 99;
 }
 .search-body button:focus {
   outline: none;
   background: rgba(0, 0, 0, 0.1);
 }
 .search-body .search-description {
-  width: 90%;
+  width: 100vw;
   min-width: 300px;
-  max-width: 960px;
-  background: #fdfdfde0;
-  border-radius: 10px;
-  margin: 0 auto 2rem;
-  padding: 1rem 2rem 1rem;
+  background: #000000ab;
+  margin: 0 auto;
+  padding: 1rem 2rem;
   text-align: center;
   z-index: 100;
 }
 .search-body .search-description > * {
-  padding: 1rem 0;
-}
-.search-body .search-description .btn {
-  font-weight: 900;
-  font-size: 1.5rem;
-  text-shadow: 2px 1px 4px #181818c0;
-  opacity: 0.8;
-  padding: 0.5rem 2rem !important;
-  margin: 1rem;
-  text-align: center;
+  padding: 0.5rem 0;
 }
 .search-body .search-description h1 {
   color: #f1f1f1;
@@ -88,14 +88,10 @@ h1 {
 }
 .search-body .search-description p:last-child {
   padding: 0;
+  margin: 0 auto;
 }
 .search-body .search-description .description-body {
   padding: 1rem;
-}
-@media (min-width: 590px) {
-  .search-body .search-description {
-    width: 75%;
-  }
 }
 @media (max-width: 790px) {
   .search-body .search-description {
@@ -117,6 +113,7 @@ h1 {
   overflow: hidden;
   -o-object-position: center;
      object-position: center;
+  border-radius: 5px;
 }
 .search-body .description-images .description-img img {
   height: 100%;
@@ -129,6 +126,8 @@ h1 {
   width: 90%;
   max-width: 1800px;
   margin: 0 auto;
+  color: #b9b9b9f1;
+  z-index: 99;
 }
 .badges ul {
   display: -webkit-box;
@@ -144,6 +143,7 @@ h1 {
   list-style-type: none;
   padding: 0;
   margin-bottom: 0;
+  color: #b9b9b9f1;
 }
 .badges ul li {
   padding: 0.5rem 0.8rem;
@@ -156,6 +156,9 @@ h1 {
   width: 3rem;
   height: 3rem;
   opacity: 0.65;
+}
+.badges ul li svg path {
+  fill: #cac9c9de;
 }
 .badges ul li:hover, .badges ul li:focus {
   -webkit-transform: scale(1.5);

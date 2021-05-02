@@ -44,11 +44,11 @@
       >
     </div> -->
     <div class="container-fluid search-body">
+      <a href="/campsites" class="btn btn-lg btn-success">
+        <h2>Welcome To</h2>
+        <h1>JelpCamp!</h1>
+      </a>
       <div class="search-description">
-        <a href="/campsites" class="btn btn-lg btn-success">
-          <h2>Welcome To</h2>
-          <h1>JelpCamp!</h1>
-        </a>
         <h5>
           ...from hiking and climbing, to horseback riding or clam-digging!
         </h5>
@@ -78,14 +78,14 @@
         <a href="/campsites" class="btn btn-lg btn-success"
           >Find Your Next &#127956;dventure!</a
         >
-        <%- include("partials/badges") %>
       </div>
+      <%- include("partials/badges") %>
       <ul class="slideshow">
         <% campgrounds.forEach((campground) => { %>
         <li style="background-image: url(<%=campground.image%>)"></li>
         <% }); %>
-        <!-- <li></li>
-        <li></li> -->
+        <li></li>
+        <li></li>
       </ul>
     </div>
 
