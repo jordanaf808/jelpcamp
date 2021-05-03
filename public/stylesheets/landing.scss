@@ -38,24 +38,29 @@ body {
 
 h1 {
   font-family: 'Paytone One', sans-serif;
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.container-fluid {
+  height: 100vh;
 }
 
 .search-body {
-  max-width: 1800px;
   padding-top: 1rem 0;
   display: flex;
   flex-direction: column;
   color: #f1f1f1;
 
   .btn {
-    font-weight: 900;
-    font-size: 1.5rem;
     text-shadow: 2px 1px 4px #181818c0;
     opacity: 0.9;
     padding: 0.5rem 4rem !important;
     margin: 1rem auto;
     text-align: center;
     z-index: 99;
+    color: #f1f1f1;
+    background-color: #00000000;
   }
 
   button:focus {
@@ -66,11 +71,12 @@ h1 {
   .search-description {
     width: 100vw;
     min-width: 300px;
+    max-width: 1800px;
     // max-width: 960px;
     background: #000000ab;
     // border-radius: 10px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 1rem 4rem;
     text-align: center;
     z-index: 100;
 
@@ -99,6 +105,10 @@ h1 {
     }
     .description-body {
       padding: 1rem;
+    }
+    .btn {
+      background-color: #28a745;
+      font-weight: 900;
     }
   }
 
@@ -255,6 +265,6 @@ h1 {
 .footer {
   position: absolute;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   /* background-color: rgba(227, 231, 240, 0.9); */
 }

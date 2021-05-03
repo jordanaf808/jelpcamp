@@ -21,3 +21,7 @@ save results of index page to DB instead of fetching from api each time?
 fixing spacing and responsiveness on the main index page
 
 fix phone responsiveness
+
+## 5-2-21
+
+improved landing page design, fixed problem with background not showing a picture
