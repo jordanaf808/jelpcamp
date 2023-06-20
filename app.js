@@ -1,25 +1,25 @@
 require('dotenv').config();
 
-const express    	 =  require("express"),
-	  app        	 = express(),
-	  axios      	 = require("axios").default,
-	  bodyParser 	 = require("body-parser"),
-	  mongoose   	 = require("mongoose"),
-	  passport	 	 = require("passport"),
-	  LocalStrategy  = require("passport-local"),
-	  methodOverride = require("method-override"),
-	  flash			 = require("connect-flash"),
-	  numeral		 = require("numeral"),
-	  Campground 	 = require("./models/campground"),
-	  Comment	 	 = require("./models/comment"),
-	  User		 	 = require("./models/user"),
-	  seedDB	 	 = require("./seeds"),
-	  port       	 = process.env.PORT || 3000;
+const express    	 		=  require("express"),
+	  	app        	 		= express(),
+	  	axios      	 		= require("axios").default,
+	  	bodyParser 	 		= require("body-parser"),
+	  	mongoose   	 		= require("mongoose"),
+	  	passport	 	 		= require("passport"),
+	  	LocalStrategy  	= require("passport-local"),
+	  	methodOverride 	= require("method-override"),
+	  	flash			 			= require("connect-flash"),
+	  	numeral		 			= require("numeral"),
+	  	Campground 	 		= require("./models/campground"),
+	  	Comment	 	 			= require("./models/comment"),
+	  	User		 	 			= require("./models/user"),
+	  	seedDB	 	 			= require("./seeds"),
+	  	port       	 		= process.env.PORT || 3000;
 
 //Require Routes.
 const commentsRoutes 	= require("./routes/comments"),
 	  campgroundRoutes 	= require("./routes/campgrounds"),
-	  indexRoutes 		= require("./routes/index");
+	  		 indexRoutes	= require("./routes/index");
 
 const connectDB = async () =>{
 	try {
@@ -45,7 +45,7 @@ app.use(methodOverride("_method"));
 app.use(flash());
 
 //seed the DB
-seedDB(); 
+// seedDB(); 
 
 //PASSPORT configuration
 app.use(require("express-session")({
