@@ -1,20 +1,21 @@
-const express = require('express'),
-  passport = require('passport'),
-  User = require('../models/user'),
-  Campground = require('../models/campground'),
-  Campsite = require('../models/campsite'),
-  mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
+const express = require('express');
+const passport = require('passport');
+const User = require('../models/user');
+const Campground = require('../models/campground');
+const Campsite = require('../models/campsite');
+const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
 const router = express.Router();
 const middleware = require('../middleware');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   // 	get all campgrounds from DB
-  Campground.find({}, (err, allCampgrounds) => {
-    if (err) return console.error(err);
-    else {
+  // Campground.find({}, (err, allCampgrounds) => {
+    try {
+      const allCampgrounds = await Campground.find();
       res.render('landing', { campgrounds: allCampgrounds });
+    } catch (error) {
+      return console.error(err);
     }
-  });
 });
 
 // ========================
@@ -28,6 +29,9 @@ router.get('/register', (req, res) => {
 // Handle register logic...
 router.post('/register', (req, res) => {
   const newUser = new User({ username: req.body.username });
+  // if(req.body.adminCode === process.env.ADMIN_CODE) {
+  //   newUser.isAdmin = true;
+  // }
   User.register(newUser, req.body.password, (err, user) => {
     if (err) {
       console.log(err);

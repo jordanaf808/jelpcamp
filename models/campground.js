@@ -1,6 +1,6 @@
 
 const mongoose = require("mongoose");
-const numeral	= require("numeral");
+// const numeral	= require("numeral");
 //SCHEMA SETUP:
 const campgroundSchema = new mongoose.Schema({
 	name: String,
@@ -10,6 +10,7 @@ const campgroundSchema = new mongoose.Schema({
 	location: String,
 	lat: Number,
 	lng: Number,
+	createdAt: { type: Date, default: Date.now },
 	author: {
 		id: {
 			type: mongoose.Schema.Types.ObjectId,

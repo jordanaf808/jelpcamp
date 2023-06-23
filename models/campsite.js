@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const campsiteSchema = new mongoose.Schema({
 	name: String,
 	id: Number,
+	createdAt: { type: Date, default: Date.now },
 	geometry: {
 		TYPE: {
 			type: String,

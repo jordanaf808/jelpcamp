@@ -1,17 +1,17 @@
 // const { response } = require('express');
 require('dotenv').config();
-const express = require('express'),
-  app = express(),
-  axios = require('axios').default,
-  bodyParser = require('body-parser'),
-  methodOverride = require('method-override'),
-  middleware = require('../middleware'),
-  port = process.env.PORT || 3000,
-  router = express.Router();
+const express = require('express');
+const app = express();
+const axios = require('axios').default;
+// const bodyParser = require('body-parser');
+// const methodOverride = require('method-override');
+// const middleware = require('../middleware');
+// const port = process.env.PORT || 3000;
+const router = express.Router();
 
-const Campground = require('../models/campground'),
-  Campsite = require('../models/campsite'),
-  Comment = require('../models/comment');
+// const Campground = require('../models/campground');
+const Campsite = require('../models/campsite');
+// const Comment = require('../models/comment');
 
 // axios has built in body parser.
 // app.use(bodyParser.urlencoded({extended: true}));
@@ -121,24 +121,20 @@ router.get('/show/:id', async (req, res) => {
     };
     // Campground.findbyid if no create, if yes populate
     // Can I put this in a TRY/CATCH ??? is this Promise-based already?
-    Campsite.findOne({ id: id })
-      .populate('comments')
-      .exec((err, foundCampsite) => {
-        if (err || !foundCampsite) {
-          console.log('creating' + id);
-          Campsite.create(newCampsite, (err, foundCampsite) => {
-            if (err) {
-              console.log(err);
-            } else {
-              console.log(foundCampsite.name);
-              res.render('campsites/show', { data, foundCampsite });
-            }
-          });
+    const foundCampsite = await Campsite.findOne({ id: id }).populate('comments').exec();
+      if (!foundCampsite) {
+        console.log('creating' + id);
+        const madeCampsite = await Campsite.create(newCampsite);
+        if (!madeCampsite) {
+          console.log('err: ', madeCampsite);
         } else {
-          console.log('found' + id);
-          res.render('campsites/show', { data, foundCampsite });
+          console.log(madeCampsite);
+          res.render('campsites/show', { data, madeCampsite });
         }
-      });
+      } else {
+        console.log('found' + id);
+        res.render('campsites/show', { data, foundCampsite });
+      }
   } catch (e) {
     console.log('oh no.', e);
   }
