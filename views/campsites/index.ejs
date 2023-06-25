@@ -213,9 +213,9 @@
   <div class="row text-center">
     <div class="card-deck campcards container-fluid">
       <% for(let name of recData){ %>
-      <div class="card m-3 p-4 campcard">
+      <div class="card m-3 p-3 campcard">
         <h2 class="card-title"><%=name.FacilityName%></h2>
-        <div class="card-body"><%-name.FacilityDescription%></div>
+        <div class="card-body px-2 py-0 my-3"><%-name.FacilityDescription%></div>
         <a
           href="/campsites/show/<%=name.FacilityID%>"
           class="btn btn-primary show-btn"

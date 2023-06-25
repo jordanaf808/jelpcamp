@@ -46,7 +46,7 @@ router.get('/', async (req, res) => {
       geometry: item.GEOJSON,
       id: item.FacilityID,
     }));
-    console.log(recData);
+    console.log(recData.length);
     res.render('campsites/index', { recData, mapData });
   } catch (e) {
     console.log('oh no.', e);
@@ -129,7 +129,7 @@ router.get('/show/:id', async (req, res) => {
           console.log('err: ', madeCampsite);
         } else {
           console.log(madeCampsite);
-          res.render('campsites/show', { data, madeCampsite });
+          res.render('campsites/show', { data, foundCampsite: madeCampsite });
         }
       } else {
         console.log('found' + id);

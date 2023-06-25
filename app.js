@@ -3,7 +3,7 @@ require('dotenv').config();
 const express    	 		=  require("express");
 const app        	 		= express();
 const axios      	 		= require("axios").default;
-const bodyParser 	 		= require("body-parser");
+// const bodyParser 	 		= require("body-parser");
 const mongoose   	 		= require("mongoose");
 const passport	 	 		= require("passport");
 const LocalStrategy  	= require("passport-local");
@@ -22,28 +22,34 @@ const commentsRoutes 		= require("./routes/comments");
 const campgroundRoutes 	= require("./routes/campgrounds");
 const indexRoutes 			= require("./routes/index");
 const campsitesRoutes		= require("./routes/campsites");
+const ExpressError = require('./utils/ExpressError');
 				
 
 const monitorDB = async () => {
 	try {
-		const conn = mongoose.connection.on('error', err => {
-			logError(err)
-		})
-		console.log(`MongoDB monitoring: ${conn}`)
+		const db = mongoose.connection;
+		db.on('error', err => {
+			logError(err);
+			console.error.bind(console, "db: connection error;")
+		});
+		db.once("open", () => {
+			console.log("database connected")
+		});
 	} catch(error){
-		console.log('start connection monitor error', error.message)
+		console.log('catch: connection monitor error: ', error.message)
+		next(error)
 	};
 }
 
 const connectDB = async () => {
 	try {
-		const conn = await mongoose.connect(process.env.MONGO_URI, {
+		const conn = mongoose.connect(process.env.MONGO_URI, {
 			// useNewUrlParser: true,
 			// useUnifiedTopology: true,
 			// useFindAndModify: false,
 			// useCreateIndex: true
 		})
-		console.log(`MongoDB Connected: ${conn.connection.host}`)
+		console.log(`MongoDB Connecting;`)
 	} catch(error){
 		console.log(error.message)
 	};
@@ -52,7 +58,8 @@ const connectDB = async () => {
 connectDB();
 monitorDB();
 
-app.use(bodyParser.urlencoded({extended: true}));
+// app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.urlencoded({extended: true}));
 app.use(express.static(__dirname + '/public'));
 console.log(__dirname);
 app.set("view engine", "ejs");
@@ -74,8 +81,6 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// Adds the 'currentUser' info to the 'req'uest in the '.user' object.
-// every 'app.'... request will append this, like a middleware.
 app.use((req, res, next) => {
 	res.locals.currentUser 	= req.user;
 	res.locals.error 				= req.flash("error");
@@ -88,6 +93,22 @@ app.use("/campgrounds/:id/comments", commentsRoutes);
 app.use("/campsites/:id/comments", commentsRoutes);
 app.use("/campgrounds", campgroundRoutes);
 app.use("/campsites", campsitesRoutes);
+
+// Adds the 'currentUser' info to the 'req'uest in the '.user' object.
+// every 'app.'... request will append this, like a middleware.
+// 6/23/23 added 'err'
+
+app.all('*', (req, res, next) => {
+	next(new ExpressError('Page Not Found', 404))
+});
+
+app.use((err, req, res, next) => {
+	console.log('error route');
+	const {statusCode = 500} = err;
+	if(!err.message) err.message = "Error."
+	res.status(statusCode).send(err.message);
+	// next(err);
+});
 
 app.listen(process.env.PORT || 3000) 
 console.log(`YelpCamp listening at ${port}`)

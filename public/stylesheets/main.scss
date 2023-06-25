@@ -356,6 +356,7 @@ button:focus {
 }
 
 .campcard {
+  font-size: 1rem;
   min-width: 350px;
   max-width: 450px;
   max-height: 400px;
@@ -387,6 +388,20 @@ button:focus {
   background: rgba(162, 224, 215, 0.5);
   border: 1px solid #949494;
   border-radius: 15px;
+}
+.card-title {
+  font-size: 1.5em;
+  margin-bottom: 0;
+}
+
+.card-body {
+  overflow: hidden;
+  font-size: 0.8em;
+  text-align: justify;
+}
+
+.card-body h2 {
+  font-size: 1.5em;
 }
 
 /* Show Campground */
