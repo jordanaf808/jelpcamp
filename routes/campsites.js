@@ -1,20 +1,12 @@
-// const { response } = require('express');
 require('dotenv').config();
 const express = require('express');
 const app = express();
 const axios = require('axios').default;
-// const bodyParser = require('body-parser');
 // const methodOverride = require('method-override');
 // const middleware = require('../middleware');
-// const port = process.env.PORT || 3000;
 const router = express.Router();
 
-// const Campground = require('../models/campground');
 const Campsite = require('../models/campsite');
-// const Comment = require('../models/comment');
-
-// axios has built in body parser.
-// app.use(bodyParser.urlencoded({extended: true}));
 
 axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/';
 axios.defaults.headers = {
@@ -72,9 +64,9 @@ router.get('/search', async (req, res) => {
     };
     const response = await axios.get('/facilities', { params: searchParams });
     const data = response.data.RECDATA;
-    const maps = data.filter(item => item.GEOJSON.COORDINATES);
-    const recData = maps;
-    const mapData = maps.map(item => ({
+    // filter out items without GEOJSON
+    const recData = data.filter(item => item.GEOJSON.COORDINATES);
+    const mapData = recData.map(item => ({
       properties: {
         title: item.FacilityName,
         type: item.FacilityTypeDescription,
@@ -93,7 +85,6 @@ router.get('/search', async (req, res) => {
 // ==========|  SHOW  |========== \\
 
 router.get('/show/:id', async (req, res) => {
-  // ':id' can be accessed through req.param. use destructuring.
   try {
     const showParams = { full: true };
     const { id } = req.params;
@@ -120,21 +111,20 @@ router.get('/show/:id', async (req, res) => {
       geometry: recData.GEOJSON,
     };
     // Campground.findbyid if no create, if yes populate
-    // Can I put this in a TRY/CATCH ??? is this Promise-based already?
     const foundCampsite = await Campsite.findOne({ id: id }).populate('comments').exec();
-      if (!foundCampsite) {
-        console.log('creating' + id);
-        const madeCampsite = await Campsite.create(newCampsite);
-        if (!madeCampsite) {
-          console.log('err: ', madeCampsite);
-        } else {
-          console.log(madeCampsite);
-          res.render('campsites/show', { data, foundCampsite: madeCampsite });
-        }
+    if (!foundCampsite) {
+      console.log('creating' + id);
+      const madeCampsite = await Campsite.create(newCampsite);
+      if (!madeCampsite) {
+        console.log('err: ', madeCampsite);
       } else {
-        console.log('found' + id);
-        res.render('campsites/show', { data, foundCampsite });
+        console.log(madeCampsite);
+        res.render('campsites/show', { data, foundCampsite: madeCampsite });
       }
+    } else {
+      console.log('found' + id);
+      res.render('campsites/show', { data, foundCampsite });
+    }
   } catch (e) {
     console.log('oh no.', e);
   }

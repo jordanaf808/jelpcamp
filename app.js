@@ -10,7 +10,7 @@ const LocalStrategy  	= require("passport-local");
 const methodOverride 	= require("method-override");
 const flash			 			= require("connect-flash");
 const numeral		 			= require("numeral");
-const Campground 	 		= require("./models/campground");
+// const Campground 	 		= require("./models/campground");
 const Campsite 	 			= require("./models/campsite");
 const Comment	 	 			= require("./models/comment");
 const User		 	 			= require("./models/user");
@@ -19,7 +19,7 @@ const port       	 		= process.env.PORT || 3000;
 
 //Require Routes.
 const commentsRoutes 		= require("./routes/comments");
-const campgroundRoutes 	= require("./routes/campgrounds");
+// const campgroundRoutes 	= require("./routes/campgrounds");
 const indexRoutes 			= require("./routes/index");
 const campsitesRoutes		= require("./routes/campsites");
 const ExpressError = require('./utils/ExpressError');
@@ -89,9 +89,9 @@ app.use((req, res, next) => {
 });
 
 app.use(indexRoutes);
-app.use("/campgrounds/:id/comments", commentsRoutes);
+// app.use("/campgrounds/:id/comments", commentsRoutes);
 app.use("/campsites/:id/comments", commentsRoutes);
-app.use("/campgrounds", campgroundRoutes);
+// app.use("/campgrounds", campgroundRoutes);
 app.use("/campsites", campsitesRoutes);
 
 // Adds the 'currentUser' info to the 'req'uest in the '.user' object.
@@ -110,5 +110,23 @@ app.use((err, req, res, next) => {
 	// next(err);
 });
 
-app.listen(process.env.PORT || 3000) 
+const server = app.listen(process.env.PORT || 3000);
+
+// Kill App On SIGTERM
+process.on('SIGTERM', () => {
+  console.info('SIGTERM signal received.');
+  console.log('Closing http server.');
+  server.close(() => {
+    console.log('Http server closed.');
+    // boolean means [force], 
+    mongoose.connection.close(false, () => {
+      console.log('MongoDb connection closed.'); 
+			// NodeJS will exit when the EventLoop queue is empty and there is nothing left to do.
+			// But sometimes, your application can have more functions and will not exit automatically.
+			// We need to exit from the process using process.exit function.
+			// 0 means exit with a "success" code.
+      process.exit(0);
+    });
+  });
+}); 
 console.log(`YelpCamp listening at ${port}`)

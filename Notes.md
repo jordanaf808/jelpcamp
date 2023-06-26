@@ -2,6 +2,17 @@
 
 ## 6/2023
 
+### 6/25/23
+
+*Fixed* error with Register User and other middleware callbacks.
+- I tried updating w/o callbacks like the other mongoose queries, but this was throwing errors. 
+  - Passport-mongoose-local plugin still accepts old syntax.
+  - Wasn't sure how to use the updated syntax in the very limited docs for my needs.
+
+*fixed* - error with checkComments middleware, and error with undefined ID. Turns out I wasn't awaiting async findById() after removing callbacks;
+
+---
+
 - fix syntax for updated dependencies
   - remove callback functions
   - use Try/Catch
@@ -18,18 +29,19 @@ add favorites route works
 
 ### Issues
 
-update comment route.
+*fixed* update comment route. 6/25/23
 
-### fixed *Error*
-- after creating a new campsite document I renamed the variable that I passed to 
-the show page, where it was not able to find said variable. renamed variable passed to show page back to foundCampground.
-- After performing a search, then selecting one of the results, an error is thrown from show.ejs, starting around the 'currentUser' check, *right after* the document has been successfuly been created in the database. However, if you go back and search for that same campsite, no error will be thrown and the show.ejs will load.
+*fixed* Error 6/24/23
+- After performing a search, then selecting one of the results, an error is thrown from show.ejs, starting around the 'currentUser' check, right after the document has been successfuly been created in the database. However, if you go back and search for that same campsite, no error will be thrown and the show.ejs will load.
+  - after creating a new campsite document I renamed the variable that I passed to 
+  the show page, where it was not able to find said variable. renamed variable passed to show page back to foundCampground.
 
 - Fix landing page styles
   - use overlay across whole page
   - fix icons overflowing on hover
 
-- Need to create Remove Favorite route.
+- Need a Remove Favorite route.
+- Prevent duplicate favorites.
 
 ---
 
