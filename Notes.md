@@ -1,11 +1,29 @@
 # WANDUR Notes
 
+## 7/2023
+
+- for security make user register and log in to see campsite pages
+- trouble getting Helmet to work properly.
+
+- Need a Remove Favorite route.
+- Prevent duplicate favorites.
+- Fix User Show page to look better, add a delete favorite, also
+- change the favorite button based on whether the site was favorite'd.
+
+---
+
+7/11/23
+
+Fixed hiding the Favorite button if it was already favorited.
+prevents duplicate favorites.
+Add Delete Favorite button and route
+
 ## 6/2023
 
 ### 6/25/23
 
-*Fixed* error with Register User and other middleware callbacks.
-- I tried updating w/o callbacks like the other mongoose queries, but this was throwing errors. 
+*Fixed* error with User.register() and other passport-local middleware callbacks.
+  - I tried updating w/o callbacks and adding .onFail(), like the other mongoose queries, but this was throwing errors. 
   - Passport-mongoose-local plugin still accepts old syntax.
   - Wasn't sure how to use the updated syntax in the very limited docs for my needs.
 
@@ -21,7 +39,6 @@
 - update code to ES6
 - adding error handler.
 
-added `.orFail()` to the register user route, to send back to register on error, and remove the if/else statement.
 added $(onload) for offcanvas.js
 added mongoose ID object validation on user page.
 
@@ -40,9 +57,6 @@ add favorites route works
   - use overlay across whole page
   - fix icons overflowing on hover
 
-- Need a Remove Favorite route.
-- Prevent duplicate favorites.
-
 ---
 
 <br>
@@ -55,17 +69,11 @@ Add CampCards Title.
 
 _Fixed_ Mapbox popup html/css, its too big.
 
-\*\*\* Fix User Show page to look better, add a delete favorite, also
-
-\*\*\* change the favorite button based on whether the site was favorite'd.
-
 ---
 
-## 3-22-2021
+## 5-2-21
 
-Fixed Edit Comment Route.
-
-save results of index page to DB instead of fetching from api each time?
+improved landing page design, fixed problem with background not showing a picture
 
 ---
 
@@ -77,8 +85,10 @@ fix phone responsiveness
 
 ---
 
-## 5-2-21
+## 3-22-2021
 
-improved landing page design, fixed problem with background not showing a picture
+Fixed Edit Comment Route.
+
+save results of index page to DB instead of fetching from api each time?
 
 ---

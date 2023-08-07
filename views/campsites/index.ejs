@@ -1,5 +1,11 @@
 <%- include("../partials/header") %>
 
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js" crossorigin="anonymous"></script>
+<link
+  href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css"
+  rel="stylesheet" crossorigin="anonymous"
+/>
+
 <div class="container-fluid p-0 main-body">
   <header class="jumbotron">
     <div class="container px-0 text-center">
@@ -230,7 +236,7 @@
 <script>
   const mapToken = '<%-process.env.MAPBOX_API_1%>';
   const campsites =  {features: <%- JSON.stringify(mapData).toLowerCase() %>} ;
-  console.log(campsites)
+  // console.log(campsites)
 </script>
 <script src="/js/map.js"></script>
 <%- include("../partials/footer") %>

@@ -18,30 +18,34 @@ router.get('/new', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
 }));
 
 // CREATE comments
-router.post('/', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
-  //lookup campground using id
-  const { id } = req.params;
-  const campsite = await Campsite.findOne({ id: id });
-  const comment = await Comment.create(req.body.comment);
-  if(!comment){
-    req.flash('error', 'Error Creating Comment.');
-    console.log(err);
-    return res.redirect('/campsites');
-  }
-  //add username and id to comment
-  comment.author.id = req.user._id;
-  comment.author.username = req.user.username;
-  //save comment
-  await comment.save();
-  campsite.comments.push(comment);
-  await campsite.save();
-  console.log(comment);
-  res.redirect('/campsites/show/' + id);
-}));
+router.post('/', 
+  middleware.isLoggedIn, 
+  middleware.validateComment, 
+  catchAsync(async (req, res, next) => {
+    //lookup campground using id
+    const { id } = req.params;
+    const campsite = await Campsite.findOne({ id: id });
+    const comment = await Comment.create(req.body.comment);
+    if(!comment){
+      req.flash('error', 'Error Creating Comment.');
+      console.log(err);
+      return res.redirect(`/campsites/${id}`);
+    }
+    //add username and id to comment
+    comment.author.id = req.user._id;
+    comment.author.username = req.user.username;
+    //save comment
+    await comment.save();
+    campsite.comments.push(comment);
+    await campsite.save();
+    console.log(comment);
+    res.redirect('/campsites/show/' + id);
+  })
+);
 
 //EDIT Comment route
 router.get('/:comment_id/edit',
-middleware.checkCommentOwnership,
+  middleware.checkCommentOwnership,
   catchAsync(async (req, res, next) => {
     console.log(req.params.comment_id);
     const { id } = req.params;
@@ -61,6 +65,7 @@ middleware.checkCommentOwnership,
 //UPDATE Comment route
 router.put('/:comment_id', 
   middleware.checkCommentOwnership, 
+  middleware.validateComment, 
   catchAsync(async (req, res, next) => {
     console.log(req.params);
     updateComment = await Comment.findByIdAndUpdate(req.params.comment_id, req.body.comment);

@@ -14,10 +14,14 @@
     "body-parser": "^1.20.2",
     "connect-ensure-login": "^0.1.1",
     "connect-flash": "^0.1.1",
+    "connect-mongo": "^5.0.0",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
     "express-session": "^1.17.3",
+    "helmet": "^7.0.0",
+    "joi": "^17.9.2",
     "mapbox-gl": "^2.15.0",
     "method-override": "^3.0.0",
     "mongoose": "^7.3.0",
@@ -25,6 +29,7 @@
     "numeral": "^2.0.6",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
-    "passport-local-mongoose": "^8.0.0"
+    "passport-local-mongoose": "^8.0.0",
+    "sanitize-html": "^2.11.0"
   }
 }

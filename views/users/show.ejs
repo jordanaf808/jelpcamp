@@ -19,13 +19,24 @@
           class="card-header p-1 d-flex justify-content-between favorite-item"
         >
           <strong class="card-title favorite-title"
-            ><%= favorite.name %></strong
-          >
-          <a
-            href="/campsites/show/<%=favorite.id%>"
-            class="btn btn-primary show-btn favorite-btn"
-            >More Info</a
-          >
+            ><%= favorite.name %>
+          </strong>
+          <div Class="btn-group">
+            <a
+              href="/campsites/show/<%=favorite.id%>"
+              class="btn btn-primary show-btn favorite-btn"
+              >
+              More Info
+            </a>
+            <form
+              action="/user/<%=user.id%>/<%=favorite.id%>?_method=DELETE"
+              method="POST" class="btn-group"
+            >
+              <button class="btn btn-danger show-btn favorite-btn">
+                Delete
+              </button>
+            </form>
+          </div>
         </div>
         <% }); %>
       </div>

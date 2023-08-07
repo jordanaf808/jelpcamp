@@ -1,12 +1,11 @@
 require('dotenv').config();
 const express = require('express');
-const app = express();
 const axios = require('axios').default;
-// const methodOverride = require('method-override');
-// const middleware = require('../middleware');
 const router = express.Router();
+const ExpressError = require('../utils/ExpressError');
 
 const Campsite = require('../models/campsite');
+const User = require('../models/user');
 
 axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/';
 axios.defaults.headers = {
@@ -39,7 +38,7 @@ router.get('/', async (req, res) => {
       id: item.FacilityID,
     }));
     console.log(recData.length);
-    res.render('campsites/index', { recData, mapData });
+    res.render('campsites/index', { recData, mapData, mapBox: true });
   } catch (e) {
     console.log('oh no.', e);
   }
@@ -76,7 +75,7 @@ router.get('/search', async (req, res) => {
     }));
     console.log(response.data.METADATA);
     // console.log(recData)
-    res.render('campsites/results', { recData, mapData, searchParams });
+    res.render('campsites/results', { recData, mapData, searchParams, mapBox: true });
   } catch (e) {
     console.log('oh no.', e);
   }
@@ -90,18 +89,15 @@ router.get('/show/:id', async (req, res) => {
     const { id } = req.params;
     console.log('show facility id#' + id);
     const url = `/facilities/${id}`;
-    const mediaURL = `${url}/media`;
-    const linkURL = `${url}/links`;
     const response = await axios.get(url, { showParams });
-    const medias = await axios.get(mediaURL);
-    const links = await axios.get(linkURL);
+    const medias = await axios.get(`${url}/media`);
+    const links = await axios.get(`${url}/links`);
     const recData = response.data;
     const linksData = links.data.RECDATA;
     const mediaData = medias.data.RECDATA;
     const parentRecAreaID = recData.ParentRecAreaID;
     console.log('parent RecArea ID#' + parentRecAreaID);
-    const parentRecAreaURL = `/recareas/${parentRecAreaID}`;
-    const parentRecAreaResponse = await axios.get(parentRecAreaURL);
+    const parentRecAreaResponse = await axios.get(`/recareas/${parentRecAreaID}`);
     const parentRecArea = parentRecAreaResponse.data;
     console.log('Parent RecArea Name' + parentRecArea);
     const data = { recData, mediaData, parentRecArea, linksData };
@@ -119,11 +115,29 @@ router.get('/show/:id', async (req, res) => {
         console.log('err: ', madeCampsite);
       } else {
         console.log(madeCampsite);
-        res.render('campsites/show', { data, foundCampsite: madeCampsite });
+        res.render('campsites/show', { data, foundCampsite: madeCampsite, favorite: false });
       }
     } else {
-      console.log('found' + id);
-      res.render('campsites/show', { data, foundCampsite });
+      if(req.isAuthenticated()){
+        const user = req.user;
+        console.log(`Show Route: logged in: ${user._id}:`);
+        const foundUser = await User.findById(user._id).populate('favorites').exec();
+        console.log('foundCampsite._id: ', foundCampsite._id);
+        let favorites = false;
+        for(fav of foundUser.favorites){
+          if(fav._id.toString() === foundCampsite._id.toString()){
+            console.log("match: ", fav._id);
+            favorites = true;
+          }
+        }
+        if(favorites){
+          console.log('ALREADY added to favorites by: ', foundUser.username);
+          return res.render('campsites/show', { data, foundCampsite, favorite: true });
+        }
+      }
+      // console.log("not favorite");
+      console.log('found campsite: ' + id);
+      res.render('campsites/show', { data, foundCampsite, favorite: false  });
     }
   } catch (e) {
     console.log('oh no.', e);
