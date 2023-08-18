@@ -154,22 +154,22 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(process.env.PORT || 3000);
 
-// Kill App On SIGTERM
-process.on('SIGTERM', () => {
-  console.info('SIGTERM signal received.');
-  console.log('Closing http server.');
-  server.close(() => {
-    console.log('Http server closed.');
-    // boolean means [force], 
-    mongoose.connection.close(false, () => {
-      console.log('MongoDb connection closed.'); 
-			// NodeJS will exit when the EventLoop queue is empty and there is nothing left to do.
-			// But sometimes, your application can have more functions and will not exit automatically.
-			// We need to exit from the process using process.exit function.
-			// 0 means exit with a "success" code.
-      process.exit(0);
-    });
-  });
-}); 
+// // Kill App On SIGTERM
+// process.on('SIGTERM', () => {
+//   console.info('SIGTERM signal received.');
+//   console.log('Closing http server.');
+//   server.close(() => {
+//     console.log('Http server closed.');
+//     // boolean means [force], 
+//     mongoose.connection.close(false, () => {
+//       console.log('MongoDb connection closed.'); 
+// 			// NodeJS will exit when the EventLoop queue is empty and there is nothing left to do.
+// 			// But sometimes, your application can have more functions and will not exit automatically.
+// 			// We need to exit from the process using process.exit function.
+// 			// 0 means exit with a "success" code.
+//       process.exit(0);
+//     });
+//   });
+// }); 
 
 console.log(`YelpCamp listening at ${port}`)

@@ -11,8 +11,8 @@ axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/';
 axios.defaults.headers = {
   'Content-Type': 'application/json',
   apikey: process.env.API,
-  // 'Access-Control-Allow-Origin' : '*',
-  // 'Access-Control-Allow-Methods' : 'GET, PUT, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Origin' : '*',
+  'Access-Control-Allow-Methods' : 'GET, PUT, POST, DELETE, OPTIONS',
 };
 
 // ==========|  INDEX  |========== \\
