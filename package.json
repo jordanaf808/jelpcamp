@@ -24,7 +24,7 @@
     "joi": "^17.9.2",
     "mapbox-gl": "^2.15.0",
     "method-override": "^3.0.0",
-    "mongoose": "^7.3.0",
+    "mongoose": "^7.5.0",
     "node-geocoder": "^4.2.0",
     "numeral": "^2.0.6",
     "passport": "^0.6.0",
