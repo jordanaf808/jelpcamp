@@ -11,15 +11,14 @@ const mutateData = require('../utils/mutateData');
 
 
 // import Axios Cache Interceptor
-// const { setupCache } = require('axios-cache-interceptor');
-// for debugging cache
-const { setupCache } = require('axios-cache-interceptor/dev'); 
+const { setupCache } = require('axios-cache-interceptor');
 // same object, but with updated typings.
-// const axios = setupCache(Axios); 
-// for debugging
-const axios = setupCache(Axios, {
-  debug: console.log 
-}); 
+const axios = setupCache(Axios); 
+// for debugging cache
+// const { setupCache } = require('axios-cache-interceptor/dev'); 
+// const axios = setupCache(Axios, {
+//   debug: console.log 
+// }); 
 
 
 axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/';
@@ -41,20 +40,8 @@ router.get('/', async (req, res) => {
     const response = await axios.get('/facilities', { params, cache: {ttl: 1800000} });
     console.log('initial response status: ' + response.status);
     const data = response.data.RECDATA;
+    // filter out any data withOUT GEOJSON and separate data for map feature
     const { recData, mapData } = mutateData(data);
-    // // filter out any data withOUT GEOJSON
-    // const filterGEO = data.filter(item => item.GEOJSON.COORDINATES);
-    // const recData = filterGEO;
-    // const mapData = filterGEO.map(item => ({
-    //   properties: {
-    //     title: item.FacilityName,
-    //     type: item.FacilityTypeDescription,
-    //   },
-    //   geometry: item.GEOJSON,
-    //   id: item.FacilityID,
-    // }));
-
-    console.log(recData.length);
     res.render('campsites/index', { recData, mapData, mapBox: true });
   } catch (e) {
     console.log('oh no.', e);
@@ -81,16 +68,6 @@ router.get('/search', async (req, res) => {
     const response = await axios.get('/facilities', { params: searchParams });
     const data = response.data.RECDATA;
     const { recData, mapData } = mutateData(data);
-    // // filter out items without GEOJSON
-    // const recData = data.filter(item => item.GEOJSON.COORDINATES);
-    // const mapData = recData.map(item => ({
-    //   properties: {
-    //     title: item.FacilityName,
-    //     type: item.FacilityTypeDescription,
-    //   },
-    //   geometry: item.GEOJSON,
-    //   id: item.FacilityID,
-    // }));
     console.log("response METADATA: ", response.data.METADATA);
     // console.log(recData)
     res.render('campsites/results', { recData, mapData, searchParams, mapBox: true });
