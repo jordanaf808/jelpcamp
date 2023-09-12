@@ -1,5 +1,15 @@
 # WANDUR Notes
 
+## 9/2023
+
+### 9/2
+
+Added Axios Cache Interceptor package to the Campsites route! refactored code to filter out Rec and MapData in mutateData.js
+
+### 9/1
+
+Successfuly deployed WANDUR to the Render hosting platform without major errors! I believe some SIGTERM code I added to close the app on a terminate signal was actually being ran right after starting the app. I commented out the code allowing me to see the campsites page. Everything seemed to be working except the GoogleMaps API was throwing an unauthorized error, so I added the website address to the services I was using from Google, which allowed googleMaps to load.
+
 ## 7/2023
 
 - for security make user register and log in to see campsite pages

@@ -1,11 +1,26 @@
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios').default;
+const Axios = require('axios').default;
 const router = express.Router();
 const ExpressError = require('../utils/ExpressError');
 
 const Campsite = require('../models/campsite');
 const User = require('../models/user');
+
+const mutateData = require('../utils/mutateData');
+
+
+// import Axios Cache Interceptor
+// const { setupCache } = require('axios-cache-interceptor');
+// for debugging cache
+const { setupCache } = require('axios-cache-interceptor/dev'); 
+// same object, but with updated typings.
+// const axios = setupCache(Axios); 
+// for debugging
+const axios = setupCache(Axios, {
+  debug: console.log 
+}); 
+
 
 axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/';
 axios.defaults.headers = {
@@ -23,20 +38,22 @@ axios.defaults.headers = {
 router.get('/', async (req, res) => {
   try {
     const params = { query: 'hiking', limit: 25, full: 'false', sort: 'Date' }; // state: "CA"
-    const response = await axios.get('/facilities', { params });
+    const response = await axios.get('/facilities', { params, cache: {ttl: 1800000} });
     console.log('initial response status: ' + response.status);
     const data = response.data.RECDATA;
-    // filter out any data withOUT GEOJSON
-    const filterGEO = data.filter(item => item.GEOJSON.COORDINATES);
-    const recData = filterGEO;
-    const mapData = filterGEO.map(item => ({
-      properties: {
-        title: item.FacilityName,
-        type: item.FacilityTypeDescription,
-      },
-      geometry: item.GEOJSON,
-      id: item.FacilityID,
-    }));
+    const { recData, mapData } = mutateData(data);
+    // // filter out any data withOUT GEOJSON
+    // const filterGEO = data.filter(item => item.GEOJSON.COORDINATES);
+    // const recData = filterGEO;
+    // const mapData = filterGEO.map(item => ({
+    //   properties: {
+    //     title: item.FacilityName,
+    //     type: item.FacilityTypeDescription,
+    //   },
+    //   geometry: item.GEOJSON,
+    //   id: item.FacilityID,
+    // }));
+
     console.log(recData.length);
     res.render('campsites/index', { recData, mapData, mapBox: true });
   } catch (e) {
@@ -63,17 +80,18 @@ router.get('/search', async (req, res) => {
     };
     const response = await axios.get('/facilities', { params: searchParams });
     const data = response.data.RECDATA;
-    // filter out items without GEOJSON
-    const recData = data.filter(item => item.GEOJSON.COORDINATES);
-    const mapData = recData.map(item => ({
-      properties: {
-        title: item.FacilityName,
-        type: item.FacilityTypeDescription,
-      },
-      geometry: item.GEOJSON,
-      id: item.FacilityID,
-    }));
-    console.log(response.data.METADATA);
+    const { recData, mapData } = mutateData(data);
+    // // filter out items without GEOJSON
+    // const recData = data.filter(item => item.GEOJSON.COORDINATES);
+    // const mapData = recData.map(item => ({
+    //   properties: {
+    //     title: item.FacilityName,
+    //     type: item.FacilityTypeDescription,
+    //   },
+    //   geometry: item.GEOJSON,
+    //   id: item.FacilityID,
+    // }));
+    console.log("response METADATA: ", response.data.METADATA);
     // console.log(recData)
     res.render('campsites/results', { recData, mapData, searchParams, mapBox: true });
   } catch (e) {
@@ -89,15 +107,15 @@ router.get('/show/:id', async (req, res) => {
     const { id } = req.params;
     console.log('show facility id#' + id);
     const url = `/facilities/${id}`;
-    const response = await axios.get(url, { showParams });
-    const medias = await axios.get(`${url}/media`);
-    const links = await axios.get(`${url}/links`);
+    const response = await axios.get(url, { showParams, cache: {ttl: 1800000} });
+    const medias = await axios.get(`${url}/media`, {cache: {ttl: 1800000}});
+    const links = await axios.get(`${url}/links`, {cache: {ttl: 1800000}});
     const recData = response.data;
     const linksData = links.data.RECDATA;
     const mediaData = medias.data.RECDATA;
     const parentRecAreaID = recData.ParentRecAreaID;
     console.log('parent RecArea ID#' + parentRecAreaID);
-    const parentRecAreaResponse = await axios.get(`/recareas/${parentRecAreaID}`);
+    const parentRecAreaResponse = await axios.get(`/recareas/${parentRecAreaID}`, {cache: {ttl: 1800000}});
     const parentRecArea = parentRecAreaResponse.data;
     console.log('Parent RecArea Name' + parentRecArea);
     const data = { recData, mediaData, parentRecArea, linksData };
