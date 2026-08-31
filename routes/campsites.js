@@ -22,7 +22,7 @@ const axios = setupCache(Axios)
 axios.defaults.baseURL = 'https://ridb.recreation.gov/api/v1/'
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
-	apikey: process.env.API,
+	apikey: process.env.RIDB_API_KEY,
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
 }
