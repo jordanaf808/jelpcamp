@@ -133,9 +133,13 @@ load the map page, and run a search.
 
 ### Deferred: major upgrades
 
-Superseded. The table that was here listed pre-fix versions and now contradicts reality.
-See **Phase 4** in the [Remediation checklist](#remediation-checklist) for the current
-table, and check EOL status at <https://endoflife.date> before ordering the upgrades.
+**No longer deferred — Express 4 -> 5 became mandatory on 2026-09-04.** New `qs`
+advisories were published that no Express 4 release can resolve: Express 4.22.2
+(the newest 4.x) declares `qs: ~6.15.1`, which caps below the patched `qs@6.16.0`.
+`npm audit fix --force` proposes `qs@6.15.3` — still inside the vulnerable range.
+
+A `qs` override is in place as a stopgap. See **Phase 4** in the
+[Remediation checklist](#remediation-checklist) for the migration plan.
 
 ---
 
@@ -436,6 +440,65 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
 
 Check <https://endoflife.date> before ordering these.
+
+#### 🔴 Express 4 -> 5 — required, not optional (added 2026-09-04)
+
+Three new `qs` advisories ([GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/GHSA-4mjr-xmp4-gh2g),
+[GHSA-x5fp-wj9c-mxmx](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx),
+[GHSA-q8mj-m7cp-5q26](https://github.com/advisories/GHSA-q8mj-m7cp-5q26)) are
+unfixable on Express 4 — see the note in Part 1. This is the "EOL major means no fix
+available" scenario, arriving earlier than expected.
+
+**Stopgap in place:** `overrides: { "qs": "^6.16.0" }` in `package.json`. This forces
+`qs` past Express 4's declared `~6.15.1`, so it runs a version Express was not tested
+against. **Technical debt — remove when Express 5 lands.**
+
+- [ ] **Migrate to Express 5** ([official guide](https://expressjs.com/en/guide/migrating-5.html))
+
+Migration surface, scanned against this codebase on 2026-09-04:
+
+| Change | Where | Notes |
+|---|---|---|
+| `req.query` is a read-only getter | [app.js:36](app.js#L36) | **Test this first.** `express-mongo-sanitize` mutates `req.query` in place; Express 5 makes it non-writable. Fails at runtime, not install. Likely needs a config change, a replacement, or `req.body`-only sanitizing |
+| `res.redirect('back')` removed | 13 live call sites | `middleware/index.js` x9, `routes/comments.js` x3, `routes/users.js` x1. Replace with `res.redirect(req.get('Referrer') \|\| '/')` |
+| Wildcards must be named | [app.js:144](app.js#L144) | `app.all('*', ...)` -> `app.all('*splat', ...)` |
+| `req.body` is `undefined` when unparsed | any `req.body.x` | Was `{}` in v4, so bodyless requests now throw instead of yielding undefined |
+| Rejected promises auto-forwarded | [utils/catchAsync.js](utils/catchAsync.js) | **Delete it** and unwrap every `catchAsync(...)` — Express 5 does this natively |
+
+Verified as **not** affected: route patterns (all plain `:param`),
+`express.urlencoded({extended: true})` (already explicit at [app.js:31](app.js#L31)),
+Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
+`res.json(obj, status)` or `res.send(status)` anywhere.
+
+- [ ] **Delete `routes/old.campgrounds.js` first** — not mounted in `app.js`, but holds
+      3 of the 16 `redirect('back')` hits. Deleting it before migrating avoids
+      migrating dead code.
+- [ ] **Fix the latent bug at [routes/users.js:22](routes/users.js#L22)** —
+      `res.redirect('back', {error: "User Not Found..." })` passes an options object
+      where Express expects a status code. That flash message has never worked.
+- [ ] **Remove the `qs` override** once Express 5 is in and `npm audit` is clean.
+
+#### Client-side API deprecations
+
+Not security findings — maintenance debt in third-party browser APIs, tracked here
+because nothing else in the repo tracks it and `npm audit` cannot see it.
+
+- [ ] **`google.maps.Marker` deprecated 2024-02-21** — migrate to `google.maps.marker.AdvancedMarkerElement`
+  - [views/campsites/show.ejs:233](views/campsites/show.ejs#L233) — **the live template; this is the one that matters**
+  - [views/campgrounds/show.ejs:140](views/campgrounds/show.ejs#L140) — dead code per commit `96be9ad`; **delete rather than migrate**
+  - *Not urgent:* no discontinuation date announced, 12 months notice promised, and
+    major regressions still get fixed. But **existing bugs will not be addressed**,
+    so this is a slow leak rather than a deadline.
+  - *Not a drop-in swap:* `AdvancedMarkerElement` also requires a **Map ID** on the
+    map instance and the `marker` library in the loader (`&libraries=marker`).
+    Budget more than a find-and-replace.
+  - Surfaced by the 2026-09-04 smoke test after the Phase 1 dependency patches —
+    pre-existing, unrelated to those upgrades.
+  - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations)
+
+- [ ] *Also noticed:* both map templates use the legacy `callback=initMap` loader
+      ([campsites/show.ejs:245](views/campsites/show.ejs#L245)). Google now recommends
+      the dynamic library import. Bundle with the marker migration if you do it.
 
 ### The one-line summary
 
