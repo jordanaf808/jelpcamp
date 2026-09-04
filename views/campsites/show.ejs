@@ -187,7 +187,10 @@
             data-parent="#accordionExample"
           >
             <div class="card-body">
-              <div id="map"></div>
+              <div id="map"
+                data-lat="<%= data.recData.GEOJSON.COORDINATES[1] %>"
+                data-lng="<%= data.recData.GEOJSON.COORDINATES[0] %>"
+                data-name="<%= data.recData["FacilityName"] %>"></div>
             </div>
           </div>
         </div>
@@ -196,14 +199,7 @@
   </div>
 </div>
 
-<script>
-  window.onload = function () {
-    let item = document.querySelector('div.carousel-item');
-    let indicator = document.querySelector('ol.carousel-indicators li');
-    item.classList.add('active');
-    indicator.classList.add('active');
-  };
-</script>
+<script src="/js/carousel.js"></script>
 <script
   src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
   integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
@@ -215,34 +211,11 @@
   crossorigin="anonymous"
 ></script>
 
-<script>
-  function initMap(){
-  	const lat = <%- data.recData.GEOJSON.COORDINATES[1] %>;
-  	const lng = <%- data.recData.GEOJSON.COORDINATES[0] %>;
-  	const center = {lat: lat, lng: lng };
-  	console.log(center)
-  	const map = new google.maps.Map(document.getElementById("map"), {
-  		zoom: 8,
-  		center: center,
-  		scrollwheel: false
-  	});
-  	const contentString = "<h5><%=data.recData["FacilityName"]%></h5>"
-  	const infowindow = new google.maps.InfoWindow({
-  		content: contentString
-  	});
-  	const marker = new google.maps.Marker({
-  		position: center,
-  		map: map
-  	});
-  	marker.addListener('click', function(){
-  		infowindow.open(map, marker);
-  	});
-  }
-</script>
+<script src="/js/gmap.js"></script>
 <script
   async
   defer
-  src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap"
+  src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap&loading=async"
   type="text/javascript"
 ></script>
 <script

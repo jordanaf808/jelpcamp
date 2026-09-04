@@ -1,5 +1,11 @@
 console.log('map.js says hi!');
 
+// Values are passed via data-attributes on #map so this file stays a static
+// asset — the CSP allows script-src 'self' with no inline scripts.
+const mapEl = document.getElementById('map');
+const mapToken = mapEl.dataset.token;
+const campsites = JSON.parse(mapEl.dataset.campsites);
+
 mapboxgl.accessToken = mapToken;
 const map = new mapboxgl.Map({
   container: 'map',

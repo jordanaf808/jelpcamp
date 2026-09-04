@@ -211,7 +211,9 @@
 
     <div class="row my-5">
       <div class="map-box col-11 col-sm-10">
-        <div id="map"></div>
+        <div id="map"
+  data-token="<%= process.env.MAPBOX_API_KEY %>"
+  data-campsites='<%= JSON.stringify({features: mapData}).toLowerCase() %>'></div>
       </div>
     </div>
   </div>
@@ -233,10 +235,5 @@
   </div>
   <div class="search-body"><%- include("../partials/badges") %></div>
 </div>
-<script>
-  const mapToken = '<%-process.env.MAPBOX_API_KEY%>';
-  const campsites =  {features: <%- JSON.stringify(mapData).toLowerCase() %>} ;
-  // console.log(campsites)
-</script>
 <script src="/js/map.js"></script>
 <%- include("../partials/footer") %>
