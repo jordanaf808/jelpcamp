@@ -10,7 +10,7 @@ const flash = require('connect-flash')
 const session = require('express-session')
 const MongoStore = require('connect-mongo')
 const mongoSanitize = require('express-mongo-sanitize')
-// const helmet				 	= require('helmet');
+const helmet = require('helmet')
 
 // Models
 const User = require('./models/user')
@@ -35,59 +35,66 @@ app.use(methodOverride('_method'))
 app.use(flash())
 app.use(mongoSanitize())
 
-// const scriptSrcUrls = [
-// 	"https://stackpath.bootstrapcdn.com/",
-// 	"https://api.tiles.mapbox.com/",
-// 	"https://api.mapbox.com/",
-// 	"https://kit.fontawesome.com/",
-// 	"https://cdnjs.cloudflare.com/",
-// 	"https://cdn.jsdelivr.net",
-// 	"https://fonts.gstatic.com",
-// 	"https://code.jquery.com/",
-// 	"https://maps.googleapis.com/",
-// 	"//embedr.flickr.com/"
-// ];
-// const styleSrcUrls = [
-// 	"https://kit-free.fontawesome.com/",
-// 	"https://stackpath.bootstrapcdn.com/",
-// 	"https://api.mapbox.com/",
-// 	"https://api.tiles.mapbox.com/",
-// 	"https://fonts.googleapis.com/",
-// 	"https://fonts.gstatic.com",
-// 	"https://use.fontawesome.com/",
-// ];
-// const connectSrcUrls = [
-// 	"https://api.mapbox.com/",
-// 	"https://a.tiles.mapbox.com/",
-// 	"https://b.tiles.mapbox.com/",
-// 	"https://events.mapbox.com/",
-// 	"https://ridb.recreation.gov/api/v1/",
-// 	"https://maps.googleapis.com/",
-// 	"embedr.flickr.com/"
-// ];
-// const fontSrcUrls = [];
-// app.use(
-// 	helmet.contentSecurityPolicy({
-// 			directives: {
-// 					defaultSrc: [],
-// 					connectSrc: ["'self'", ...connectSrcUrls],
-// 					scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
-// 					styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
-// 					workerSrc: ["'self'", "blob:"],
-// 					objectSrc: [],
-// 					imgSrc: [
-// 							"'self'",
-// 							"blob:",
-// 							"data:",
-// 							"https://res.cloudinary.com/douqbebwk/", //SHOULD MATCH YOUR CLOUDINARY ACCOUNT!
-// 							"https://images.unsplash.com/",
-// 							"https://maps.googleapis.com/maps/api/js?key=APIKEY&callback=initMap",
-// 							"embedr.flickr.com/"
-// 					],
-// 					fontSrc: ["'self'", ...fontSrcUrls],
-// 			},
-// 	})
-// );
+// Content Security Policy. Origins below were derived by scanning views/ and
+// public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
+// script-src has no 'unsafe-inline': all inline scripts were moved into
+// public/js/ so injected inline script cannot execute.
+const scriptSrcUrls = [
+	'https://api.mapbox.com',
+	'https://code.jquery.com',
+	'https://cdn.jsdelivr.net',
+	'https://stackpath.bootstrapcdn.com',
+	'https://cdnjs.cloudflare.com',
+	'https://maps.googleapis.com',
+	'https://embedr.flickr.com',
+	'https://widgets.flickr.com', // embedr chain-loads its client code from here
+]
+const styleSrcUrls = [
+	'https://stackpath.bootstrapcdn.com',
+	'https://cdnjs.cloudflare.com',
+	'https://fonts.googleapis.com',
+	'https://api.mapbox.com',
+]
+const connectSrcUrls = [
+	'https://api.mapbox.com',
+	'https://events.mapbox.com',
+	'https://a.tiles.mapbox.com',
+	'https://b.tiles.mapbox.com',
+	// Google Maps runtime fetches. Per Google's CSP guidance, googleapis.com
+	// MUST be present or the Maps JS API rejects requests outright.
+	// https://developers.google.com/maps/documentation/javascript/content-security-policy
+	'https://*.googleapis.com',
+	'https://*.gstatic.com',
+	'https://*.google.com',
+	// DevTools fetches .js.map / .css.map from these over connect-src. Only
+	// affects debugging, never end users; already trusted for script/style.
+	'https://cdn.jsdelivr.net',
+	'https://stackpath.bootstrapcdn.com',
+	'https://code.jquery.com',
+	'https://cdnjs.cloudflare.com',
+]
+const fontSrcUrls = ['https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com']
+
+app.use(
+	helmet({
+		contentSecurityPolicy: {
+			directives: {
+				defaultSrc: ["'self'"],
+				scriptSrc: ["'self'", ...scriptSrcUrls],
+				// 'unsafe-inline' is still required here: 10 views use inline
+				// style="..." attributes, which cannot carry a nonce.
+				styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+				connectSrc: ["'self'", ...connectSrcUrls],
+				fontSrc: ["'self'", ...fontSrcUrls],
+				// Campsite photos come from the RIDB API, whose hosts are not known
+				// until runtime, so any https image is allowed. Images cannot execute.
+				imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+				workerSrc: ["'self'", 'blob:'], // mapbox-gl uses blob workers
+				objectSrc: ["'none'"],
+			},
+		},
+	})
+)
 
 // seed the DB
 // seedDB();
