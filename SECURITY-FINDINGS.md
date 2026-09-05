@@ -434,10 +434,18 @@ overstates the app's actual security posture.
   - [x] Verified: index, search and show all render 200 with formatting intact; injection
         payloads (`<script>`, `onerror`, `javascript:`, `<iframe>`, `<svg onload>`,
         `</script>` breakout) all neutralized
-- [ ] **Session cookie** — [app.js:106–117](app.js#L106-L117)
-  - [ ] Delete the `expires` line (**real bug** — evaluated once at module load)
-  - [ ] Add `secure: process.env.NODE_ENV === 'production'`
-  - [ ] Add `sameSite: 'lax'`
+- [x] **Session cookie** — done 2026-09-05
+  - [x] Deleted the `expires` line (**real bug** — evaluated once at module load).
+        Verified fixed: two sessions issued 2s apart now carry expiries 3s apart,
+        where previously every session in a process shared one absolute expiry.
+  - [x] Added `secure: process.env.NODE_ENV === 'production'`
+  - [x] Added `sameSite: 'lax'`
+  - [x] **Also required, and not in the original finding:** `app.set('trust proxy', 1)`.
+        Render terminates TLS at its proxy and forwards plain HTTP, so Express would
+        see an insecure connection and refuse to set a `secure` cookie — breaking login
+        in production while working locally. Verified all three cases: dev sets the
+        cookie without `Secure`; production over plain HTTP sets **no cookie**;
+        production with `X-Forwarded-Proto: https` sets it **with** `Secure`.
 - [ ] **Pin the runtime** — add `"engines": { "node": ">=20.0.0" }` and a `.nvmrc`
 - [ ] **Rate-limit auth** — `express-rate-limit` on `/login` and `/register` (only if publicly deployed)
 - [ ] **Verify the Google Maps key** was never committed under another path; rotate if it was
