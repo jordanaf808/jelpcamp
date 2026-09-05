@@ -411,9 +411,10 @@ overstates the app's actual security posture.
         extracted to `public/js/` rather than deferring this to "later"
   - [x] Verified locally: Mapbox renders, zero CSP violations
   - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
-  - [ ] **Google Maps CSP unverified** — the GCP key has no `localhost` referrer, so the
-        show-page map cannot be tested locally. Check DevTools after deploy; if the map
-        misbehaves, `frame-src *.google.com` is the first directive to try
+  - [x] **Google Maps CSP verified in production 2026-09-05** — deployed and checked in
+        DevTools: no CSP violations, map renders. `frame-src *.google.com` was **not**
+        needed. The only console output is the pre-existing `google.maps.Marker`
+        deprecation warning, tracked separately under Phase 4.
 - [x] **Sanitize RIDB API data before rendering** — done, branch `fix/sanitize-ridb-html`
   - [x] New `utils/sanitizeDescription.js` — a **display** allowlist (`p h1-h4 ul ol li
         br hr strong b em i a`), derived from 276 facilities sampled across 6 RIDB
@@ -433,10 +434,18 @@ overstates the app's actual security posture.
   - [x] Verified: index, search and show all render 200 with formatting intact; injection
         payloads (`<script>`, `onerror`, `javascript:`, `<iframe>`, `<svg onload>`,
         `</script>` breakout) all neutralized
-- [ ] **Session cookie** — [app.js:106–117](app.js#L106-L117)
-  - [ ] Delete the `expires` line (**real bug** — evaluated once at module load)
-  - [ ] Add `secure: process.env.NODE_ENV === 'production'`
-  - [ ] Add `sameSite: 'lax'`
+- [x] **Session cookie** — done 2026-09-05
+  - [x] Deleted the `expires` line (**real bug** — evaluated once at module load).
+        Verified fixed: two sessions issued 2s apart now carry expiries 3s apart,
+        where previously every session in a process shared one absolute expiry.
+  - [x] Added `secure: process.env.NODE_ENV === 'production'`
+  - [x] Added `sameSite: 'lax'`
+  - [x] **Also required, and not in the original finding:** `app.set('trust proxy', 1)`.
+        Render terminates TLS at its proxy and forwards plain HTTP, so Express would
+        see an insecure connection and refuse to set a `secure` cookie — breaking login
+        in production while working locally. Verified all three cases: dev sets the
+        cookie without `Secure`; production over plain HTTP sets **no cookie**;
+        production with `X-Forwarded-Proto: https` sets it **with** `Secure`.
 - [ ] **Pin the runtime** — add `"engines": { "node": ">=20.0.0" }` and a `.nvmrc`
 - [ ] **Rate-limit auth** — `express-rate-limit` on `/login` and `/register` (only if publicly deployed)
 - [ ] **Verify the Google Maps key** was never committed under another path; rotate if it was

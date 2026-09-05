@@ -129,10 +129,29 @@ const sessionConfig = {
 	saveUninitialized: false,
 	cookie: {
 		httpOnly: true,
-		expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+		// There is deliberately no `expires`. It used to be
+		// `Date.now() + <7 days>`, which JavaScript evaluates ONCE when this module
+		// is loaded — so every session ever issued by a given process shared one
+		// absolute expiry, and a session handed out eight days into an uptime
+		// period was born already expired. `maxAge` is relative and is applied per
+		// session, which is the behaviour that was intended all along.
 		maxAge: 1000 * 60 * 60 * 24 * 7,
+		// Never transmit the session cookie over plain HTTP in production.
+		// Off in development so localhost, which has no TLS, still works.
+		secure: process.env.NODE_ENV === 'production',
+		// CSRF defence-in-depth: withheld from cross-site form posts, still sent on
+		// ordinary top-level navigations back into the site.
+		sameSite: 'lax',
 	},
 }
+
+// Required by `secure` above. Render terminates TLS at its proxy and forwards
+// plain HTTP internally, so Express sees an insecure connection and would refuse
+// to set a secure cookie — silently breaking login in production while working
+// perfectly on localhost. Trusting one proxy hop makes req.secure read
+// X-Forwarded-Proto instead. The value is 1, not `true`: trust exactly the hop
+// Render controls, so a client cannot spoof the header through additional hops.
+app.set('trust proxy', 1)
 
 //PASSPORT configuration
 app.use(session(sessionConfig))
