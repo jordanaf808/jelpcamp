@@ -411,9 +411,10 @@ overstates the app's actual security posture.
         extracted to `public/js/` rather than deferring this to "later"
   - [x] Verified locally: Mapbox renders, zero CSP violations
   - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
-  - [ ] **Google Maps CSP unverified** — the GCP key has no `localhost` referrer, so the
-        show-page map cannot be tested locally. Check DevTools after deploy; if the map
-        misbehaves, `frame-src *.google.com` is the first directive to try
+  - [x] **Google Maps CSP verified in production 2026-09-05** — deployed and checked in
+        DevTools: no CSP violations, map renders. `frame-src *.google.com` was **not**
+        needed. The only console output is the pre-existing `google.maps.Marker`
+        deprecation warning, tracked separately under Phase 4.
 - [x] **Sanitize RIDB API data before rendering** — done, branch `fix/sanitize-ridb-html`
   - [x] New `utils/sanitizeDescription.js` — a **display** allowlist (`p h1-h4 ul ol li
         br hr strong b em i a`), derived from 276 facilities sampled across 6 RIDB
