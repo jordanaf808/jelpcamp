@@ -11,7 +11,7 @@
         <div id="carousel" class="carousel slide" data-ride="carousel">
           <ol class="carousel-indicators">
             <% for(let media in data.mediaData){ %>
-            <li data-target="#carousel" data-slide-to="<%-media%>"></li>
+            <li data-target="#carousel" data-slide-to="<%=media%>"></li>
             <% }; %>
           </ol>
           <div class="carousel-inner">
@@ -47,6 +47,7 @@
         <% }; %>
 
         <div class="caption campsite-description">
+          <%# Unescaped on purpose: sanitized in the show route. %>
           <div><%-data.recData.FacilityDescription%></div>
         </div>
 

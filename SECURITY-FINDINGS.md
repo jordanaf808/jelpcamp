@@ -5,14 +5,16 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-01**
+> **Status — updated 2026-09-04**
 >
-> **Part 1 is done.** `npm audit fix` was applied and `npm audit` now reports
-> **0 vulnerabilities**. All 25 advisories cleared with no breaking changes, as predicted.
+> **Part 1 is done.** All 25 advisories cleared. `npm audit` now reports
+> **3 moderate**, a later regression from new `qs` advisories no Express 4 release
+> can fix — see Phase 4.
 >
-> **Parts 2 and 3 are outstanding** — and Part 2 is where the real risk lives.
-> Everything below Part 1 remains an open finding. See the
-> [Remediation checklist](#remediation-checklist) at the bottom for current state.
+> **Part 2 is in progress.** Item 1 (helmet + CSP) is on
+> `fix/security-findings-phase-2`, [PR #5](https://github.com/jordanaf808/jelpcamp/pull/5).
+> Item 2 (sanitize RIDB HTML) is on `fix/sanitize-ridb-html`. **Part 3 is untouched.**
+> See the [Remediation checklist](#remediation-checklist) for current state.
 
 ## Summary
 
@@ -193,13 +195,19 @@ Two options: run API responses through the same `sanitizeHtml` call before
 rendering (keeps intended formatting, strips scripts), or switch to `<%= %>`
 (fully safe, but descriptions lose their HTML formatting). The first is better here.
 
-Also flagged, lower priority:
-[results.ejs:231](views/campsites/results.ejs#L231) and
-[index.ejs:238](views/campsites/index.ejs#L238) inject
-`<%- JSON.stringify(mapData).toLowerCase() %>` directly into a `<script>` block.
-`JSON.stringify` does not escape `</script>` sequences — a description containing
-that string would break out of the script context. The `.toLowerCase()` doesn't
-help; it lowercases the payload but leaves it executable.
+**Correction (2026-09-04):** only **three** of those four are live.
+`campsites.ejs` is rendered by nothing — see the dead-code list in Phase 4.
+Current line numbers are index.ejs:226, results.ejs:220, show.ejs:50.
+
+**A fourth sink, not originally listed:** [public/js/map.js](public/js/map.js)
+built its Mapbox popup with `.setHTML()`, interpolating the RIDB `FacilityName`
+and `FacilityTypeDescription` straight into an HTML string. Same third-party data,
+client-side sink. `gmap.js` already avoided this using `textContent`.
+
+~~Also flagged, lower priority: results.ejs:231 and index.ejs:238 inject
+`<%- JSON.stringify(mapData).toLowerCase() %>` directly into a `<script>` block.~~
+**Closed 2026-09-04** by the CSP work — those `<script>` blocks no longer exist.
+Map data now travels through escaped `data-` attributes read by `public/js/map.js`.
 
 ### 🟡 Session cookie: two gaps
 
@@ -396,16 +404,35 @@ git commit -am "chore: remove unused dependencies"
 Ordered by risk. These are unaffected by Phase 1 and are why "0 vulnerabilities"
 overstates the app's actual security posture.
 
-- [ ] **Re-enable `helmet` + CSP** — [app.js:13](app.js#L13), [app.js:38–91](app.js#L38-L91)
-  - [ ] Uncomment the `require` and the `contentSecurityPolicy` block
-  - [ ] Bump `helmet` 7 → 8 while you're in there
-  - [ ] Deploy with `reportOnly: true` first; watch console for violations
-  - [ ] Fix directives, then flip `reportOnly` off
-  - [ ] *Later:* drop `'unsafe-inline'` from `scriptSrc` by extracting inline `<script>` blocks
-- [ ] **Sanitize RIDB API data before rendering** — the `<%- %>` sinks
-  - [ ] [campsites.ejs:191](views/campsites/campsites.ejs#L191), [results.ejs:218](views/campsites/results.ejs#L218), [index.ejs:224](views/campsites/index.ejs#L224), [show.ejs:50](views/campsites/show.ejs#L50)
-  - [ ] Reuse the existing `sanitizeHtml` call from [middleware/index.js:18](middleware/index.js#L18)
-  - [ ] Fix `JSON.stringify` → `<script>` injection at [results.ejs:231](views/campsites/results.ejs#L231) and [index.ejs:238](views/campsites/index.ejs#L238)
+- [x] **Re-enable `helmet` + CSP** — done, [PR #5](https://github.com/jordanaf808/jelpcamp/pull/5)
+  - [x] Call `helmet()`, not `helmet.contentSecurityPolicy()` alone — the old block
+        would have shipped the CSP and none of the other headers
+  - [x] `scriptSrc` ships with **no `'unsafe-inline'`** — all inline scripts were
+        extracted to `public/js/` rather than deferring this to "later"
+  - [x] Verified locally: Mapbox renders, zero CSP violations
+  - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
+  - [ ] **Google Maps CSP unverified** — the GCP key has no `localhost` referrer, so the
+        show-page map cannot be tested locally. Check DevTools after deploy; if the map
+        misbehaves, `frame-src *.google.com` is the first directive to try
+- [x] **Sanitize RIDB API data before rendering** — done, branch `fix/sanitize-ridb-html`
+  - [x] New `utils/sanitizeDescription.js` — a **display** allowlist (`p h1-h4 ul ol li
+        br hr strong b em i a`), derived from 276 facilities sampled across 6 RIDB
+        queries. Deliberately **not** the `middleware/index.js` config: that one strips
+        every tag, which is right for *rejecting* user input but would gut the
+        descriptions this is meant to preserve
+  - [x] Anchors get `rel="noopener noreferrer nofollow"` + `target="_blank"` forced via
+        `transformTags`, overwriting whatever the API sends
+  - [x] Applied at the two **fetch boundaries** (`utils/mutateData.js` for index/results,
+        the show route for the single-facility fetch), not at the four render sites — so
+        a new view cannot reintroduce the sink
+  - [x] Fixed the **unlisted fourth sink**: `public/js/map.js` built its Mapbox popup with
+        `.setHTML()`; now `setDOMContent` with `textContent`, matching `gmap.js`
+  - [x] `<%-media%>` → `<%=media%>` at show.ejs:14 (a loop index, safe, but a `<%-` a
+        future reader could copy)
+  - [x] ~~Fix `JSON.stringify` → `<script>` injection~~ — already closed by the CSP work
+  - [x] Verified: index, search and show all render 200 with formatting intact; injection
+        payloads (`<script>`, `onerror`, `javascript:`, `<iframe>`, `<svg onload>`,
+        `</script>` breakout) all neutralized
 - [ ] **Session cookie** — [app.js:106–117](app.js#L106-L117)
   - [ ] Delete the `expires` line (**real bug** — evaluated once at module load)
   - [ ] Add `secure: process.env.NODE_ENV === 'production'`
@@ -449,9 +476,14 @@ Three new `qs` advisories ([GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/G
 unfixable on Express 4 — see the note in Part 1. This is the "EOL major means no fix
 available" scenario, arriving earlier than expected.
 
-**Stopgap in place:** `overrides: { "qs": "^6.16.0" }` in `package.json`. This forces
-`qs` past Express 4's declared `~6.15.1`, so it runs a version Express was not tested
-against. **Technical debt — remove when Express 5 lands.**
+**Stopgap NOT yet in place** (corrected 2026-09-04 — `package.json` still holds an
+empty `"overrides": {}`). `qs@6.16.0` was published `2026-08-29T23:50Z` and
+`min-release-age=7` in `~/.npmrc` blocks it until **2026-09-05 ~23:50 UTC**. That is
+the guard working; wait rather than passing `--min-release-age=0`.
+
+Once it ages in, `npm pkg set overrides.qs="^6.16.0"` forces `qs` past Express 4's
+declared `~6.15.1`, so it runs a version Express was not tested against.
+**Technical debt — remove when Express 5 lands.**
 
 - [ ] **Migrate to Express 5** ([official guide](https://expressjs.com/en/guide/migrating-5.html))
 
