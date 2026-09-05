@@ -156,6 +156,12 @@ app.use((err, req, res, next) => {
 	const {statusCode = 500} = err
 	if (!err.message) err.message = 'Error.'
 	console.log('error route', err.message)
+	// Some errors arrive after the response has already gone out. express-session
+	// saves the session inside its res.end patch, so a session-store failure
+	// reaches here via next(err) once the body is flushed. Writing again throws
+	// ERR_HTTP_HEADERS_SENT, which buries the error that actually mattered.
+	// Delegating to Express's default handler closes the connection instead.
+	if (res.headersSent) return next(err)
 	res.status(statusCode).send(err.message)
 })
 
