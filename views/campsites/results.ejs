@@ -217,6 +217,7 @@
       <% for(let name of recData){ %>
       <div class="card mb-3 mx-xs-4 p-2 campcard">
         <h2 class="card-title"><%=name.FacilityName%></h2>
+        <%# Unescaped on purpose: sanitized in utils/mutateData.js. %>
         <div class="card-body"><%-name.FacilityDescription%></div>
         <a
           href="/campsites/show/<%=name.FacilityID%>"

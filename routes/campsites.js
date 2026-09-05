@@ -8,6 +8,7 @@ const Campsite = require('../models/campsite')
 const User = require('../models/user')
 
 const mutateData = require('../utils/mutateData')
+const sanitizeDescription = require('../utils/sanitizeDescription')
 
 // import Axios Cache Interceptor
 const {setupCache} = require('axios-cache-interceptor')
@@ -93,7 +94,14 @@ router.get('/show/:id', async (req, res) => {
 		const response = await axios.get(url, {showParams, cache: {ttl: 1800000}})
 		const medias = await axios.get(`${url}/media`, {cache: {ttl: 1800000}})
 		const links = await axios.get(`${url}/links`, {cache: {ttl: 1800000}})
-		const recData = response.data
+		// The show route fetches a single facility and never passes through
+		// mutateData, so it sanitizes at its own fetch boundary.
+		const recData = {
+			...response.data,
+			FacilityDescription: sanitizeDescription(
+				response.data.FacilityDescription,
+			),
+		}
 		const linksData = links.data.RECDATA
 		const mediaData = medias.data.RECDATA
 		const parentRecAreaID = recData.ParentRecAreaID
