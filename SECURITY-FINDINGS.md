@@ -5,16 +5,28 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-04**
+> **Status — updated 2026-09-05**
 >
-> **Part 1 is done.** All 25 advisories cleared. `npm audit` now reports
-> **3 moderate**, a later regression from new `qs` advisories no Express 4 release
-> can fix — see Phase 4.
+> **Parts 1 and 2 are both done and on `main`.** Phase 1 cleared all 25 advisories;
+> Phase 2 — the findings `npm audit` cannot see, and the ones this document argued
+> carried more real risk than all 25 combined — is now complete:
 >
-> **Part 2 is in progress.** Item 1 (helmet + CSP) is on
-> `fix/security-findings-phase-2`, [PR #5](https://github.com/jordanaf808/jelpcamp/pull/5).
-> Item 2 (sanitize RIDB HTML) is on `fix/sanitize-ridb-html`. **Part 3 is untouched.**
-> See the [Remediation checklist](#remediation-checklist) for current state.
+> | | Shipped in |
+> |---|---|
+> | helmet + strict CSP, no `script-src 'unsafe-inline'` | PR #5, verified in production |
+> | RIDB HTML sanitized at the fetch boundary | PR #6 / #8 |
+> | Session cookie: `expires` bug, `secure`, `sameSite`, `trust proxy` | PR #10 |
+> | Node runtime pinned + `npm ci` on deploy | PR #9 |
+> | Rate limiting on `/login` and `/register` | PR #11 |
+> | Google Maps key history audited | this PR |
+>
+> Plus an unplanned but necessary detour: **three separate session-store failures**
+> traced to one `kruptein: ^3.0.0` range, fixed by upgrading connect-mongo to 6 (PR #7).
+>
+> **`npm audit` currently reports 3 moderate**, all `qs`, unfixable on Express 4 —
+> see Phase 4. **Part 3 (tests + CI) is untouched and is now the highest-value item
+> remaining**: every failure in this document's history was invisible to `npm audit`
+> and would have been caught by a login round-trip test.
 
 ## Summary
 
@@ -233,20 +245,34 @@ attempts. `passport-local-mongoose` hashes correctly with pbkdf2, so this is
 online-guessing exposure rather than a hashing weakness — but a public deployment
 should throttle `/login` and `/register`.
 
-### 🟢 Secrets — clean, one thing to verify
+### 🟡 Secrets — current state clean, history is not (answered 2026-09-05)
 
 `.env` is gitignored, `.env.example` documents the required vars without values,
 and recent commits (`96be9ad`, `84c46e5`, `396e95d`) moved a hardcoded Google Maps
 key and the session secret into env vars. `git log --all --full-history -- .env`
 returns nothing — **`.env` was never committed.**
 
-One item remains: the Google Maps key removed in `96be9ad` was in the working tree
-before that commit. Confirm whether it was ever *committed* under a different path,
-and if so, **rotate it** — removing a secret from the current tree does nothing for
-a value already in history.
+**The open question is now answered, and the answer was yes.** Two Google API keys
+were committed and are permanently in this **public** repo's history:
+
+| Key | Entered at | Removed at |
+|---|---|---|
+| `AIzaSyB6rjTHh3h2h4ekebPZYTlE6TxODKdqmbk` | `58c6176` JelpCamp v12 | `96be9ad` |
+| `AIzaSyBJss5OZ9rprm3qA-4F1XiH0OYvrLBKPE8` | `13eacc0` integrate RIDB API | `34b406c` |
+
+Both had already been deleted in GCP during the earlier remediation, so the exposure
+is **inert**: readable by anyone, useful to no one. Rotation was the effective fix and
+it was already done — which is the whole point of the finding. Removing a secret from
+the working tree does nothing for a value already in history; revoking it does.
+
+The **current** `MAPS_API_KEY` and `GEOCODER_API_KEY` were checked against every blob
+in history and appear nowhere. See the Phase 2 checklist entry for the full result and
+for why history is deliberately not being rewritten.
 
 ```bash
-git log --all --full-history -p -S 'AIza' -- . | head -40
+# what was run
+git log --all --full-history -p -S 'AIza' -- . | grep -oE 'AIza[0-9A-Za-z_-]{35}' | sort -u
+git log --all --full-history -- .env          # empty: never committed
 ```
 
 ### 🟢 No `engines` field, no CI, no tests
@@ -399,7 +425,7 @@ npm start   # smoke test before committing
 git commit -am "chore: remove unused dependencies"
 ```
 
-### ⬜ Phase 2 — What `npm audit` can't see (open — the real work)
+### ✅ Phase 2 — What `npm audit` can't see (COMPLETE 2026-09-05)
 
 Ordered by risk. These are unaffected by Phase 1 and are why "0 vulnerabilities"
 overstates the app's actual security posture.
@@ -446,7 +472,25 @@ overstates the app's actual security posture.
         in production while working locally. Verified all three cases: dev sets the
         cookie without `Secure`; production over plain HTTP sets **no cookie**;
         production with `X-Forwarded-Proto: https` sets it **with** `Secure`.
-- [ ] **Pin the runtime** — add `"engines": { "node": ">=20.0.0" }` and a `.nvmrc`
+- [x] **Pin the runtime** — done 2026-09-05 in PR #9, after it turned out to be a
+      **deploy blocker rather than the 5-minute nicety this list rated it as.** Nothing
+      pinned a version, so Render used the default for a service of this age — Node
+      **14.17.0**, EOL — and the deploy died on `Cannot find module 'node:async_hooks'`
+      (`node:` prefixed core imports need >=14.18 in CJS; mongoose 7.8.12 uses them).
+
+      Shipped `.nvmrc` = `24.14.1` and `engines: { "node": ">=22.12.0 <25" }`.
+      **The floor is 22.12.0, not the 20.0.0 guessed above** — it is set by
+      `sanitize-html` 2.17.7, not by connect-mongo (>=20.8.0) or mongoose (>=14.20.1).
+      Upper bound is deliberate, per Render's docs, so a future major cannot arrive
+      unannounced. `.node-version` deliberately omitted: two files naming one version
+      drift, and the higher-precedence one wins silently.
+
+      **Second problem this exposed, fixed in the Render dashboard rather than here:**
+      the build command was `npm install`, and Node 14 bundles npm 6, which reads only
+      lockfileVersion 1 while ours is 3. npm 6 ignored the lockfile and re-resolved
+      from the `^` ranges — Render built **176 packages / 4 advisories** where the
+      locked tree is **156 / 3**. Every deploy before this ran a dependency tree nobody
+      had tested. Build command is now `npm ci`.
 - [x] **Rate-limit auth** — done 2026-09-05. `express-rate-limit` 8.7.0 on **POST**
       `/login` (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are
       unlimited. Verified: attempt 11 and attempt 6 return 429 respectively, with the
@@ -462,8 +506,31 @@ overstates the app's actual security posture.
     `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire. Confirmed no warning at boot.
   - **Known limits:** default in-memory store, so counters reset on deploy and are
     per-instance if ever scaled. Per-IP keying means a shared NAT shares a budget.
-- [ ] **Verify the Google Maps key** was never committed under another path; rotate if it was
-      — `git log --all --full-history -p -S 'AIza' -- . | head -40`
+- [x] **Google Maps keys WERE committed** — checked 2026-09-05. Two distinct keys are
+      permanently in this **public** repo's history:
+
+      | Key | Entered at | Removed at |
+      |---|---|---|
+      | `AIzaSyB6rjTHh3h2h4ekebPZYTlE6TxODKdqmbk` | `58c6176` JelpCamp v12 | `96be9ad` |
+      | `AIzaSyBJss5OZ9rprm3qA-4F1XiH0OYvrLBKPE8` | `13eacc0` integrate RIDB API | `34b406c` |
+
+      **Both were already deleted in GCP**, so the exposure is inert — anyone can read
+      them from history and they authenticate nothing.
+
+      Verified clean: the **current** `MAPS_API_KEY` and `GEOCODER_API_KEY` do **not**
+      appear anywhere in history; `.env` has never been committed (`git log --all
+      --full-history -- .env` is empty) and is ignored at `.gitignore:8`; the only file
+      in the working tree containing a key is `.env` itself.
+
+      **Deliberately NOT rewriting history.** `git filter-repo` would scrub the blobs,
+      but the keys are already revoked so it removes nothing usable, it rewrites every
+      commit hash and breaks every clone and fork of a public repo, and GitHub keeps
+      unreferenced objects regardless. History rewriting is for live secrets that cannot
+      be rotated. These could be rotated, and were.
+
+  - [ ] **Still open:** in the GCP Console, confirm neither deleted key shows usage from
+        an unfamiliar referrer between its commit date and its deletion. Cannot be
+        checked from the repo.
 
 ### ⬜ Phase 3 — Keep it fixed (open)
 
