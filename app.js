@@ -100,11 +100,17 @@ app.use(
 // seedDB();
 
 // Store the session data on MongoDB instead of in Local Memory.
+// SESSION_STORE_SECRET encrypts the session payload at rest. It is a different
+// key from SESSION_SECRET below because it does a different job, and because
+// kruptein (via connect-mongo) enforces character-class rules on this one only:
+// >=8 chars with >=2 each of uppercase, lowercase, digits and specials. A secret
+// that fails them makes every session write throw, which reads as a confusing
+// post-response error rather than a startup failure.
 const sessionStore = new MongoStore({
 	mongoUrl: process.env.MONGO_URI,
 	touchAfter: 24 * 60 * 60,
 	crypto: {
-		secret: process.env.SECRET,
+		secret: process.env.SESSION_STORE_SECRET,
 	},
 })
 
@@ -112,7 +118,8 @@ const sessionStore = new MongoStore({
 // currently using default memory store, also templates for Redis, Mongo, etc...
 const sessionConfig = {
 	store: sessionStore,
-	secret: process.env.SECRET,
+	// SESSION_SECRET HMAC-signs the session cookie. No complexity rules apply.
+	secret: process.env.SESSION_SECRET,
 	resave: false,
 	saveUninitialized: false,
 	cookie: {
