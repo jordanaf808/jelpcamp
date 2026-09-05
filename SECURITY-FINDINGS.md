@@ -447,7 +447,21 @@ overstates the app's actual security posture.
         cookie without `Secure`; production over plain HTTP sets **no cookie**;
         production with `X-Forwarded-Proto: https` sets it **with** `Secure`.
 - [ ] **Pin the runtime** — add `"engines": { "node": ">=20.0.0" }` and a `.nvmrc`
-- [ ] **Rate-limit auth** — `express-rate-limit` on `/login` and `/register` (only if publicly deployed)
+- [x] **Rate-limit auth** — done 2026-09-05. `express-rate-limit` 8.7.0 on **POST**
+      `/login` (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are
+      unlimited. Verified: attempt 11 and attempt 6 return 429 respectively, with the
+      form re-rendered and the message shown.
+  - Deliberately **no** `skipSuccessfulRequests` on login: passport uses
+    `failureRedirect`, so a failed login returns 302 exactly like a success, and status
+    code cannot separate them. 10/15min is generous enough that a real person never
+    reaches it.
+  - Handler **renders** rather than redirects. `res.redirect()` overwrites statusCode
+    with 302, discarding the 429 that logs and monitoring need; a 429 with a Location
+    header is useless since browsers only follow 3xx.
+  - `trust proxy` is `1`, not `true`, so express-rate-limit's
+    `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire. Confirmed no warning at boot.
+  - **Known limits:** default in-memory store, so counters reset on deploy and are
+    per-instance if ever scaled. Per-IP keying means a shared NAT shares a budget.
 - [ ] **Verify the Google Maps key** was never committed under another path; rotate if it was
       — `git log --all --full-history -p -S 'AIza' -- . | head -40`
 

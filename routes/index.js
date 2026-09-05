@@ -7,6 +7,7 @@ const Campsite = require('../models/campsite');
 // const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
 const router = express.Router();
 const { storeReturnTo, validateUser } = require('../middleware');
+const { loginLimiter, registerLimiter } = require('../middleware/rateLimiters');
 
 // import utils
 const catchAsync = require('../utils/catchAsync');
@@ -33,6 +34,7 @@ router.get('/register', (req, res) => {
 
 // Handle register logic...
 router.post('/register', 
+  registerLimiter,
   validateUser,
   catchAsync(async (req, res, next) => {
     const newUser = new User({ username: req.body.username });
@@ -58,6 +60,7 @@ router.get('/login', (req, res) => {
 });
 // handle LOGIN logic
 router.post('/login',
+  loginLimiter,
   storeReturnTo,
   passport.authenticate('local', {
     // successRedirect: '/campsites',
