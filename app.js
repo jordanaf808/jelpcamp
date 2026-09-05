@@ -8,7 +8,9 @@ const LocalStrategy = require('passport-local')
 const methodOverride = require('method-override')
 const flash = require('connect-flash')
 const session = require('express-session')
-const MongoStore = require('connect-mongo')
+// connect-mongo 6 ships dual ESM/CJS and no longer default-exports the class to
+// CJS callers: require() returns a namespace object, so this must be destructured.
+const {MongoStore} = require('connect-mongo')
 const mongoSanitize = require('express-mongo-sanitize')
 const helmet = require('helmet')
 
@@ -100,12 +102,15 @@ app.use(
 // seedDB();
 
 // Store the session data on MongoDB instead of in Local Memory.
-// SESSION_STORE_SECRET encrypts the session payload at rest. It is a different
-// key from SESSION_SECRET below because it does a different job, and because
-// kruptein (via connect-mongo) enforces character-class rules on this one only:
-// >=8 chars with >=2 each of uppercase, lowercase, digits and specials. A secret
-// that fails them makes every session write throw, which reads as a confusing
-// post-response error rather than a startup failure.
+// SESSION_STORE_SECRET encrypts the session payload at rest — a different job
+// from signing the cookie, so a different key.
+//
+// History worth keeping: connect-mongo 5.1.0 declared `kruptein: ^3.0.0`, which
+// floated to 3.4.0 and broke sessions twice over — a character-class gate that
+// rejected a 128-hex-char secret, and a double JSON.parse that made every read
+// throw. connect-mongo 6 pins kruptein 3.0.8, which has neither. Keep this
+// secret mixed-case with digits and symbols anyway: it costs nothing and
+// survives the pin being loosened again.
 const sessionStore = new MongoStore({
 	mongoUrl: process.env.MONGO_URI,
 	touchAfter: 24 * 60 * 60,
