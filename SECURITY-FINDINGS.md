@@ -203,10 +203,10 @@ help; it lowercases the payload but leaves it executable.
 
 ### 🟡 Session cookie: two gaps
 
-[app.js:106–117](app.js#L106-L117) is largely correct — `secret` from
-`process.env.SECRET`, `httpOnly: true`, `resave: false`,
-`saveUninitialized: false`, and a real `MongoStore` rather than `MemoryStore`.
-Two things missing:
+[app.js:106–117](app.js#L106-L117) is largely correct — `httpOnly: true`,
+`resave: false`, `saveUninitialized: false`, and a real `MongoStore` rather than
+`MemoryStore`. The secret is now split in two (2026-09-05): `SESSION_SECRET` signs
+the cookie, `SESSION_STORE_SECRET` encrypts the payload at rest. Two things missing:
 
 1. **No `secure: true`** — the session cookie will transmit over plain HTTP. Set it conditionally: `secure: process.env.NODE_ENV === 'production'`.
 2. **No `sameSite`** — add `sameSite: 'lax'` for CSRF defence-in-depth.
