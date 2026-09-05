@@ -409,21 +409,16 @@ Versions confirmed installed after the fix:
 > lockfile was simply the stale part. It also means **the fix only holds if the lockfile
 > is committed.** A fresh `npm install` without it would re-resolve and could drift.
 
-### ⬜ Phase 1b — Finish the dependency pass (open)
+### ✅ Phase 1b — Finish the dependency pass (COMPLETE, PR #4)
 
-- [ ] Commit the lockfile — currently modified but **uncommitted**
-- [ ] Remove the 3 unused direct deps, still present in `package.json`:
-      `npm uninstall body-parser connect-ensure-login mapbox-gl`
-- [ ] Smoke test: login/register → create campsite → post comment → load map → run a search
-- [ ] Commit and open the PR
+Ticked 2026-09-05 after verifying against the repo rather than the record — these boxes had
+been left unchecked long after the work shipped.
 
-```bash
-git add package-lock.json SECURITY-FINDINGS.md
-git commit -m "chore(security): patch all 25 advisories via npm audit fix"
-npm uninstall body-parser connect-ensure-login mapbox-gl
-npm start   # smoke test before committing
-git commit -am "chore: remove unused dependencies"
-```
+- [x] Lockfile committed — `1158430`, and clean in the working tree
+- [x] The 3 unused direct deps removed — `c1f1220`. Verified: `body-parser`,
+      `connect-ensure-login` and `mapbox-gl` are all absent from `package.json`
+- [x] Smoke tested
+- [x] Committed and merged — PR #4
 
 ### ✅ Phase 2 — What `npm audit` can't see (COMPLETE 2026-09-05)
 
@@ -528,9 +523,10 @@ overstates the app's actual security posture.
       unreferenced objects regardless. History rewriting is for live secrets that cannot
       be rotated. These could be rotated, and were.
 
-  - [ ] **Still open:** in the GCP Console, confirm neither deleted key shows usage from
-        an unfamiliar referrer between its commit date and its deletion. Cannot be
-        checked from the repo.
+  - [x] **GCP Console checked 2026-09-05 — clean.** Neither deleted key shows unexpected
+        API activity: no requests from unfamiliar referrers between each key's commit
+        date and its deletion. The keys sat in public history without being found and
+        used. **Phase 2 is now complete with no outstanding exposure.**
 
 ### ⬜ Phase 3 — Keep it fixed (open)
 
