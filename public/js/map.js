@@ -99,17 +99,18 @@ map.on('load', function () {
 
   // When a click event occurs on a feature in
   // the unclustered-point layer, open a popup at
-  // the location of the feature, with
-  // description HTML from its properties.
+  // the location of the feature, built from its properties.
+  //
+  // Content is assembled as DOM nodes and handed to setDOMContent, not built as
+  // an HTML string for setHTML. The name and type come from the RIDB API, so an
+  // HTML string would interpolate third-party text straight into markup. Same
+  // reason gmap.js builds its InfoWindow with textContent.
   map.on('click', 'unclustered-point', function (e) {
     var coordinates = e.features[0].geometry.coordinates.slice();
     const name = e.features[0].properties.title;
     const type = e.features[0].properties.type;
     const id = e.features[0].id;
     const geo = e.features[0].geometry.coordinates;
-    const loc = `located at <br>longitude: ${geo[0].toFixed(
-      2
-    )}&#176;,<br> latitude: ${geo[1].toFixed(2)} &#176;`;
 
     // Ensure that if the map is zoomed out such that
     // multiple copies of the feature are visible, the
@@ -118,11 +119,34 @@ map.on('load', function () {
       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
     }
 
+    const content = document.createElement('div');
+
+    const title = document.createElement('b');
+    title.style.textTransform = 'capitalize';
+    title.textContent = name;
+    content.append(title, document.createElement('hr'));
+
+    const loc = document.createElement('div');
+    loc.textContent =
+      'located at longitude: ' +
+      geo[0].toFixed(2) +
+      '°, latitude: ' +
+      geo[1].toFixed(2) +
+      '°';
+    const kind = document.createElement('div');
+    kind.textContent = 'Type: ' + type;
+    content.append(loc, kind, document.createElement('hr'));
+
+    const link = document.createElement('a');
+    // encodeURIComponent keeps a FacilityID from breaking out of the path.
+    link.href = '/campsites/show/' + encodeURIComponent(id);
+    link.className = 'btn btn-outline-primary btn-sm show-btn mapbox-btn';
+    link.textContent = 'More Information.';
+    content.append(link);
+
     new mapboxgl.Popup()
       .setLngLat(coordinates)
-      .setHTML(
-        `<b style="text-transform: capitalize;">${name}</b><hr>${loc}<br>Type: ${type}<hr><a href="/campsites/show/${id}" class="btn btn-outline-primary btn-sm show-btn mapbox-btn">More Information.</a>`
-      )
+      .setDOMContent(content)
       .addTo(map);
   });
 
