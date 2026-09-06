@@ -23,10 +23,13 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > Plus an unplanned but necessary detour: **three separate session-store failures**
 > traced to one `kruptein: ^3.0.0` range, fixed by upgrading connect-mongo to 6 (PR #7).
 >
-> **`npm audit` currently reports 3 moderate**, all `qs`, unfixable on Express 4 —
-> see Phase 4. **Part 3 (tests + CI) is untouched and is now the highest-value item
-> remaining**: every failure in this document's history was invisible to `npm audit`
-> and would have been caught by a login round-trip test.
+> **`npm audit` reports 0 vulnerabilities** as of 2026-09-06, via a `qs` override that
+> forces Express 4 past its own declared `~6.15.1` cap — a stopgap, not a fix, removed
+> when Express 5 lands. See Phase 4.
+>
+> **Part 3 (tests + CI) is untouched and is now the highest-value item remaining**:
+> every failure in this document's history was invisible to `npm audit` and would have
+> been caught by a login round-trip test.
 
 ## Summary
 
@@ -409,21 +412,16 @@ Versions confirmed installed after the fix:
 > lockfile was simply the stale part. It also means **the fix only holds if the lockfile
 > is committed.** A fresh `npm install` without it would re-resolve and could drift.
 
-### ⬜ Phase 1b — Finish the dependency pass (open)
+### ✅ Phase 1b — Finish the dependency pass (COMPLETE, PR #4)
 
-- [ ] Commit the lockfile — currently modified but **uncommitted**
-- [ ] Remove the 3 unused direct deps, still present in `package.json`:
-      `npm uninstall body-parser connect-ensure-login mapbox-gl`
-- [ ] Smoke test: login/register → create campsite → post comment → load map → run a search
-- [ ] Commit and open the PR
+Ticked 2026-09-05 after verifying against the repo rather than the record — these boxes had
+been left unchecked long after the work shipped.
 
-```bash
-git add package-lock.json SECURITY-FINDINGS.md
-git commit -m "chore(security): patch all 25 advisories via npm audit fix"
-npm uninstall body-parser connect-ensure-login mapbox-gl
-npm start   # smoke test before committing
-git commit -am "chore: remove unused dependencies"
-```
+- [x] Lockfile committed — `1158430`, and clean in the working tree
+- [x] The 3 unused direct deps removed — `c1f1220`. Verified: `body-parser`,
+      `connect-ensure-login` and `mapbox-gl` are all absent from `package.json`
+- [x] Smoke tested
+- [x] Committed and merged — PR #4
 
 ### ✅ Phase 2 — What `npm audit` can't see (COMPLETE 2026-09-05)
 
@@ -528,9 +526,10 @@ overstates the app's actual security posture.
       unreferenced objects regardless. History rewriting is for live secrets that cannot
       be rotated. These could be rotated, and were.
 
-  - [ ] **Still open:** in the GCP Console, confirm neither deleted key shows usage from
-        an unfamiliar referrer between its commit date and its deletion. Cannot be
-        checked from the repo.
+  - [x] **GCP Console checked 2026-09-05 — clean.** Neither deleted key shows unexpected
+        API activity: no requests from unfamiliar referrers between each key's commit
+        date and its deletion. The keys sat in public history without being found and
+        used. **Phase 2 is now complete with no outstanding exposure.**
 
 ### ⬜ Phase 3 — Keep it fixed (open)
 
@@ -566,13 +565,34 @@ Three new `qs` advisories ([GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/G
 unfixable on Express 4 — see the note in Part 1. This is the "EOL major means no fix
 available" scenario, arriving earlier than expected.
 
-**Stopgap NOT yet in place** (corrected 2026-09-04 — `package.json` still holds an
-empty `"overrides": {}`). `qs@6.16.0` was published `2026-08-29T23:50Z` and
-`min-release-age=7` in `~/.npmrc` blocks it until **2026-09-05 ~23:50 UTC**. That is
-the guard working; wait rather than passing `--min-release-age=0`.
+**Stopgap applied 2026-09-06:** `"overrides": { "qs": "^6.16.0" }` in `package.json`.
+`npm audit` now reports **0 vulnerabilities**, down from 3 moderate.
 
-Once it ages in, `npm pkg set overrides.qs="^6.16.0"` forces `qs` past Express 4's
-declared `~6.15.1`, so it runs a version Express was not tested against.
+`qs@6.16.0` was published `2026-08-29T23:50Z` and `min-release-age=7` in `~/.npmrc`
+blocked it until `2026-09-05T23:50:15Z`. The guard was waited out rather than bypassed
+with `--min-release-age=0`. Worth knowing: `npm view` can *see* a gated version while
+`npm install` refuses it with `ETARGET ... with a date before <cutoff>`.
+
+The override forces `qs` past Express 4's declared `~6.15.1`, so the app runs a `qs`
+version Express was **not tested against**. That is the whole reason this is debt and
+not a fix. Verified it does not break the two things `qs` actually does here —
+query-string parsing and urlencoded bodies:
+
+| Exercise | Result |
+|---|---|
+| `/campsites/search?search=&state=&limit=` | 200 |
+| array syntax `?activities[]=a&activities[]=b` | 200 |
+| bracket keys `?a[b]=1&a[c]=2`, deep `?deep[x][y][z]=1` | 200 |
+| comma values `?list=one,two,three` | 200 |
+| urlencoded POST `/login`, `/register` | 302 as expected |
+| `express-mongo-sanitize` mutating `req.query` (`?$where=1`) | 200, no crash |
+| session round trip | cookie issued, read back, flash intact |
+| `npm ci` reproduces the override | yes — matters, Render runs `npm ci` |
+
+Bracket-key and comma parsing were tested deliberately: `GHSA-x5fp-wj9c-mxmx` is an
+array-limit bypass *via bracket-key comma parsing*, so that is exactly the surface
+6.16.0 changed.
+
 **Technical debt — remove when Express 5 lands.**
 
 - [ ] **Migrate to Express 5** ([official guide](https://expressjs.com/en/guide/migrating-5.html))
