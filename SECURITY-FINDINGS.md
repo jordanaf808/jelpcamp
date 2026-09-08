@@ -127,26 +127,28 @@ Three direct dependencies aren't used at all (verified by `grep` across
 
 ### Recommended sequence
 
-**Step 2 ran on 2026-09-01 (0 vulnerabilities). Step 1 has not been run, and the
-lockfile from step 2 is still uncommitted.**
+**✅ Both steps are done and shipped** in [PR #4](https://github.com/jordanaf808/jelpcamp/pull/4)
+(`c1f1220`) — `body-parser`, `connect-ensure-login` and `mapbox-gl` are gone from
+`package.json`, and `npm audit` reports 0. Kept here as the record of what was run:
 
 ```bash
 git checkout -b security/dependency-audit
 
-# 1. remove dead weight first — smallest tree to patch     <-- NOT YET RUN
+# 1. remove dead weight first — smallest tree to patch     <-- DONE (c1f1220)
 npm uninstall body-parser connect-ensure-login mapbox-gl
 npm start                                   # verify the app still boots
 git commit -am "chore: remove unused dependencies"
 
-# 2. take the free patches                                 <-- DONE, NOT COMMITTED
+# 2. take the free patches                                 <-- DONE (c1f1220)
 npm audit fix                               # NOT --force
 npm audit                                   # expect: 0 vulnerabilities
 npm start
 git commit -am "chore(security): apply non-breaking dependency patches"
 ```
 
-Manually exercise afterward: login/register, create a campsite, post a comment,
-load the map page, and run a search.
+Manually exercise afterward: login/register, post and edit a comment, save a favourite,
+load the map page, and run a search. (There is no "create a campsite" — campsites come
+from the RIDB API and are read-only here.)
 
 ### Deferred: major upgrades
 
@@ -165,6 +167,13 @@ A `qs` override is in place as a stopgap. See **Phase 4** in the
 `npm audit` reads the lockfile. It has never read `app.js`. These findings are
 invisible to it, to Dependabot, and to the "0 vulnerabilities" message you'll
 see after Part 1.
+
+> **Snapshot of the 2026-08-31 assessment.** The headings below are written in the
+> present tense as they were found — "helmet is disabled", "no rate limiting". **Every
+> 🔴 and 🟡 finding in this Part has since been fixed and deployed** (`d39d9f3`,
+> 2026-09-08); they are kept as the record of what was wrong and why it mattered. For
+> current status always read the [Remediation checklist](#remediation-checklist), never
+> these headings.
 
 ### 🔴 Security headers are disabled
 
@@ -280,6 +289,14 @@ git log --all --full-history -- .env          # empty: never committed
 
 ### 🟢 No `engines` field, no CI, no tests
 
+**Partly resolved.** `engines` and `.nvmrc` landed in
+[PR #9](https://github.com/jordanaf808/jelpcamp/pull/9) — `package.json` now declares
+`"node": ">=22.12.0 <25"` and `.nvmrc` pins `24.14.1`, which is stricter than the
+`>=20.0.0` originally proposed here. **The tests and CI half is still open** and is all
+of Phase 3.
+
+As found:
+
 `package.json` has no `engines`, so nothing prevents running this on an EOL Node
 with unpatched runtime CVEs. Add:
 
@@ -337,7 +354,7 @@ choosing between merging blind and ignoring the bot — and an ignored bot is wo
 than no bot, because it manufactures the feeling of coverage.
 
 So the highest-leverage next step after Part 1 is not Dependabot. It's a few
-integration tests over the auth flow and campsite CRUD, plus:
+integration tests over the auth flow and comment CRUD, plus:
 
 ```yaml
 # .github/workflows/ci.yml
@@ -489,21 +506,58 @@ overstates the app's actual security posture.
       from the `^` ranges — Render built **176 packages / 4 advisories** where the
       locked tree is **156 / 3**. Every deploy before this ran a dependency tree nobody
       had tested. Build command is now `npm ci`.
-- [x] **Rate-limit auth** — done 2026-09-05. `express-rate-limit` 8.7.0 on **POST**
-      `/login` (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are
-      unlimited. Verified: attempt 11 and attempt 6 return 429 respectively, with the
-      form re-rendered and the message shown.
+- [x] **Rate-limit auth** — done 2026-09-05, **production-verified 2026-09-08**.
+      `express-rate-limit` 8.7.0 on **POST** `/login` and **POST** `/register`. GET
+      forms are unlimited. Limits were **halved on 2026-09-08** — login 10 → **5** per
+      15 min, register 5 → **3** per hour — see the multi-instance finding below.
   - Deliberately **no** `skipSuccessfulRequests` on login: passport uses
     `failureRedirect`, so a failed login returns 302 exactly like a success, and status
-    code cannot separate them. 10/15min is generous enough that a real person never
-    reaches it.
+    code cannot separate them. This means the limit counts login *actions*, not
+    failures.
   - Handler **renders** rather than redirects. `res.redirect()` overwrites statusCode
     with 302, discarding the 429 that logs and monitoring need; a 429 with a Location
     header is useless since browsers only follow 3xx.
+    **Verified live:** the 429 returns a 4.3 KB `text/html` login view carrying the
+    message, not a bare text body.
   - `trust proxy` is `1`, not `true`, so express-rate-limit's
-    `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire. Confirmed no warning at boot.
-  - **Known limits:** default in-memory store, so counters reset on deploy and are
-    per-instance if ever scaled. Per-IP keying means a shared NAT shares a budget.
+    `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire. Confirmed no warning at boot,
+    and **confirmed behaviourally in production 2026-09-08**: with both counters
+    exhausted, requests carrying a spoofed `X-Forwarded-For` still returned 429 with
+    `ratelimit-remaining: 0` rather than opening a fresh bucket. The key is the real
+    client IP and is not attacker-controlled.
+  - 🔴 **FINDING 2026-09-08 — the service runs on more than one instance, so the
+    in-memory store multiplies the effective limit.** The old note here said counters
+    would be per-instance "if ever scaled". They already are. 12 consecutive failed
+    logins produced **no** 429; the `RateLimit-*` headers showed why — `reset`
+    alternates between two independent window start times on consecutive requests,
+    with the client IP held constant (`curl -4`, so not an IPv4/IPv6 key split):
+
+    ```text
+    instance A   reset=871  ─┐  alternating request by request
+    instance B   reset=213  ─┘  effective limit = configured × instance count
+    ```
+
+    - **Impact is modest, not zero.** The pre-fix effective budget was ~20 login
+      attempts / 15 min ≈ 1,900/day against pbkdf2 — far too slow to be a practical
+      brute-force path, but not the 10 the code claimed.
+    - **Applied fix:** limits halved to 5 and 3, which corrects for an instance count
+      of **2 and only 2**. If the instance count changes these numbers are wrong again.
+    - **Durable fix, deferred:** a shared store. `rate-limit-redis` is the maintained
+      option — `rate-limit-mongo` is abandoned (last published 2022, depends on
+      `mongodb ^3.6.7`, predates the v7 Store interface). Deferred because it costs a
+      Redis instance for a modest security gain on a portfolio project.
+    - **⬜ Not yet confirmed:** the actual instance count in the Render dashboard
+      (Service → Scaling). Two counters were *observed*; two instances is the
+      inference. A 21 s cold start on `GET /` suggests free tier, which is documented
+      as single-instance — so the observation and the plan disagree and one of them is
+      wrong.
+    - **This is why `standardHeaders: true` earns its keep.** Status codes alone made
+      this look like a totally broken limiter. `RateLimit-Reset` is what distinguished
+      "broken" from "doubled".
+  - **Remaining known limits:** counters reset on deploy or restart (accepted — an
+    attacker cannot trigger a restart). Per-IP keying means a shared NAT shares a
+    budget, and since successes count too, a busy office IP can reach 5 logins/15 min
+    legitimately.
 - [x] **Google Maps keys WERE committed** — checked 2026-09-05. Two distinct keys are
       permanently in this **public** repo's history:
 
@@ -533,8 +587,26 @@ overstates the app's actual security posture.
 
 ### ⬜ Phase 3 — Keep it fixed (open)
 
-- [ ] Integration tests over auth flow + campsite CRUD (replaces the `"no test specified"` stub)
+**Prerequisite, found 2026-09-08 — `app.js` cannot be imported.** [app.js:199](app.js#L199)
+calls `app.listen()` at module load and the module has no `module.exports`, so requiring it
+starts a server and binds a port. **No integration test can reach this app until that is
+split.** It is Phase 3's first task, not an afterthought.
+
+- [ ] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
+      (`connectDB()` + `app.listen()`), then point `"start"` at `server.js`. Render runs
+      `npm start`, so that line must be right or the deploy 404s at boot
+- [ ] Integration tests over the auth flow and **comment** CRUD (replaces the
+      `"no test specified"` stub)
+  - There is **no campsite CRUD** — this checklist said so until 2026-09-08 and was wrong.
+    [routes/campsites.js](routes/campsites.js) is read-only (`/`, `/search`, `/show/:id`)
+    and proxies the RIDB API. The writes are in [routes/comments.js](routes/comments.js)
+    and [routes/users.js](routes/users.js)
+  - The campsite routes call `ridb.recreation.gov` with a live API key, so testing them at
+    all needs an HTTP interceptor (`nock`). Out of scope for the first suite; the
+    `utils/sanitizeDescription.js` unit test already covers that path's security half
 - [ ] `.github/workflows/ci.yml` with `npm ci`, `npm test`, `npm audit --audit-level=high`
+      — read the Node version from `.nvmrc` (`node-version-file`) so CI cannot drift from
+      Render
 - [ ] Enable **Dependency graph + Dependabot alerts** (do this now — free, zero noise)
 - [ ] Enable **grouped security updates** — only once CI exists
 - [ ] Add `.github/dependabot.yml` with majors ignored
@@ -644,5 +716,10 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
 
 ### The one-line summary
 
-Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 is still entirely open**,
-and it holds more real risk than all 25 combined — a live XSS sink with no CSP behind it.
+Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk than all
+25 combined** — a live XSS sink with no CSP behind it — and is now complete and deployed
+(`d39d9f3`, 2026-09-08).
+
+What remains is Phase 3, and the reason is the same one in miniature: none of the Phase 1
+or Phase 2 work is pinned by a test, so nothing stops it regressing silently — exactly as
+the session-store failures did, while `npm audit` reported zero problems throughout.
