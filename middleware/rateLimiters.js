@@ -12,25 +12,44 @@ const rateLimit = require('express-rate-limit')
 // Note the store is the default in-memory one, so counters reset on deploy or
 // restart. That is accepted: an attacker cannot trigger a restart.
 //
-// What is NOT accepted, and was wrong here until 2026-09-08: this file used to
-// claim the service "runs as a single Render instance". Production testing
-// disproved it. Requests round-robin between at least TWO instances, each with
-// its own in-memory counter — visible in the RateLimit-* headers, where the
-// `reset` value alternates between two independent window start times:
+// 🔴 OPEN BUG (2026-09-08) — THE KEY IS NOT THE CLIENT IP.
 //
-//   instance A   reset=871  ─┐  alternating on consecutive requests,
-//   instance B   reset=213  ─┘  with the client IP held constant
+// Production testing produced THREE independent counters for a single client,
+// on a service that runs exactly one instance (Render Hobby does not scale).
+// Warm service, no recent deploy, client egress IP verified stable across 8
+// samples. Eight spaced requests:
 //
-// A per-process store therefore multiplies the effective limit by the instance
-// count. The limits below are halved to compensate, which is a correction for
-// an instance count of 2 and nothing more principled than that. **If the
-// instance count changes, these numbers are wrong again** — the durable fix is
-// a shared store (`rate-limit-redis`; `rate-limit-mongo` is abandoned), which
-// is deferred only because it costs a Redis instance for a modest gain.
+//   req   1  2  3  4  5  6  7  8
+//   rem   4  4  4  3  3  2  3  2
+//         A  B  C  A  B  A  C  B    three interleaved buckets
 //
-// Verified 2026-09-08 in production: 429 fires and renders the login view, and
-// `trust proxy: 1` is correct — a spoofed X-Forwarded-For does not open a fresh
-// bucket, so the key is the real client IP and not attacker-controlled.
+// Each bucket counts down correctly. There are simply several of them, so
+// `req.ip` is resolving to something that varies per request rather than to the
+// caller.
+//
+// Most likely cause, NOT yet confirmed: this app sits behind two proxy layers —
+// Cloudflare (Render's CDN) and Render's own router. `trust proxy` is 1, so
+// Express trusts one hop and reads the second-from-right X-Forwarded-For entry,
+// which lands on the Cloudflare edge node rather than the client. Cloudflare
+// spreads traffic across edges, so the key moves.
+//
+// Two consequences, and the second is the one that matters:
+//   1. an attacker gets `limit x edge_count` attempts — the limiter is weakened
+//   2. users sharing a Cloudflare edge SHARE A BUCKET, so one person's failed
+//      logins can lock out strangers. A brute-force defence that DoSes your own
+//      users is worse than the exposure it was added to close.
+//
+// Confirm with GET /__whoami (below, env-gated) then fix the key — either
+// `trust proxy: 2`, or a keyGenerator reading CF-Connecting-IP, which
+// Cloudflare sets to the true client address. Do not tune these numbers until
+// the key is correct; tightening a shared bucket makes consequence 2 worse.
+//
+// Also verified 2026-09-08 and still true: the 429 fires and renders the login
+// view, and the key is not settable by a client-supplied X-Forwarded-For — a
+// spoofed header does not open a fresh bucket. Note that is NOT evidence the
+// key is correct: an edge-node key is equally unspoofable and equally wrong.
+// Reading it as confirmation was the mistake that produced the bad diagnosis
+// this comment replaces.
 
 // The app is server-rendered, so a bare 429 text body would be the only page on
 // the site that breaks its own conventions. Re-render the form with the message
@@ -57,14 +76,19 @@ const common = {
 // cannot separate them, and keying off the Location header would couple this
 // middleware to the route's redirect targets.
 //
-// 5 per 15 minutes, halved from 10 because two instances each keep their own
-// counter (see above), so the effective budget is ~10. Worth remembering that
-// this counts login *actions*, not failures — behind a NAT'd IP it is shared by
-// everyone on it, which is the direction from which false positives will come.
+// 10 per 15 minutes. Briefly halved to 5 on 2026-09-08 on the mistaken theory
+// that multiple instances were doubling the budget; reverted once the real
+// cause turned out to be the key (see above). Halving a bucket that is SHARED
+// between unrelated users makes collateral lockouts twice as easy, so it was
+// not merely useless but harmful.
+//
+// Worth remembering this counts login *actions*, not failures — behind a NAT'd
+// IP it is shared by everyone on it, which is the direction from which false
+// positives will come.
 const loginLimiter = rateLimit({
 	...common,
 	windowMs: 15 * 60 * 1000,
-	limit: 5,
+	limit: 10,
 	handler: renderWithMessage(
 		'login',
 		'Too many login attempts. Please wait 15 minutes and try again.',
@@ -72,12 +96,12 @@ const loginLimiter = rateLimit({
 })
 
 // Registration is stricter and over a longer window: creating accounts is rare
-// for a legitimate user and attractive for abuse. 3 per hour, halved from 5 for
-// the same two-instance reason, giving an effective ~6.
+// for a legitimate user and attractive for abuse. Back to 5 per hour, reverted
+// alongside the login limit above.
 const registerLimiter = rateLimit({
 	...common,
 	windowMs: 60 * 60 * 1000,
-	limit: 3,
+	limit: 5,
 	handler: renderWithMessage(
 		'register',
 		'Too many accounts created from this address. Please try again later.',

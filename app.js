@@ -170,6 +170,41 @@ app.use((req, res, next) => {
 	next()
 })
 
+// TEMPORARY DIAGNOSTIC — delete once the rate-limit key bug is fixed.
+//
+// Rate limiting produced three independent counters for one client on a
+// single-instance service (see middleware/rateLimiters.js). That means req.ip
+// is not resolving to the caller. This endpoint reports what Express actually
+// derives, so the correct `trust proxy` value can be read off the real header
+// chain instead of guessed.
+//
+// Off unless DIAGNOSTICS_ENABLED=1 — it discloses the proxy topology, which is
+// not secret but is of no use to anyone but us. Hit it several times: if `ip`
+// changes between calls while your own address does not, that is the bug.
+if (process.env.DIAGNOSTICS_ENABLED === '1') {
+	app.get('/__whoami', (req, res) => {
+		res.json({
+			// What express-rate-limit keys on today.
+			ip: req.ip,
+			// The chain Express considers trusted, left to right.
+			ips: req.ips,
+			trustProxy: app.get('trust proxy'),
+			headers: {
+				// The raw chain. Its length tells us the right hop count.
+				'x-forwarded-for': req.headers['x-forwarded-for'] ?? null,
+				// Cloudflare sets this to the true client address regardless of
+				// hop count — the robust key if trust proxy stays ambiguous.
+				'cf-connecting-ip': req.headers['cf-connecting-ip'] ?? null,
+				'true-client-ip': req.headers['true-client-ip'] ?? null,
+				'x-real-ip': req.headers['x-real-ip'] ?? null,
+			},
+			// Differs per instance. Constant across calls => one instance, which
+			// rules out the multi-instance explanation for good.
+			renderInstanceId: process.env.RENDER_INSTANCE_ID ?? null,
+		})
+	})
+}
+
 app.use(indexRoutes)
 app.use('/user', userRoutes)
 app.use('/campsites/:id/comments', commentsRoutes)

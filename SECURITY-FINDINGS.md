@@ -506,10 +506,12 @@ overstates the app's actual security posture.
       from the `^` ranges — Render built **176 packages / 4 advisories** where the
       locked tree is **156 / 3**. Every deploy before this ran a dependency tree nobody
       had tested. Build command is now `npm ci`.
-- [x] **Rate-limit auth** — done 2026-09-05, **production-verified 2026-09-08**.
-      `express-rate-limit` 8.7.0 on **POST** `/login` and **POST** `/register`. GET
-      forms are unlimited. Limits were **halved on 2026-09-08** — login 10 → **5** per
-      15 min, register 5 → **3** per hour — see the multi-instance finding below.
+- [~] **Rate-limit auth** — shipped 2026-09-05, **production-verified 2026-09-08 and
+      found to have an open bug**. `express-rate-limit` 8.7.0 on **POST** `/login`
+      (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are unlimited.
+      The middleware works; **the key it counts by does not identify the client** —
+      see the open bug below. Limits were briefly halved to 5/3 on a wrong diagnosis
+      and have been reverted.
   - Deliberately **no** `skipSuccessfulRequests` on login: passport uses
     `failureRedirect`, so a failed login returns 302 exactly like a success, and status
     code cannot separate them. This means the limit counts login *actions*, not
@@ -520,40 +522,73 @@ overstates the app's actual security posture.
     **Verified live:** the 429 returns a 4.3 KB `text/html` login view carrying the
     message, not a bare text body.
   - `trust proxy` is `1`, not `true`, so express-rate-limit's
-    `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire. Confirmed no warning at boot,
-    and **confirmed behaviourally in production 2026-09-08**: with both counters
-    exhausted, requests carrying a spoofed `X-Forwarded-For` still returned 429 with
-    `ratelimit-remaining: 0` rather than opening a fresh bucket. The key is the real
-    client IP and is not attacker-controlled.
-  - 🔴 **FINDING 2026-09-08 — the service runs on more than one instance, so the
-    in-memory store multiplies the effective limit.** The old note here said counters
-    would be per-instance "if ever scaled". They already are. 12 consecutive failed
-    logins produced **no** 429; the `RateLimit-*` headers showed why — `reset`
-    alternates between two independent window start times on consecutive requests,
-    with the client IP held constant (`curl -4`, so not an IPv4/IPv6 key split):
+    `ERR_ERL_PERMISSIVE_TRUST_PROXY` check does not fire — but **note that neither of
+    the library's proxy validations catches this app's actual problem.** They fire only
+    for `trust proxy: false` and `trust proxy: true`; a value of `1` that is simply too
+    low for the real hop count passes silently. Server logs will not surface it.
+    A spoofed `X-Forwarded-For` does **not** open a fresh bucket, so the key is not
+    attacker-controlled — which is necessary but nowhere near sufficient. See the open
+    bug below.
+  - 🔴 **OPEN BUG 2026-09-08 — the rate-limit key is not the client IP.**
+    12 consecutive failed logins produced no 429. Investigation went through two
+    wrong diagnoses before landing; both are recorded below because the reasoning
+    errors are the transferable part.
+
+    **The evidence.** A clean run — warm service, no recent deploy, client egress
+    IP verified stable across 8 samples, Render **Hobby** tier which does not scale
+    past one instance — still produced **three** independent counters for one
+    caller:
 
     ```text
-    instance A   reset=871  ─┐  alternating request by request
-    instance B   reset=213  ─┘  effective limit = configured × instance count
+    req   1  2  3  4  5  6  7  8
+    rem   4  4  4  3  3  2  3  2
+          A  B  C  A  B  A  C  B     three interleaved buckets
     ```
 
-    - **Impact is modest, not zero.** The pre-fix effective budget was ~20 login
-      attempts / 15 min ≈ 1,900/day against pbkdf2 — far too slow to be a practical
-      brute-force path, but not the 10 the code claimed.
-    - **Applied fix:** limits halved to 5 and 3, which corrects for an instance count
-      of **2 and only 2**. If the instance count changes these numbers are wrong again.
-    - **Durable fix, deferred:** a shared store. `rate-limit-redis` is the maintained
-      option — `rate-limit-mongo` is abandoned (last published 2022, depends on
-      `mongodb ^3.6.7`, predates the v7 Store interface). Deferred because it costs a
-      Redis instance for a modest security gain on a portfolio project.
-    - **⬜ Not yet confirmed:** the actual instance count in the Render dashboard
-      (Service → Scaling). Two counters were *observed*; two instances is the
-      inference. A 21 s cold start on `GET /` suggests free tier, which is documented
-      as single-instance — so the observation and the plan disagree and one of them is
-      wrong.
-    - **This is why `standardHeaders: true` earns its keep.** Status codes alone made
-      this look like a totally broken limiter. `RateLimit-Reset` is what distinguished
-      "broken" from "doubled".
+    Each bucket counts down correctly. There are simply several, so `req.ip` is
+    resolving to something that varies per request rather than to the caller.
+
+    **Mechanism, reproduced locally.** With `trust proxy: 1`, Express takes the
+    **last** `X-Forwarded-For` entry. Verified against this app:
+
+    | XFF chain | `req.ip` | |
+    |---|---|---|
+    | `9.9.9.9` | `9.9.9.9` | ✅ the client |
+    | `9.9.9.9, 8.8.8.8` | `8.8.8.8` | ❌ a proxy |
+    | `9.9.9.9, 8.8.8.8, 7.7.7.7` | `7.7.7.7` | ❌ a proxy |
+
+    This app sits behind **two** proxy layers — Cloudflare (Render's CDN) and
+    Render's router — so the key lands on the Cloudflare edge node. Cloudflare
+    spreads traffic across edges, so the key moves request to request.
+    **Not yet confirmed in production** — that is what `/__whoami` is for.
+
+    - **Impact.** Two consequences, and the second is the one that matters:
+      1. an attacker gets `limit × edge_count` attempts — the limiter is weakened
+      2. **users sharing a Cloudflare edge share a bucket**, so one person's failed
+         logins can lock out strangers. A brute-force defence that DoSes your own
+         users is worse than the exposure it was added to close
+    - **Fix, once `/__whoami` reports the real chain:** either raise `trust proxy`
+      to the true hop count, or use a `keyGenerator` reading `CF-Connecting-IP`,
+      which Cloudflare sets to the true client address regardless of hop count.
+      **Do not tune the limits until the key is correct** — tightening a shared
+      bucket makes consequence 2 worse.
+    - ~~**Wrong diagnosis #1:** multiple instances, each with its own in-memory
+      store, doubling the effective limit.~~ Ruled out: Hobby tier runs one
+      instance, and a *third* bucket appeared mid-test. Acted on prematurely —
+      limits were halved to 5/3 in `105bfaa` and **reverted here**, because
+      halving a *shared* bucket makes collateral lockouts twice as easy.
+    - ~~**Wrong diagnosis #2:** `trust proxy: 1` is correct because a spoofed
+      `X-Forwarded-For` does not open a fresh bucket.~~ That observation is true
+      but proves nothing: an edge-node key is *equally* unspoofable and *entirely*
+      wrong. Both facts share one cause, and consistency was read as confirmation.
+    - **Method note.** Two boring explanations should have been eliminated first
+      and were not: the client IP rotating (checked — stable) and testing during a
+      deploy overlap (true, and it contaminated the strongest evidence). Eliminate
+      measurement artifacts before theorising about the system.
+    - **This is why `standardHeaders: true` earns its keep.** Status codes alone
+      made this look like a totally broken limiter. `RateLimit-Reset` and
+      `RateLimit-Remaining` are what exposed the bucket structure.
+
   - **Remaining known limits:** counters reset on deploy or restart (accepted — an
     attacker cannot trigger a restart). Per-IP keying means a shared NAT shares a
     budget, and since successes count too, a busy office IP can reach 5 logins/15 min
@@ -607,6 +642,8 @@ split.** It is Phase 3's first task, not an afterthought.
 - [ ] `.github/workflows/ci.yml` with `npm ci`, `npm test`, `npm audit --audit-level=high`
       — read the Node version from `.nvmrc` (`node-version-file`) so CI cannot drift from
       Render
+- [ ] **Fix the rate-limit key** and delete the `/__whoami` diagnostic — see the open
+      bug under "Rate-limit auth" above. This one is live in production
 - [ ] Enable **Dependency graph + Dependabot alerts** (do this now — free, zero noise)
 - [ ] Enable **grouped security updates** — only once CI exists
 - [ ] Add `.github/dependabot.yml` with majors ignored
