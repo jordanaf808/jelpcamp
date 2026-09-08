@@ -506,12 +506,12 @@ overstates the app's actual security posture.
       from the `^` ranges — Render built **176 packages / 4 advisories** where the
       locked tree is **156 / 3**. Every deploy before this ran a dependency tree nobody
       had tested. Build command is now `npm ci`.
-- [~] **Rate-limit auth** — shipped 2026-09-05, **production-verified 2026-09-08 and
-      found to have an open bug**. `express-rate-limit` 8.7.0 on **POST** `/login`
+- [x] **Rate-limit auth** — shipped 2026-09-05; a key bug was found and **fixed
+      2026-09-08**. `express-rate-limit` 8.7.0 on **POST** `/login`
       (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are unlimited.
-      The middleware works; **the key it counts by does not identify the client** —
-      see the open bug below. Limits were briefly halved to 5/3 on a wrong diagnosis
-      and have been reverted.
+      The middleware always worked; **the key it counted by did not identify the
+      client** until `trust proxy` was corrected to 3 — see below. Limits were
+      briefly halved to 5/3 on a wrong diagnosis and have been reverted.
   - Deliberately **no** `skipSuccessfulRequests` on login: passport uses
     `failureRedirect`, so a failed login returns 302 exactly like a success, and status
     code cannot separate them. This means the limit counts login *actions*, not
@@ -529,65 +529,84 @@ overstates the app's actual security posture.
     A spoofed `X-Forwarded-For` does **not** open a fresh bucket, so the key is not
     attacker-controlled — which is necessary but nowhere near sufficient. See the open
     bug below.
-  - 🔴 **OPEN BUG 2026-09-08 — the rate-limit key is not the client IP.**
-    12 consecutive failed logins produced no 429. Investigation went through two
-    wrong diagnoses before landing; both are recorded below because the reasoning
-    errors are the transferable part.
+  - ✅ **FIXED 2026-09-08 — the rate-limit key was a Render-internal address, not
+    the client.** 12 consecutive failed logins produced no 429. Confirmed in
+    production with a temporary `/__whoami` endpoint, now removed.
 
-    **The evidence.** A clean run — warm service, no recent deploy, client egress
-    IP verified stable across 8 samples, Render **Hobby** tier which does not scale
-    past one instance — still produced **three** independent counters for one
-    caller:
+    **The measured chain:**
+
+    ```text
+    X-Forwarded-For: 216.163.65.232, 104.23.251.43, 10.194.193.7
+                     └─ the client   └─ Cloudflare   └─ Render's internal router
+    req.ip (trust proxy: 1) = 10.194.193.7          ← the LAST entry
+    ```
+
+    `trust proxy: n` does not mean "trust n proxies and find the client". It means
+    "walk n entries back from the right of `X-Forwarded-For`". Those coincide only
+    when `n` equals the real chain length — which is **3** here, not 1.
+
+    **Why it produced multiple buckets.** Those `10.x` routers rotate across a
+    pool. Ten sampled calls returned three distinct addresses
+    (`10.194.193.7`, `10.197.58.164`, `10.199.46.133`) while `cf-connecting-ip`
+    stayed constant and `RENDER_INSTANCE_ID` never changed — one instance, three
+    keys. That matches the three interleaved counters seen from outside:
 
     ```text
     req   1  2  3  4  5  6  7  8
     rem   4  4  4  3  3  2  3  2
-          A  B  C  A  B  A  C  B     three interleaved buckets
+          A  B  C  A  B  A  C  B     three buckets, not one countdown
     ```
 
-    Each bucket counts down correctly. There are simply several, so `req.ip` is
-    resolving to something that varies per request rather than to the caller.
+    - **Impact while live.** The limiter bucketed **every visitor** by which
+      routing pod served them, not by who they were. The whole site shared roughly
+      three buckets, so one person's failed logins could lock out strangers, and an
+      attacker got `limit × pool_size` attempts. A brute-force defence that DoSes
+      its own users is worse than the exposure it was added to close.
+    - **The fix:** `trust proxy: 3` in [app.js](app.js). Verified against the real
+      chain — one client now gets **one** bucket, counting down `9,8,7,6,5` across
+      all three router addresses where it previously started a fresh bucket at 9
+      for each.
+    - **Why not `trust proxy: true`:** it takes the **leftmost** entry, which is
+      client-supplied. Tested against the real chain, `true` returns an attacker's
+      injected value while `3` returns the client. Counting from the right is
+      spoof-safe because Cloudflare inserts the true address at a fixed position;
+      prepended entries shift left and are ignored.
 
-    **Mechanism, reproduced locally.** With `trust proxy: 1`, Express takes the
-    **last** `X-Forwarded-For` entry. Verified against this app:
+      | `trust proxy` | resolves to | correct | spoof-safe |
+      |---|---|---|---|
+      | `1` (was) | `10.194.193.7` | ❌ | — |
+      | `2` | `104.23.251.43` | ❌ | — |
+      | **`3`** | **client** | ✅ | ✅ |
+      | `uniquelocal` | `127.0.0.1` | ❌ | — |
+      | `true` | client | ✅ | ❌ returns injected value |
 
-    | XFF chain | `req.ip` | |
-    |---|---|---|
-    | `9.9.9.9` | `9.9.9.9` | ✅ the client |
-    | `9.9.9.9, 8.8.8.8` | `8.8.8.8` | ❌ a proxy |
-    | `9.9.9.9, 8.8.8.8, 7.7.7.7` | `7.7.7.7` | ❌ a proxy |
-
-    This app sits behind **two** proxy layers — Cloudflare (Render's CDN) and
-    Render's router — so the key lands on the Cloudflare edge node. Cloudflare
-    spreads traffic across edges, so the key moves request to request.
-    **Not yet confirmed in production** — that is what `/__whoami` is for.
-
-    - **Impact.** Two consequences, and the second is the one that matters:
-      1. an attacker gets `limit × edge_count` attempts — the limiter is weakened
-      2. **users sharing a Cloudflare edge share a bucket**, so one person's failed
-         logins can lock out strangers. A brute-force defence that DoSes your own
-         users is worse than the exposure it was added to close
-    - **Fix, once `/__whoami` reports the real chain:** either raise `trust proxy`
-      to the true hop count, or use a `keyGenerator` reading `CF-Connecting-IP`,
-      which Cloudflare sets to the true client address regardless of hop count.
-      **Do not tune the limits until the key is correct** — tightening a shared
-      bucket makes consequence 2 worse.
+    - ⚠️ **This number is tied to the deployment topology.** If Render or Cloudflare
+      change the hop count it breaks silently. **Neither** express-rate-limit
+      validation catches it: `ERR_ERL_PERMISSIVE_TRUST_PROXY` fires only for `true`,
+      `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` only for `false`. A value that is merely
+      *too low* passes without a warning. Re-measure after any platform change.
+    - **Why local testing could never have caught this.** With no proxy in front,
+      `trust proxy: 1` and `trust proxy: 3` behave identically. The bug lives
+      entirely in the gap between the dev topology and the production one — worth
+      remembering when Phase 3's test suite arrives, because it will not catch this
+      class of bug either.
     - ~~**Wrong diagnosis #1:** multiple instances, each with its own in-memory
       store, doubling the effective limit.~~ Ruled out: Hobby tier runs one
-      instance, and a *third* bucket appeared mid-test. Acted on prematurely —
-      limits were halved to 5/3 in `105bfaa` and **reverted here**, because
-      halving a *shared* bucket makes collateral lockouts twice as easy.
+      instance, `RENDER_INSTANCE_ID` was constant, and a *third* bucket appeared
+      mid-test. Acted on prematurely — limits were halved to 5/3 in `105bfaa` and
+      reverted, because halving a *shared* bucket makes collateral lockouts easier.
     - ~~**Wrong diagnosis #2:** `trust proxy: 1` is correct because a spoofed
-      `X-Forwarded-For` does not open a fresh bucket.~~ That observation is true
-      but proves nothing: an edge-node key is *equally* unspoofable and *entirely*
+      `X-Forwarded-For` does not open a fresh bucket.~~ True observation, no
+      evidential value: a router-address key is *equally* unspoofable and *entirely*
       wrong. Both facts share one cause, and consistency was read as confirmation.
-    - **Method note.** Two boring explanations should have been eliminated first
-      and were not: the client IP rotating (checked — stable) and testing during a
-      deploy overlap (true, and it contaminated the strongest evidence). Eliminate
-      measurement artifacts before theorising about the system.
-    - **This is why `standardHeaders: true` earns its keep.** Status codes alone
-      made this look like a totally broken limiter. `RateLimit-Reset` and
-      `RateLimit-Remaining` are what exposed the bucket structure.
+    - **Method note.** Two boring explanations should have been eliminated first:
+      the client IP rotating (checked — stable across 8 samples) and testing during
+      a deploy overlap (true, and it contaminated the strongest evidence). Eliminate
+      measurement artifacts before theorising about the system. The thing that
+      finally worked was reading `req.ip` directly instead of inferring it.
+    - **`standardHeaders: true` is what made this findable.** Status codes alone
+      made it look like a totally broken limiter. `RateLimit-Remaining` returning
+      `4,4,4` for three consecutive requests is what exposed the bucket structure.
 
   - **Remaining known limits:** counters reset on deploy or restart (accepted — an
     attacker cannot trigger a restart). Per-IP keying means a shared NAT shares a
@@ -642,8 +661,6 @@ split.** It is Phase 3's first task, not an afterthought.
 - [ ] `.github/workflows/ci.yml` with `npm ci`, `npm test`, `npm audit --audit-level=high`
       — read the Node version from `.nvmrc` (`node-version-file`) so CI cannot drift from
       Render
-- [ ] **Fix the rate-limit key** and delete the `/__whoami` diagnostic — see the open
-      bug under "Rate-limit auth" above. This one is live in production
 - [ ] Enable **Dependency graph + Dependabot alerts** (do this now — free, zero noise)
 - [ ] Enable **grouped security updates** — only once CI exists
 - [ ] Add `.github/dependabot.yml` with majors ignored
