@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # ─── Application dependencies ──────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+    # Two groups, so a security fix never arrives buried inside a routine bump.
+    # The security group is worth interrupting work for; the routine one can wait
+    # for a quiet moment.
+    #
+    # The two `update-types` vocabularies below are NOT interchangeable: `groups`
+    # takes patch/minor/major, `ignore` takes version-update:semver-*. Using the
+    # wrong one is accepted and silently does nothing.
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns: ['*']
+      routine-updates:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: [minor, patch]
+
+    # Majors are deliberate work, not a bot's call. mongoose 7 -> 9, express
+    # 4 -> 5 and ejs 3 -> 6 each change behaviour and each earns its own PR with
+    # its own verification — that is Phase 4 in SECURITY-FINDINGS.md.
+    #
+    # GitHub's docs do not state whether `ignore` also suppresses a SECURITY
+    # update that happens to need a major bump. Assume it might. That is
+    # acceptable here only because `npm audit --audit-level=high` runs in CI and
+    # does not go through Dependabot at all: if a fix is ever withheld by this
+    # rule, the build goes red anyway. Two independent paths, which is the whole
+    # reason CI came first.
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
+
+    # The repo uses Conventional Commits; Dependabot's default subject does not.
+    commit-message:
+      prefix: chore
+
+  # ─── The workflow's own actions ────────────────────────────────────────────
+  # A pinned action is a supply-chain dependency like any other, and nothing else
+  # is watching these. Majors are deliberately NOT ignored here, unlike npm above:
+  # CI is the only consumer, so a breaking bump fails loudly on its own PR and
+  # reverts in one click. The risk that justifies caution with mongoose does not
+  # apply to a checkout action.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: chore
