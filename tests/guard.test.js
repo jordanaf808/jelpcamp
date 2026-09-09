@@ -20,6 +20,28 @@ test('refuses an Atlas URI outright', () => {
 	assert.throws(() => g.assertNotTheEnvFileDatabase(PROD), /remote host or credentials/)
 })
 
+// Regression test for the fail-open bug CI found on 2026-09-09, and deliberately
+// environment-blind: it calls the unconditional check directly, so it behaves
+// identically on a machine with .env and one without.
+//
+// The test above cannot do that job on its own. It goes through
+// assertNotTheEnvFileDatabase, which reads the filesystem — so before the fix it
+// passed here (where .env exists) and failed on CI (where it does not). A guard
+// test that only fires in some environments is the thing being guarded against.
+test('refuses a remote URI through the unconditional check alone', () => {
+	const g = fresh()
+	assert.throws(() => g.assertNoRemoteHostOrCredentials(PROD), /remote host or credentials/)
+	assert.throws(
+		() => g.assertNoRemoteHostOrCredentials('mongodb://user:pw@10.0.0.5:27017/prod'),
+		/remote host or credentials/,
+	)
+	// ...and lets a genuine ephemeral URI through, so it is not just always throwing.
+	assert.strictEqual(
+		g.assertNoRemoteHostOrCredentials('mongodb://127.0.0.1:31337/yelpcamp_test'),
+		true,
+	)
+})
+
 test('refuses the URI that .env actually contains', () => {
 	const g = fresh()
 	const fs = require('fs')
