@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit')
+const {MemoryStore} = rateLimit
 
 // Rate limiters for the authentication endpoints.
 //
@@ -9,8 +10,16 @@ const rateLimit = require('express-rate-limit')
 // Only the POST routes are limited. Rendering the GET forms is harmless and
 // throttling it would just break normal browsing.
 //
-// Note the store is the default in-memory one, so counters reset on deploy or
-// restart. That is accepted: an attacker cannot trigger a restart.
+// The store is in-memory, so counters reset on deploy or restart. That is
+// accepted: an attacker cannot trigger a restart. (`rate-limit-mongo` is
+// abandoned and predates the v7 Store interface; `rate-limit-redis` is the
+// maintained option if this ever needs to survive a restart.)
+//
+// It is constructed EXPLICITLY rather than left to default so tests can call
+// `resetAll()` between cases. Every test hits from the same loopback address, so
+// without that the eleventh request of the suite 429s regardless of which test
+// sent it. Resetting the store is key-agnostic and leaves the limiter live, so
+// the 429 is still exercised rather than switched off.
 //
 // ✅ FIXED 2026-09-08 — the key used to be a Render-internal address.
 //
@@ -73,8 +82,11 @@ const common = {
 // Worth remembering this counts login *actions*, not failures — behind a NAT'd
 // IP it is shared by everyone on it, which is the direction from which false
 // positives will come.
+const loginStore = new MemoryStore()
+
 const loginLimiter = rateLimit({
 	...common,
+	store: loginStore,
 	windowMs: 15 * 60 * 1000,
 	limit: 10,
 	handler: renderWithMessage(
@@ -86,8 +98,11 @@ const loginLimiter = rateLimit({
 // Registration is stricter and over a longer window: creating accounts is rare
 // for a legitimate user and attractive for abuse. Back to 5 per hour, reverted
 // alongside the login limit above.
+const registerStore = new MemoryStore()
+
 const registerLimiter = rateLimit({
 	...common,
+	store: registerStore,
 	windowMs: 60 * 60 * 1000,
 	limit: 5,
 	handler: renderWithMessage(
@@ -96,4 +111,6 @@ const registerLimiter = rateLimit({
 	),
 })
 
-module.exports = {loginLimiter, registerLimiter}
+// The stores are exported for tests only; nothing in the request path uses them.
+// Same rationale as `app.set('sessionStore', ...)` in app.js.
+module.exports = {loginLimiter, registerLimiter, loginStore, registerStore}
