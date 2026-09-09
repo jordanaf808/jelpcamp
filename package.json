@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "start": "node server.js"
   },
   "author": "Jordan",
@@ -36,5 +36,9 @@
   },
   "engines": {
     "node": ">=22.12.0 <25"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "11.2.0",
+    "supertest": "7.2.2"
   }
 }
