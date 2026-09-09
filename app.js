@@ -148,10 +148,36 @@ const sessionConfig = {
 // Required by `secure` above. Render terminates TLS at its proxy and forwards
 // plain HTTP internally, so Express sees an insecure connection and would refuse
 // to set a secure cookie — silently breaking login in production while working
-// perfectly on localhost. Trusting one proxy hop makes req.secure read
-// X-Forwarded-Proto instead. The value is 1, not `true`: trust exactly the hop
-// Render controls, so a client cannot spoof the header through additional hops.
-app.set('trust proxy', 1)
+// perfectly on localhost. Trusting proxy hops makes req.secure read
+// X-Forwarded-Proto instead.
+//
+// The value is 3, and it must match the REAL hop count. `trust proxy: n` does
+// not mean "trust n proxies and find the client" — it means "walk n entries back
+// from the right of X-Forwarded-For". Those coincide only when n equals the
+// actual chain length. Measured in production 2026-09-08:
+//
+//   X-Forwarded-For: 216.163.65.232, 104.23.251.43, 10.194.193.7
+//                    └─ the client   └─ Cloudflare   └─ Render's internal router
+//                    ^^^^^^^^^^^^^^ 3rd from the right
+//
+// This was `1` until 2026-09-08, which resolved req.ip to the Render-internal
+// 10.x address. Those rotate across a small pool — three were observed
+// (10.194.193.7, 10.197.58.164, 10.199.46.133) — so express-rate-limit keyed
+// every visitor by which routing pod served them. The whole site shared roughly
+// three buckets, and one person's failed logins could lock out strangers.
+// See SECURITY-FINDINGS.md for the full write-up.
+//
+// Why not `true`: it takes the LEFTMOST entry, which is client-supplied, so
+// anyone can spoof it. Verified against the real chain — `true` returns an
+// attacker's injected value, `3` returns the client. Counting from the right
+// works because Cloudflare inserts the true client address at a fixed position;
+// entries an attacker prepends shift left and are ignored.
+//
+// ⚠️ This number is tied to the deployment topology. If Render or Cloudflare
+// change the hop count it breaks silently — neither express-rate-limit
+// validation catches a value that is merely too low. Re-measure after any
+// platform change.
+app.set('trust proxy', 3)
 
 //PASSPORT configuration
 app.use(session(sessionConfig))
@@ -169,41 +195,6 @@ app.use((req, res, next) => {
 	res.locals.success = req.flash('success')
 	next()
 })
-
-// TEMPORARY DIAGNOSTIC — delete once the rate-limit key bug is fixed.
-//
-// Rate limiting produced three independent counters for one client on a
-// single-instance service (see middleware/rateLimiters.js). That means req.ip
-// is not resolving to the caller. This endpoint reports what Express actually
-// derives, so the correct `trust proxy` value can be read off the real header
-// chain instead of guessed.
-//
-// Off unless DIAGNOSTICS_ENABLED=1 — it discloses the proxy topology, which is
-// not secret but is of no use to anyone but us. Hit it several times: if `ip`
-// changes between calls while your own address does not, that is the bug.
-if (process.env.DIAGNOSTICS_ENABLED === '1') {
-	app.get('/__whoami', (req, res) => {
-		res.json({
-			// What express-rate-limit keys on today.
-			ip: req.ip,
-			// The chain Express considers trusted, left to right.
-			ips: req.ips,
-			trustProxy: app.get('trust proxy'),
-			headers: {
-				// The raw chain. Its length tells us the right hop count.
-				'x-forwarded-for': req.headers['x-forwarded-for'] ?? null,
-				// Cloudflare sets this to the true client address regardless of
-				// hop count — the robust key if trust proxy stays ambiguous.
-				'cf-connecting-ip': req.headers['cf-connecting-ip'] ?? null,
-				'true-client-ip': req.headers['true-client-ip'] ?? null,
-				'x-real-ip': req.headers['x-real-ip'] ?? null,
-			},
-			// Differs per instance. Constant across calls => one instance, which
-			// rules out the multi-instance explanation for good.
-			renderInstanceId: process.env.RENDER_INSTANCE_ID ?? null,
-		})
-	})
-}
 
 app.use(indexRoutes)
 app.use('/user', userRoutes)
