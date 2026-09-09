@@ -1,8 +1,19 @@
+// This module BUILDS and EXPORTS the Express app. It deliberately does not
+// listen, and does not connect to the database — server.js does both. Keeping
+// those side effects out means a test can `require('./app')` without starting a
+// server or binding a port, which was impossible before 2026-09-08.
+//
+// Note that `sessionStore` below is constructed at module load from
+// process.env.MONGO_URI, so any caller (a test, in particular) must set its
+// environment BEFORE requiring this file. dotenv does not overwrite variables
+// that are already set, so an explicit value always wins.
+//
+// Also note dotenv resolves `.env` relative to the CURRENT WORKING DIRECTORY,
+// not to this file. Requiring this module from elsewhere without setting the
+// environment first fails at the MongoStore constructor, not at the require.
 require('dotenv').config()
-const port = process.env.PORT || 3000
 const express = require('express')
 const app = express()
-const mongoose = require('mongoose')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const methodOverride = require('method-override')
@@ -26,9 +37,6 @@ const commentsRoutes = require('./routes/comments')
 
 // Utils
 const ExpressError = require('./utils/ExpressError')
-const connectDB = require('./utils/connectDB')
-
-connectDB()
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.static(__dirname + '/public'))
@@ -222,24 +230,15 @@ app.use((err, req, res, next) => {
 	res.status(statusCode).send(err.message)
 })
 
-const server = app.listen(process.env.PORT || 3000)
+// The session store opens its own MongoClient at construction, which keeps the
+// event loop alive — `node --test` hangs on it otherwise. Expose it so a test
+// teardown can close it; nothing in the request path uses this.
+//
+// Teardown ordering matters: connect-mongo creates its TTL index lazily on first
+// use, so closing the store while that is still in flight throws
+// MongoExpiredSessionError out of Collection.createIndex. Let the first request
+// settle before closing, or swallow that specific error. Production never hits
+// this because production never closes the store.
+app.set('sessionStore', sessionStore)
 
-// // Kill App On SIGTERM
-// process.on('SIGTERM', () => {
-//   console.info('SIGTERM signal received.');
-//   console.log('Closing http server.');
-//   server.close(() => {
-//     console.log('Http server closed.');
-//     // boolean means [force],
-//     mongoose.connection.close(false, () => {
-//       console.log('MongoDb connection closed.');
-// 			// NodeJS will exit when the EventLoop queue is empty and there is nothing left to do.
-// 			// But sometimes, your application can have more functions and will not exit automatically.
-// 			// We need to exit from the process using process.exit function.
-// 			// 0 means exit with a "success" code.
-//       process.exit(0);
-//     });
-//   });
-// });
-
-console.log(`YelpCamp listening at ${port}`)
+module.exports = app
