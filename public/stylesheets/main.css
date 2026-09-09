@@ -77,8 +77,28 @@ button:focus {
   height: 100vh;
 }
 
-.alert {
-  margin-top: 51px;
+/* Flash messages float above the page rather than pushing it down. The
+   container is fixed, so it takes part in no layout at all — previously an
+   alert was a normal-flow block and every element below it shifted down by
+   the alert's height the moment one appeared. */
+.flash-stack {
+  position: fixed;
+  top: 51px; /* clears the fixed-top navbar, same offset as .main-body */
+  left: 50%;
+  transform: translateX(-50%);
+  /* Above Bootstrap 4's fixed-top navbar (1030), below its modal
+     backdrop (1040) so a future modal is never covered by a toast. */
+  z-index: 1035;
+  width: min(100% - 2rem, 34rem);
+  /* The container spans the viewport width but is mostly empty space, so it
+     must not swallow clicks meant for the page underneath. */
+  pointer-events: none;
+}
+
+.flash-stack .alert {
+  margin-top: 0;
+  pointer-events: auto; /* the alert itself stays clickable */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .main-body {
