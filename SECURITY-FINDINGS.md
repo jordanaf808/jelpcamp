@@ -5,7 +5,7 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-05**
+> **Status — updated 2026-09-09**
 >
 > **Parts 1 and 2 are both done and on `main`.** Phase 1 cleared all 25 advisories;
 > Phase 2 — the findings `npm audit` cannot see, and the ones this document argued
@@ -27,9 +27,19 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > forces Express 4 past its own declared `~6.15.1` cap — a stopgap, not a fix, removed
 > when Express 5 lands. See Phase 4.
 >
-> **Part 3 (tests + CI) is untouched and is now the highest-value item remaining**:
-> every failure in this document's history was invisible to `npm audit` and would have
-> been caught by a login round-trip test.
+> **Part 3 is now half done.** The app split (PR #17) and the test harness (PR #18)
+> both landed; `npm test` runs **8 passing tests**, the first this app has ever had.
+> **CI + Dependabot is the only thing left in Phase 3** — and until it exists, nothing
+> runs those tests except a human who remembers to.
+>
+> That gap is the same one this document has been describing all along: every failure
+> in its history was invisible to `npm audit`, and a test suite nobody runs
+> automatically is only marginally better than no suite at all.
+>
+> **Also on 2026-09-09:** the three-apps-one-database problem is fixed. v12 now uses
+> `wandur` in both local and production, v13 uses `yelpcamp_v13`, and `storybooks`
+> reverts to being NodeAppFromScratch's own database (plus a frozen v12 rollback copy).
+> See [HANDOFF.md](HANDOFF.md) for the copy procedure and the cutover verification.
 
 ## Summary
 
@@ -287,13 +297,104 @@ git log --all --full-history -p -S 'AIza' -- . | grep -oE 'AIza[0-9A-Za-z_-]{35}
 git log --all --full-history -- .env          # empty: never committed
 ```
 
+### 🟡 A devDependency install can move a production dependency (found 2026-09-09)
+
+`connect-mongo` declares `mongodb` as a **peer dependency** with an unbounded range:
+
+```json
+"peerDependencies": { "mongodb": ">=5.0.0", "express-session": "^1.17.1" }
+```
+
+npm satisfies a peer from whatever is hoisted at the top of the tree, so the version is
+decided by everything else installed — not by anything in this project's `dependencies`.
+Installing `mongodb-memory-server` as a **devDependency** (it requires `mongodb@^7.2.0`)
+therefore moved the production session store's driver:
+
+```text
+mongodb                      6.21.0 -> 7.6.0     under connect-mongo
+bson                         6.10.4 -> 7.3.2     serialization, under the session store
+mongodb-connection-string-url 3.0.2 -> 7.0.2
+@types/whatwg-url             11.0.5 -> 13.0.0
+```
+
+`npm audit` reported **0 vulnerabilities** before and after. No line of `package.json`
+changed to cause it.
+
+**Verified safe before merging**, rather than assumed: a session written by the old
+stack (mongodb 6.21.0 / bson 6.10.4) reads back under the new one and vice versa, with
+kruptein encryption active — then confirmed against real Atlas by a login round trip
+after deploy. Mongoose is unaffected; it keeps its own nested `mongodb@5.9.2`.
+
+**Why it belongs in this document:** it is the same failure shape as the `kruptein`
+outages — an unpinned range under the session store, invisible to `npm audit` — and the
+mechanism will fire again on the next install that re-resolves the tree. **This is an
+argument for CI**, specifically: `npm ci` on a clean checkout is where a silently-moved
+production dependency becomes visible.
+
+Note the lockfile is not the protection people assume here. It pins the *result* of a
+resolution; it does not stop the next `npm install <anything>` from re-resolving.
+
+### 🟡 CSP is blocking a script the app still ships (found 2026-09-09)
+
+[views/login.ejs:14](views/login.ejs#L14) contains an inline `<script defer>` running
+Bootstrap's form-validation snippet. `script-src` has no `'unsafe-inline'`, so the
+browser refuses it:
+
+```text
+Executing inline script violates the following Content Security Policy directive
+'script-src 'self' …'                                            @ /login:95
+```
+
+**The CSP is working correctly** — this is what it is for. But the consequence is that
+client-side form validation on the login page has been silently dead since PR #5, and
+nothing surfaced it until a browser console was actually read.
+
+Fix: move the snippet to a file under `public/js/` and reference it with a `src`, the
+way `offcanvas.js` already is. `'self'` covers it. No CSP change needed.
+
+Worth generalising: a strict CSP converts "works" into "silently does nothing" for any
+inline script added later. Reading the console after a deploy is the only cheap check.
+
+### 🟡 Three apps shared one database (resolved 2026-09-09)
+
+v12, v13 and NodeAppFromScratch all pointed at the same Atlas database, `storybooks`,
+and therefore at a **shared `users` collection** holding both passport-local accounts
+(`salt`/`hash`) and a Google OAuth account (`googleId`) under two different schemas.
+
+Mongo namespaces by collection, so nothing was broken and nothing surfaced it. The
+risks were real but latent: any destructive operation run against `MONGO_URI` from any
+of the three projects hit all three, and the test suite added in PR #18 would have been
+exactly such an operation.
+
+Resolved by pointing v12 at `wandur` and v13 at `yelpcamp_v13`, copying v12's data
+across with `_id`s preserved, and cutting Render over. `storybooks` was left untouched
+as a rollback path. Full procedure and verification in [HANDOFF.md](HANDOFF.md).
+
+### 🟡 Secret reuse across projects (found 2026-09-09)
+
+Reading the three `.env` files while separating the databases surfaced two things:
+
+- **v12's `SESSION_SECRET` and v13's `SECRET` are the same 128-character value.**
+- **All three apps authenticate to Atlas as the same user.**
+
+Neither is an exposure — `.env` is gitignored in every project, verified, and
+`git log --all -- .env` is empty. But secret reuse means one leak is three
+compromises, and the Atlas user has access to every database on the cluster rather
+than the one its app needs.
+
+- [ ] Generate a distinct `SESSION_SECRET` per app (rotating v12's requires a
+      `sessions` clear — see the table in [HANDOFF.md](HANDOFF.md))
+- [ ] Create per-app Atlas database users scoped to their own database
+
 ### 🟢 No `engines` field, no CI, no tests
 
-**Partly resolved.** `engines` and `.nvmrc` landed in
+**Mostly resolved.** `engines` and `.nvmrc` landed in
 [PR #9](https://github.com/jordanaf808/jelpcamp/pull/9) — `package.json` now declares
 `"node": ">=22.12.0 <25"` and `.nvmrc` pins `24.14.1`, which is stricter than the
-`>=20.0.0` originally proposed here. **The tests and CI half is still open** and is all
-of Phase 3.
+`>=20.0.0` originally proposed here. **Tests landed 2026-09-09** (PR #18); `"test"` now
+runs `node --test --test-concurrency=1 "tests/**/*.test.js"` and 8 tests pass.
+**Only CI remains** — there is still no `.github/` directory, which is what keeps
+Dependabot blocked below.
 
 As found:
 
@@ -393,7 +494,7 @@ argument for Part 2.
 | 4 | Fix session `expires` bug; add `secure` + `sameSite` | 15 min | One real bug, two hardening flags |
 | 5 | Add `engines`, `.nvmrc` | 5 min | Pins the runtime |
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
-| 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9 |
+| 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **Tests ✅ 2026-09-09 (PR #18); CI still open** |
 | 8 | Major upgrades — mongoose first | ongoing | One library per PR |
 | 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring |
 
@@ -639,18 +740,32 @@ overstates the app's actual security posture.
         date and its deletion. The keys sat in public history without being found and
         used. **Phase 2 is now complete with no outstanding exposure.**
 
-### ⬜ Phase 3 — Keep it fixed (open)
+### 🟡 Phase 3 — Keep it fixed (half done — CI is what remains)
 
-**Prerequisite, found 2026-09-08 — `app.js` cannot be imported.** [app.js:199](app.js#L199)
-calls `app.listen()` at module load and the module has no `module.exports`, so requiring it
-starts a server and binds a port. **No integration test can reach this app until that is
-split.** It is Phase 3's first task, not an afterthought.
+**Prerequisite, found 2026-09-08 — `app.js` cannot be imported.** ✅ **Done, PR #17.**
+`app.js` now builds and exports the app; `server.js` does `connectDB()` + `listen()`;
+`"start"` and `"main"` both point at `server.js`.
 
-- [ ] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
-      (`connectDB()` + `app.listen()`), then point `"start"` at `server.js`. Render runs
-      `npm start`, so that line must be right or the deploy 404s at boot
-- [ ] Integration tests over the auth flow and **comment** CRUD (replaces the
-      `"no test specified"` stub)
+- [x] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
+      (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
+- [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
+      — **PR #18, 8 passing.** See [HANDOFF.md](HANDOFF.md) for what each test pins
+
+  **The database guard is the load-bearing part, not the tests.** `app.js` calls
+  `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
+  forgetting to set `MONGO_URI` before requiring the app silently loaded `.env`, which
+  pointed at live Atlas. A `deleteMany({})` there erased three apps' data **and the
+  tests would still have passed.**
+  [tests/helpers/assertEphemeralDb.js](tests/helpers/assertEphemeralDb.js) checks the
+  live mongoose connection rather than the env var — loopback host, the exact port
+  `MongoMemoryServer` allocated, the expected database name — and
+  [tests/guard.test.js](tests/guard.test.js) proves it refuses production-shaped input.
+
+  **Still uncovered, deliberately:** comment ownership (`checkCommentOwnership`),
+  the `sanitizeDescription` unit test, CSP headers, cookie flags, and
+  `express-mongo-sanitize`. All were scoped for the first suite and cut to keep PR #18
+  reviewable. The `express-mongo-sanitize` one earns its keep twice — it is the exact
+  line Express 5 breaks.
   - There is **no campsite CRUD** — this checklist said so until 2026-09-08 and was wrong.
     [routes/campsites.js](routes/campsites.js) is read-only (`/`, `/search`, `/show/:id`)
     and proxies the RIDB API. The writes are in [routes/comments.js](routes/comments.js)
@@ -677,7 +792,7 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
 | `joi` | 17.13.6 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension |
 | `helmet` | 7.0.0 | 8.3.0 | Bundle with the CSP work above |
-| `connect-mongo` | 5.0.0 | 6.0.0 | Low |
+| ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
 | `passport` | 0.6.0 | 0.7.0 | Low |
 | `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
 
@@ -771,9 +886,21 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
 ### The one-line summary
 
 Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk than all
-25 combined** — a live XSS sink with no CSP behind it — and is now complete and deployed
+25 combined** — a live XSS sink with no CSP behind it — and is complete and deployed
 (`d39d9f3`, 2026-09-08).
 
-What remains is Phase 3, and the reason is the same one in miniature: none of the Phase 1
-or Phase 2 work is pinned by a test, so nothing stops it regressing silently — exactly as
-the session-store failures did, while `npm audit` reported zero problems throughout.
+**Phase 3 is half done as of 2026-09-09** (`35bfd13`). The app can be imported, 8 tests
+pass, and the rate limiter and session round trip are pinned. What is left is the half
+that makes it automatic: **CI**. A suite that only runs when someone remembers to run it
+does not stop a regression — it just makes one easier to diagnose afterwards.
+
+The argument has not changed, only narrowed. Every failure in this document's history was
+invisible to `npm audit`, which reported zero problems throughout all of them — and
+2026-09-09 added one more: installing a *devDependency* moved the production session
+store's driver across a major version, silently, with `npm audit` clean on both sides.
+`npm ci` in CI is precisely where that becomes visible.
+
+Then Phase 4, where Express 5 is the one that matters: its riskiest change
+(`req.query` becoming a read-only getter under `express-mongo-sanitize`) fails at
+runtime, not at install. That is the kind of failure a test suite catches and a human
+reading a diff does not.
