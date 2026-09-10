@@ -5,7 +5,7 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-09**
+> **Status — updated 2026-09-10**
 >
 > **Parts 1 and 2 are both done and on `main`.** Phase 1 cleared all 25 advisories;
 > Phase 2 — the findings `npm audit` cannot see, and the ones this document argued
@@ -27,14 +27,16 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > forces Express 4 past its own declared `~6.15.1` cap — a stopgap, not a fix, removed
 > when Express 5 lands. See Phase 4.
 >
-> **Part 3 is now half done.** The app split (PR #17) and the test harness (PR #18)
-> both landed; `npm test` runs **8 passing tests**, the first this app has ever had.
-> **CI + Dependabot is the only thing left in Phase 3** — and until it exists, nothing
-> runs those tests except a human who remembers to.
+> **Part 3 is done, bar one toggle.** The app split (PR #17), the test harness (PR #18)
+> and CI (PR #22) have all landed. Every pull request and every push to `main` now runs
+> `npm ci`, **9 tests** and `npm audit --audit-level=high`, and a ruleset makes the
+> `test` check required before anything merges into `main`. Dependabot alerts and
+> grouped version updates are on (PR #24). Grouped **security** updates are the one
+> setting still off.
 >
-> That gap is the same one this document has been describing all along: every failure
-> in its history was invisible to `npm audit`, and a test suite nobody runs
-> automatically is only marginally better than no suite at all.
+> **CI earned its place on its first run.** The test-database guard — the thing standing
+> between `npm test` and live Atlas — failed open on any machine without a `.env`, and a
+> CI runner is exactly such a machine. Invisible locally; fixed in PR #23. See Part 2.
 >
 > **Also on 2026-09-09:** the three-apps-one-database problem is fixed. v12 now uses
 > `wandur` in both local and production, v13 uses `yelpcamp_v13`, and `storybooks`
@@ -180,10 +182,11 @@ see after Part 1.
 
 > **Snapshot of the 2026-08-31 assessment.** The headings below are written in the
 > present tense as they were found — "helmet is disabled", "no rate limiting". **Every
-> 🔴 and 🟡 finding in this Part has since been fixed and deployed** (`d39d9f3`,
-> 2026-09-08); they are kept as the record of what was wrong and why it mattered. For
-> current status always read the [Remediation checklist](#remediation-checklist), never
-> these headings.
+> finding from the original 2026-08-31 assessment has since been fixed and deployed**
+> (`d39d9f3`, 2026-09-08); they are kept as the record of what was wrong and why it
+> mattered. Findings added later carry their date in the heading, and **some of those
+> are still open** — each says which. For current status always read the
+> [Remediation checklist](#remediation-checklist), never these headings.
 
 ### 🔴 Security headers are disabled
 
@@ -386,15 +389,68 @@ than the one its app needs.
       `sessions` clear — see the table in [HANDOFF.md](HANDOFF.md))
 - [ ] Create per-app Atlas database users scoped to their own database
 
-### 🟢 No `engines` field, no CI, no tests
+### 🟡 The test-database guard failed open without `.env` (found and fixed 2026-09-10)
 
-**Mostly resolved.** `engines` and `.nvmrc` landed in
+[tests/helpers/assertEphemeralDb.js](tests/helpers/assertEphemeralDb.js) exists to stop
+the test suite ever touching the production database. One of its functions held two
+checks with different preconditions:
+
+```js
+if (!fs.existsSync(envPath)) return        // ← early return
+...
+if (uri.startsWith('mongodb+srv://') || uri.includes('@')) fail(...)  // ← unreachable
+```
+
+Comparing against `.env` genuinely needs `.env`. Rejecting a remote or credentialed URI
+needs nothing — an in-memory mongod is always `mongodb://127.0.0.1:<port>/…` with no
+user. Sharing a function made the universal check inherit the conditional one's early
+return, so on any machine without `.env` — a CI runner, a container, a fresh clone —
+the guard accepted an Atlas URI.
+
+It could not be found locally, because a developer machine has `.env`. CI found it on
+its first run. Fixed in PR #23 by splitting out `assertNoRemoteHostOrCredentials`, which
+runs first and unconditionally, plus a regression test that calls it directly and so
+behaves the same in every environment.
+
+**Generalisable:** a safety check whose precondition is "the developer's machine is set
+up normally" fails open exactly where nobody is watching.
+
+### 🟡 Render's spin-down resets the registration limit early (found 2026-09-10, open)
+
+The rate limiters use express-rate-limit's in-memory store, and
+[middleware/rateLimiters.js](middleware/rateLimiters.js) justifies that with: *"counters
+reset on deploy or restart. That is accepted: an attacker cannot trigger a restart."*
+
+On Render that reasoning is incomplete. Render is not serverless — one long-lived process
+serves every request, which is why an in-memory store works at all — but the free
+instance type this app runs on **spins down after 15 minutes without inbound traffic**
+([Render docs](https://render.com/docs/free)), and spinning down wipes memory. An
+attacker doesn't need to trigger a restart. They only need the site to be quiet for 15
+minutes, which on a personal project is most of the day.
+
+| Limiter | Window | Limit | Can spin-down shorten it? |
+|---|---|---|---|
+| `loginLimiter` | 15 min | 10 | No — 15 idle minutes expire the window anyway |
+| `registerLimiter` | **60 min** | 5 | **Yes** — roughly 5 per 15+ minutes instead of 5 per hour |
+
+`loginLimiter` is safe only because its window happens to equal the spin-down threshold.
+Nothing enforces that: widening the login window past 15 minutes would *weaken* it.
+
+Low severity: resets are sequential, one counter at a time, with no amplification. It
+becomes a real problem as soon as the service runs more than one instance, because each
+instance keeps its own counter — which a paid Render plan allows.
+
+- [ ] Decide: accept it and say so in `rateLimiters.js`, or shorten `registerLimiter`'s
+      window to 15 minutes so the platform cannot undercut it
+
+### ✅ No `engines` field, no CI, no tests (resolved 2026-09-10)
+
+**Resolved.** `engines` and `.nvmrc` landed in
 [PR #9](https://github.com/jordanaf808/jelpcamp/pull/9) — `package.json` now declares
 `"node": ">=22.12.0 <25"` and `.nvmrc` pins `24.14.1`, which is stricter than the
 `>=20.0.0` originally proposed here. **Tests landed 2026-09-09** (PR #18); `"test"` now
-runs `node --test --test-concurrency=1 "tests/**/*.test.js"` and 8 tests pass.
-**Only CI remains** — there is still no `.github/` directory, which is what keeps
-Dependabot blocked below.
+runs `node --test --test-concurrency=1 "tests/**/*.test.js"`. **CI landed 2026-09-10**
+(PR #22) and runs 9 tests on every pull request — see Part 3.
 
 As found:
 
@@ -412,75 +468,60 @@ there is no `.github/` directory. **This is the blocker for Dependabot** — see
 
 ## Part 3 — Dependabot
 
-**Recommended: yes, but after Part 1, and alerts before PRs.**
+**Done as of 2026-09-10, except one toggle.** The order this section recommended held up:
 
-Order of operations:
+1. ✅ **Clear the backlog manually first** (Part 1). Not because Dependabot can't — grouped security updates would collapse all 25 into one PR — but because a bot has no idea which of these are reachable in your code. Doing the triage once is how you learn where the real risk sits.
+2. ✅ **Enable Dependency graph + Dependabot alerts** (2026-09-09). Highest value-to-noise ratio available: free, no PRs, and it tells you when something you depend on gets a new advisory. Turn this on for *every* old repo, including ones you'll never touch again.
+3. ⬜ **Enable security updates** once there's a test suite and CI. Both exist now; this is the one setting still off.
+4. ✅ **Version updates last**, grouped, majors ignored — PR #24. The first grouped PR (#25) arrived within minutes.
 
-1. **Clear the backlog manually first** (Part 1). Not because Dependabot can't — grouped security updates would collapse all 25 into one PR — but because a bot has no idea which of these are reachable in your code. Doing the triage once is how you learn where the real risk sits.
-2. **Enable Dependency graph + Dependabot alerts.** Highest value-to-noise ratio available: free, no PRs, and it tells you when something you depend on gets a new advisory. Turn this on for *every* old repo, including ones you'll never touch again.
-3. **Enable security updates** once there's a test suite (below).
-4. **Version updates last**, grouped, majors ignored.
+The live config is [.github/dependabot.yml](.github/dependabot.yml) and the workflow is
+[.github/workflows/ci.yml](.github/workflows/ci.yml). **They are linked rather than
+copied here on purpose.** The snippets this section used to carry went stale within
+days — `actions/*@v4` and `node-version: '22'`, where the real workflow uses `@v7` and
+reads `.nvmrc`. A copy of a config file inside a document is a second source of truth,
+and the document is the one nobody runs.
 
-Config, once you get there:
+What the Dependabot config does, and what it does not:
 
-```yaml
-# .github/dependabot.yml
-version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    groups:
-      security-patches:
-        applies-to: security-updates
-        patterns: ["*"]
-      routine-updates:
-        applies-to: version-updates
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-```
+- **npm:** weekly, grouped into `security-patches` and `routine-updates` so a security
+  fix never arrives buried in a routine bump. Semver-major bumps are ignored — those are
+  Phase 4, one PR each.
+- **github-actions:** the workflow's pinned actions are supply-chain dependencies too.
+  Majors are *not* ignored there; CI is the only consumer, so a breaking bump fails on
+  its own PR.
+- **`ignore: semver-major` does not protect `0.x` packages.** Under semver, `0.6 → 0.7`
+  is the breaking change, but Dependabot classifies it as minor. That is how `passport`
+  0.6 → 0.7 — listed in Phase 4 as a deliberate upgrade — arrived in #25. (Checked: 0.7.0
+  only changes `authenticate({assignProperty})`, which this app does not use.) Read `0.x`
+  bumps by hand.
+- **Two `update-types` vocabularies.** `groups` takes `patch`/`minor`/`major`; `ignore`
+  takes `version-update:semver-*`. The wrong one is accepted and silently does nothing.
+- **GitHub's docs do not say whether `ignore` also suppresses a security update that
+  needs a major bump.** Assume it might. That is acceptable only because
+  `npm audit --audit-level=high` in CI does not go through Dependabot at all — a withheld
+  fix still turns the build red.
 
 ### The honest caveat for this repo
 
-**Dependabot's usefulness scales with your test suite, and this project has none.**
+**Dependabot's usefulness scales with your test suite.** When this section was written
+the project had none. It now has 9 tests, run on every PR — enough to make the bot
+trustworthy for what they cover, the database guard and the login rate limiter, and no
+further.
 
-A green Dependabot PR with no tests confirms the package installed. It says
-nothing about whether login still works or the map still renders. You'd be
-choosing between merging blind and ignoring the bot — and an ignored bot is worse
-than no bot, because it manufactures the feeling of coverage.
+A green Dependabot PR still says nothing about whether a *successful* login works,
+whether comments save, or whether the map renders. None of those are tested. So the
+caveat has narrowed rather than gone: merge patch bumps on green, and exercise the app by
+hand for anything that touches auth, sessions or rendering.
 
-So the highest-leverage next step after Part 1 is not Dependabot. It's a few
-integration tests over the auth flow and comment CRUD, plus:
+The audit step is the other half. It gates every push on the whole dependency tree,
+regardless of Dependabot, and will deliberately fail a PR that never touched
+dependencies when a new advisory is published. It is a tripwire, not a diff check.
 
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'npm' }
-      - run: npm ci
-      - run: npm test
-      - run: npm audit --audit-level=high
-```
-
-That last line gives you an audit gate on every push regardless of Dependabot,
-and turns Dependabot from a liability into something you can actually trust to
-merge.
-
-And note what Dependabot would report on this repo **today, after Part 1 is done**:
-zero problems. Helmet disabled, unescaped API data, an unauthenticated login
-endpoint, and a session-expiry bug — all invisible to it. That gap is the whole
-argument for Part 2.
+And note what Dependabot would have reported on this repo **after Part 1, before Part
+2**: zero problems. Helmet disabled, unescaped API data, an unauthenticated login
+endpoint, and a session-expiry bug — all invisible to it. That gap is the whole argument
+for Part 2.
 
 ---
 
@@ -494,9 +535,9 @@ argument for Part 2.
 | 4 | Fix session `expires` bug; add `secure` + `sameSite` | 15 min | One real bug, two hardening flags |
 | 5 | Add `engines`, `.nvmrc` | 5 min | Pins the runtime |
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
-| 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **Tests ✅ 2026-09-09 (PR #18); CI still open** |
+| 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **✅ Tests PR #18, CI PR #22; `test` required on `main`** |
 | 8 | Major upgrades — mongoose first | ongoing | One library per PR |
-| 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring |
+| 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24); security updates still off** |
 
 Steps 2–4 are the ones `npm audit` will never tell you about, and they carry more
 real risk than all 25 advisories combined.
@@ -505,7 +546,7 @@ real risk than all 25 advisories combined.
 
 ## Remediation checklist
 
-Current state as of **2026-09-01**. Verified against the repo, not assumed.
+Started 2026-09-01; items carry their own dates. Verified against the repo, not assumed.
 
 ### ✅ Phase 1 — Dependency patches (done)
 
@@ -740,7 +781,7 @@ overstates the app's actual security posture.
         date and its deletion. The keys sat in public history without being found and
         used. **Phase 2 is now complete with no outstanding exposure.**
 
-### 🟡 Phase 3 — Keep it fixed (half done — CI is what remains)
+### ✅ Phase 3 — Keep it fixed (complete 2026-09-10, one toggle left)
 
 **Prerequisite, found 2026-09-08 — `app.js` cannot be imported.** ✅ **Done, PR #17.**
 `app.js` now builds and exports the app; `server.js` does `connectDB()` + `listen()`;
@@ -749,7 +790,7 @@ overstates the app's actual security posture.
 - [x] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
-      — **PR #18, 8 passing.** See [HANDOFF.md](HANDOFF.md) for what each test pins
+      — **PR #18**; 9 passing after PR #23. See [HANDOFF.md](HANDOFF.md) for what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
@@ -773,12 +814,28 @@ overstates the app's actual security posture.
   - The campsite routes call `ridb.recreation.gov` with a live API key, so testing them at
     all needs an HTTP interceptor (`nock`). Out of scope for the first suite; the
     `utils/sanitizeDescription.js` unit test already covers that path's security half
-- [ ] `.github/workflows/ci.yml` with `npm ci`, `npm test`, `npm audit --audit-level=high`
-      — read the Node version from `.nvmrc` (`node-version-file`) so CI cannot drift from
-      Render
-- [ ] Enable **Dependency graph + Dependabot alerts** (do this now — free, zero noise)
-- [ ] Enable **grouped security updates** — only once CI exists
-- [ ] Add `.github/dependabot.yml` with majors ignored
+- [x] `.github/workflows/ci.yml` — **PR #22**. `npm ci`, `npm test`,
+      `npm audit --audit-level=high`, with Node read from `.nvmrc` (`node-version-file`) so
+      CI cannot drift from Render. Confirmed on the first `main` run:
+      `Resolved .nvmrc as 24.14.1`, 9 passing, 0 vulnerabilities
+  - **Its first run found a real bug:** the guard failing open without `.env`, fixed in
+    PR #23. See Part 2
+  - **Known defect:** the step that caches the `mongod` binary saves nothing. It caches
+    `~/.cache/mongodb-binaries`, which is where the binary lands on a machine with
+    `ignore-scripts=true`; on CI the postinstall puts it in
+    `node_modules/.cache/mongodb-memory-server` instead. Cost: a ~5 s re-download per run.
+    Fix: `"config": {"mongodbMemoryServer": {"disablePostinstall": "1"}}` in
+    `package.json`, so every machine downloads to the same place
+- [x] Enable **Dependency graph + Dependabot alerts** — 2026-09-09
+- [ ] Enable **grouped security updates** — CI exists now; this is what's left
+- [x] Add `.github/dependabot.yml` with majors ignored — **PR #24**. See Part 3 for the
+      `0.x` gap
+- [x] **Protect `main`** — ruleset *Protect Main*, 2026-09-10: pull request required,
+      the `test` check required and up to date, no force-push, no deletion. Repo admin
+      may bypass on PRs only, so an advisory with no fix cannot lock the repo
+- [x] `node app.js` exits 1 with a message instead of hanging — **PR #21**, re-landing a
+      commit orphaned when it was pushed to `refactor/export-app` five minutes after
+      PR #17 had merged
 
 ### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
 
@@ -790,10 +847,11 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | `mongoose` | 7.8.12 | 9.9.4 | **Highest** — 2 majors behind; verify v7 EOL status |
 | `express` | 4.22.2 | 5.2.1 | High — v4 is in maintenance |
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
-| `joi` | 17.13.6 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension |
+| `joi` | 17.13.6 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch in Dependabot #25) |
 | `helmet` | 7.0.0 | 8.3.0 | Bundle with the CSP work above |
 | ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
-| `passport` | 0.6.0 | 0.7.0 | Low |
+| `passport` | 0.6.0 | 0.7.0 | Low — **arriving via Dependabot #25** despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here |
+| `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it |
 | `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
 
 Check <https://endoflife.date> before ordering these.
@@ -889,10 +947,11 @@ Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk 
 25 combined** — a live XSS sink with no CSP behind it — and is complete and deployed
 (`d39d9f3`, 2026-09-08).
 
-**Phase 3 is half done as of 2026-09-09** (`35bfd13`). The app can be imported, 8 tests
-pass, and the rate limiter and session round trip are pinned. What is left is the half
-that makes it automatic: **CI**. A suite that only runs when someone remembers to run it
-does not stop a regression — it just makes one easier to diagnose afterwards.
+**Phase 3 is complete as of 2026-09-10** (`22b5286`), bar the security-updates toggle.
+9 tests and an audit gate run on every pull request, and `main` will not accept a merge
+until they pass. On its very first run CI found a bug no local run could: the guard that
+keeps the test suite off the production database failed open on any machine without a
+`.env`.
 
 The argument has not changed, only narrowed. Every failure in this document's history was
 invisible to `npm audit`, which reported zero problems throughout all of them — and
