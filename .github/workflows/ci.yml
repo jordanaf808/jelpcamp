@@ -1,0 +1,66 @@
+name: CI
+
+# Pull requests are the gate. The push trigger is narrowed to `main` on purpose:
+# `on: [push, pull_request]` would run every PR branch twice, once as a push and
+# once as a pull_request, for identical results.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The default GITHUB_TOKEN is broader than this job needs. It only reads code.
+permissions:
+  contents: read
+
+# A second push to a PR makes the first run irrelevant before it finishes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # node-version-file rather than a literal version. `.nvmrc` is what Render
+      # reads at deploy time, so hardcoding a version here would let CI and
+      # production drift apart silently — the tests would keep passing on a
+      # runtime nobody ships. One file, one answer.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # `cache: npm` above caches ~/.npm and nothing else. mongodb-memory-server
+      # keeps its ~150 MB mongod binary in a separate directory and re-downloads
+      # it on every cold run, which is slow and needs the network to cooperate.
+      #
+      # The lockfile hash is the correct key: the mongod version is a constant
+      # inside the pinned mongodb-memory-server, so it can only change when the
+      # lockfile changes.
+      - name: Cache the mongod binary
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongod-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: mongod-${{ runner.os }}-
+
+      # `npm ci`, never `npm install`. It installs the lockfile exactly and fails
+      # if package.json and the lockfile disagree, and it is what Render runs.
+      #
+      # It is also the step that catches a silently-moved transitive dependency:
+      # installing mongodb-memory-server as a devDependency once moved `mongodb`
+      # 6 -> 7 underneath the production session store, through connect-mongo's
+      # unbounded `mongodb` peer range, with no line of `dependencies` changing
+      # to cause it and `npm audit` reporting 0 throughout.
+      - run: npm ci
+
+      - run: npm test
+
+      # Deliberately gates on the whole dependency tree rather than on this diff,
+      # so a newly published advisory will redden a PR that did not touch
+      # dependencies. That is the intent — it is a tripwire, not a diff check.
+      - run: npm audit --audit-level=high

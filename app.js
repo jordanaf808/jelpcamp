@@ -242,3 +242,15 @@ app.use((err, req, res, next) => {
 app.set('sessionStore', sessionStore)
 
 module.exports = app
+
+// Running this file directly does nothing useful and — worse — does not fail.
+// The session store holds the event loop open, so `node app.js` hangs forever
+// without binding a port. On Render that surfaces as a port-scan timeout, which
+// points nowhere near the cause. Fail loudly instead.
+if (require.main === module) {
+	console.error(
+		'app.js builds the app but does not start a server.\n' +
+			'Run `npm start` (which runs server.js) instead.'
+	)
+	process.exit(1)
+}

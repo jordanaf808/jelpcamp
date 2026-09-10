@@ -58,10 +58,34 @@ const assertEphemeralDb = () => {
 	return true
 }
 
-// Independent cross-check, run once at setup: whatever .env would have supplied
-// must NOT be what we are about to use. This catches the specific dotenv
+// Universal check: depends on nothing outside the URI itself. An in-memory mongod
+// is always loopback and never has credentials, so a remote host or an `@` rules a
+// URI out on its own terms, on any machine.
+//
+// This lived INSIDE assertNotTheEnvFileDatabase below, underneath its
+// `if (!fs.existsSync(envPath)) return`. That made a check needing nothing
+// conditional on a file that only exists on a developer's machine, so the guard
+// failed open on CI, in containers, and on fresh clones — the environments least
+// likely to notice, and the ones most likely to carry a real MONGO_URI in the
+// actual environment. Separated 2026-09-09, after CI caught it on its first run.
+// Keep the two apart: they have different preconditions.
+const assertNoRemoteHostOrCredentials = (uriInUse) => {
+	if (uriInUse.startsWith('mongodb+srv://') || uriInUse.includes('@')) {
+		fail('this URI has a remote host or credentials', 'ephemeral servers have neither')
+	}
+	return true
+}
+
+// Machine-specific cross-check, run once at setup: whatever .env would have
+// supplied must NOT be what we are about to use. This catches the specific dotenv
 // ordering mistake directly, without needing to know what production looks like.
+// It also catches a LOCAL production database, which the shape check cannot see.
+//
+// Legitimately conditional on .env existing — but it runs the unconditional check
+// first, so a missing .env can no longer weaken anything.
 const assertNotTheEnvFileDatabase = (uriInUse) => {
+	assertNoRemoteHostOrCredentials(uriInUse)
+
 	const fs = require('fs')
 	const path = require('path')
 	const envPath = path.join(__dirname, '..', '..', '.env')
@@ -74,9 +98,11 @@ const assertNotTheEnvFileDatabase = (uriInUse) => {
 	if (uriInUse === fromEnvFile) {
 		fail('this is the URI from .env', 'the test suite is pointed at the real database')
 	}
-	if (uriInUse.startsWith('mongodb+srv://') || uriInUse.includes('@')) {
-		fail('this URI has a remote host or credentials', 'ephemeral servers have neither')
-	}
 }
 
-module.exports = {rememberEphemeralServer, assertEphemeralDb, assertNotTheEnvFileDatabase}
+module.exports = {
+	rememberEphemeralServer,
+	assertEphemeralDb,
+	assertNotTheEnvFileDatabase,
+	assertNoRemoteHostOrCredentials,
+}
