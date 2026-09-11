@@ -234,11 +234,12 @@ app.use((err, req, res, next) => {
 // event loop alive — `node --test` hangs on it otherwise. Expose it so a test
 // teardown can close it; nothing in the request path uses this.
 //
-// Teardown ordering matters: connect-mongo creates its TTL index lazily on first
-// use, so closing the store while that is still in flight throws
-// MongoExpiredSessionError out of Collection.createIndex. Let the first request
-// settle before closing, or swallow that specific error. Production never hits
-// this because production never closes the store.
+// Teardown ordering matters: connect-mongo starts building its TTL index as soon
+// as its client connects, with no request needed, and close() does not wait for
+// it. Closing mid-build makes the in-flight createIndex reject with
+// MongoExpiredSessionError. Await `sessionStore.collectionP` before closing —
+// tests/setup.js stop() does. Production never hits this because production
+// never closes the store.
 app.set('sessionStore', sessionStore)
 
 module.exports = app

@@ -65,10 +65,21 @@ const resetRateLimiters = () => {
 }
 
 // Teardown order matters: the session store holds its own MongoClient and will
-// keep the event loop open. connect-mongo also builds its TTL index lazily, so
-// closing it mid-flight throws MongoExpiredSessionError.
+// keep the event loop open. connect-mongo also starts building its TTL index the
+// moment that client connects, and close() does not wait for it — closing
+// mid-build rejects with MongoExpiredSessionError. Awaiting collectionP waits
+// the build out. The catch keeps a failed build from skipping close() and
+// leaving the client open.
+//
+// rateLimit.test.js never hit this only because its requests write sessions,
+// and every store operation awaits collectionP first. A test file that sends no
+// requests hit it 20 times in 20 runs (2026-09-11).
 const stop = async () => {
-	if (app?.get('sessionStore')) await app.get('sessionStore').close()
+	const store = app?.get('sessionStore')
+	if (store) {
+		await store.collectionP.catch(() => {})
+		await store.close()
+	}
 	await mongoose.connection.close()
 	if (mongod) await mongod.stop()
 }
