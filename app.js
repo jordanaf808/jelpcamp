@@ -47,8 +47,10 @@ app.use(mongoSanitize())
 
 // Content Security Policy. Origins below were derived by scanning views/ and
 // public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
-// script-src has no 'unsafe-inline': all inline scripts were moved into
-// public/js/ so injected inline script cannot execute.
+// script-src has no 'unsafe-inline', so injected inline script cannot execute —
+// and neither can any inline script the views themselves ship. Page scripts
+// belong in public/js/, loaded with a src; tests/inlineScripts.test.js enforces
+// that for the pages with forms.
 const scriptSrcUrls = [
 	'https://api.mapbox.com',
 	'https://code.jquery.com',

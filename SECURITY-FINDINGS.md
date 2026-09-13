@@ -590,9 +590,13 @@ overstates the app's actual security posture.
 - [x] **Re-enable `helmet` + CSP** — done, [PR #5](https://github.com/jordanaf808/jelpcamp/pull/5)
   - [x] Call `helmet()`, not `helmet.contentSecurityPolicy()` alone — the old block
         would have shipped the CSP and none of the other headers
-  - [x] `scriptSrc` ships with **no `'unsafe-inline'`** — all inline scripts were
-        extracted to `public/js/` rather than deferring this to "later"
-  - [x] Verified locally: Mapbox renders, zero CSP violations
+  - [x] `scriptSrc` ships with **no `'unsafe-inline'`** — inline scripts were
+        extracted to `public/js/` rather than deferring this to "later".
+        **Correction 2026-09-13:** three were missed — the form-validation snippet on
+        `/login`, `/register` and the new-comment form. See the CSP finding above; now
+        enforced by `tests/inlineScripts.test.js`
+  - [x] Verified locally: Mapbox renders, zero CSP violations — on the pages checked;
+        it did not catch the three form pages
   - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
   - [x] **Google Maps CSP verified in production 2026-09-05** — deployed and checked in
         DevTools: no CSP violations, map renders. `frame-src *.google.com` was **not**
