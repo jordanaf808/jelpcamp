@@ -19,6 +19,11 @@
       if (!form.checkValidity()) {
         event.preventDefault()
         event.stopPropagation()
+        // Bootstrap's was-validated styles only reach .form-control inputs, and
+        // the login and register inputs are plain — without this, an empty
+        // submit there is blocked with nothing on screen. The browser's own
+        // "Please fill out this field" shows on every form.
+        form.reportValidity()
       }
 
       form.classList.add('was-validated')
