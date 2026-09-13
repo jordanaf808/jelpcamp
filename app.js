@@ -47,8 +47,10 @@ app.use(mongoSanitize())
 
 // Content Security Policy. Origins below were derived by scanning views/ and
 // public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
-// script-src has no 'unsafe-inline': all inline scripts were moved into
-// public/js/ so injected inline script cannot execute.
+// script-src has no 'unsafe-inline', so injected inline script cannot execute —
+// and neither can any inline script the views themselves ship. Page scripts
+// belong in public/js/, loaded with a src; tests/inlineScripts.test.js enforces
+// that for the pages with forms.
 const scriptSrcUrls = [
 	'https://api.mapbox.com',
 	'https://code.jquery.com',
@@ -234,11 +236,12 @@ app.use((err, req, res, next) => {
 // event loop alive — `node --test` hangs on it otherwise. Expose it so a test
 // teardown can close it; nothing in the request path uses this.
 //
-// Teardown ordering matters: connect-mongo creates its TTL index lazily on first
-// use, so closing the store while that is still in flight throws
-// MongoExpiredSessionError out of Collection.createIndex. Let the first request
-// settle before closing, or swallow that specific error. Production never hits
-// this because production never closes the store.
+// Teardown ordering matters: connect-mongo starts building its TTL index as soon
+// as its client connects, with no request needed, and close() does not wait for
+// it. Closing mid-build makes the in-flight createIndex reject with
+// MongoExpiredSessionError. Await `sessionStore.collectionP` before closing —
+// tests/setup.js stop() does. Production never hits this because production
+// never closes the store.
 app.set('sessionStore', sessionStore)
 
 module.exports = app
