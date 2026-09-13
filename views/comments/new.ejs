@@ -8,7 +8,7 @@
     <h1 class="text-white">Add A New Comment to <%= campsite.name %></h1>
     <!--Put an input form in a div with css style to group them together  -->
     <div style="width: 30%; margin: 50px auto">
-      <form action="/campsites/<%= campsite.id %>/comments/" method="POST" class="needs-validation" novalidate>
+      <form action="/campsites/<%= campsite.id %>/comments/" method="POST" class="validated-form" novalidate>
         <!-- Put each input in a div.formgroup to give a little spacing between them	 -->
         <div class="form-group">
           <input
@@ -30,25 +30,5 @@
     </div>
   </div>
 </div>
-<script defer>
-// Example starter JavaScript for disabling form submissions if there are invalid fields
-(() => {
-  'use strict'
-
-  // Fetch all the forms we want to apply custom Bootstrap validation styles to
-  const forms = document.querySelectorAll('.needs-validation')
-
-  // Loop over them and prevent submission
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-      if (!form.checkValidity()) {
-        event.preventDefault()
-        event.stopPropagation()
-      }
-
-      form.classList.add('was-validated')
-    }, false)
-  })
-})()
-</script>
+<script src="/js/validateForms.js"></script>
 <%- include("../partials/footer") %>

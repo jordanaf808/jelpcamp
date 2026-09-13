@@ -337,11 +337,11 @@ production dependency becomes visible.
 Note the lockfile is not the protection people assume here. It pins the *result* of a
 resolution; it does not stop the next `npm install <anything>` from re-resolving.
 
-### 🟡 CSP is blocking a script the app still ships (found 2026-09-09)
+### 🟡 CSP was blocking a script the app still shipped (found 2026-09-09, resolved 2026-09-13)
 
-[views/login.ejs:14](views/login.ejs#L14) contains an inline `<script defer>` running
-Bootstrap's form-validation snippet. `script-src` has no `'unsafe-inline'`, so the
-browser refuses it:
+`views/login.ejs:14` contained an inline `<script defer>` running Bootstrap's
+form-validation snippet. `script-src` has no `'unsafe-inline'`, so the browser refused
+it:
 
 ```text
 Executing inline script violates the following Content Security Policy directive
@@ -352,11 +352,24 @@ Executing inline script violates the following Content Security Policy directive
 client-side form validation on the login page has been silently dead since PR #5, and
 nothing surfaced it until a browser console was actually read.
 
-Fix: move the snippet to a file under `public/js/` and reference it with a `src`, the
-way `offcanvas.js` already is. `'self'` covers it. No CSP change needed.
+**Resolution (2026-09-13).** It was wider and older than first recorded:
+
+- **Three pages, not one.** `/register` and the new-comment form carried the same snippet.
+- **Dead twice on login and register.** The snippet queried `.needs-validation`; those
+  forms were `class="validated-form"`. It would have matched nothing even without the CSP.
+- **Moving it was not enough.** Bootstrap's `was-validated` styles only reach
+  `.form-control` inputs, and the login and register inputs are plain. Once the script
+  ran, an empty submit there was blocked with nothing on screen — worse than before,
+  when it at least reached the server. `form.reportValidity()` now shows the browser's
+  own message on every form.
+
+The snippet lives in `public/js/validateForms.js`, loaded with a `src`; `'self'` covers
+it, no CSP change. `tests/inlineScripts.test.js` fails if any of the three pages renders
+an inline `<script>`.
 
 Worth generalising: a strict CSP converts "works" into "silently does nothing" for any
-inline script added later. Reading the console after a deploy is the only cheap check.
+inline script added later. Reading the console after a deploy is what caught this; a
+test on the rendered HTML catches it before the deploy.
 
 ### 🟡 Three apps shared one database (resolved 2026-09-09)
 
@@ -590,9 +603,13 @@ overstates the app's actual security posture.
 - [x] **Re-enable `helmet` + CSP** — done, [PR #5](https://github.com/jordanaf808/jelpcamp/pull/5)
   - [x] Call `helmet()`, not `helmet.contentSecurityPolicy()` alone — the old block
         would have shipped the CSP and none of the other headers
-  - [x] `scriptSrc` ships with **no `'unsafe-inline'`** — all inline scripts were
-        extracted to `public/js/` rather than deferring this to "later"
-  - [x] Verified locally: Mapbox renders, zero CSP violations
+  - [x] `scriptSrc` ships with **no `'unsafe-inline'`** — inline scripts were
+        extracted to `public/js/` rather than deferring this to "later".
+        **Correction 2026-09-13:** three were missed — the form-validation snippet on
+        `/login`, `/register` and the new-comment form. See the CSP finding above; now
+        enforced by `tests/inlineScripts.test.js`
+  - [x] Verified locally: Mapbox renders, zero CSP violations — on the pages checked;
+        it did not catch the three form pages
   - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
   - [x] **Google Maps CSP verified in production 2026-09-05** — deployed and checked in
         DevTools: no CSP violations, map renders. `frame-src *.google.com` was **not**
