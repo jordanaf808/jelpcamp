@@ -36,7 +36,11 @@ jobs:
 
       # `cache: npm` above caches ~/.npm and nothing else. mongodb-memory-server
       # keeps its ~150 MB mongod binary in a separate directory and re-downloads
-      # it on every cold run, which is slow and needs the network to cooperate.
+      # it on every cold run, which needs MongoDB's download server to cooperate.
+      #
+      # The cache buys independence from that server, not speed. On GitHub's
+      # runners the download takes ~3–4 s and a restore ~3 s, and saving a new
+      # entry adds ~4 s.
       #
       # This path is only right because package.json sets
       # config.mongodbMemoryServer.disablePostinstall. Without it, `npm ci` runs
@@ -45,9 +49,11 @@ jobs:
       # nothing to save. With it, the binary downloads on the first test run,
       # into this directory, whether or not the machine runs install scripts.
       #
-      # The lockfile hash is the correct key: the mongod version is a constant
+      # The lockfile hash is a safe key: the mongod version is a constant
       # inside the pinned mongodb-memory-server, so it can only change when the
-      # lockfile changes.
+      # lockfile changes. It is also a coarse one: any lockfile change, such as
+      # a Dependabot bump, gets a new key, so the job restores the previous
+      # entry through restore-keys and saves the same binary under the new key.
       - name: Cache the mongod binary
         uses: actions/cache@v6
         with:
