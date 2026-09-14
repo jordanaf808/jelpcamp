@@ -27,12 +27,12 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > forces Express 4 past its own declared `~6.15.1` cap — a stopgap, not a fix, removed
 > when Express 5 lands. See Phase 4.
 >
-> **Part 3 is done, bar one toggle.** The app split (PR #17), the test harness (PR #18)
-> and CI (PR #22) have all landed. Every pull request and every push to `main` now runs
-> `npm ci`, **13 tests** and `npm audit --audit-level=high`, and a ruleset makes the
-> `test` check required before anything merges into `main`. Dependabot alerts and
-> grouped version updates are on (PR #24). Grouped **security** updates are the one
-> setting still off.
+> **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
+> have all landed. Every pull request and every push to `main` now runs `npm ci`,
+> **13 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
+> required before anything merges into `main`. Dependabot alerts, grouped version
+> updates (PR #24) and security updates are all on. Since 2026-09-14, Render also
+> deploys a commit only after that check passes.
 >
 > **CI earned its place on its first run.** The test-database guard — the thing standing
 > between `npm test` and live Atlas — failed open on any machine without a `.env`, and a
@@ -463,7 +463,8 @@ instance keeps its own counter — which a paid Render plan allows.
 `"node": ">=22.12.0 <25"` and `.nvmrc` pins `24.14.1`, which is stricter than the
 `>=20.0.0` originally proposed here. **Tests landed 2026-09-09** (PR #18); `"test"` now
 runs `node --test --test-concurrency=1 "tests/**/*.test.js"`. **CI landed 2026-09-10**
-(PR #22) and runs 9 tests on every pull request — see Part 3.
+(PR #22) and runs the suite on every pull request — 9 tests then, 13 as of 2026-09-14. See
+Part 3.
 
 As found:
 
@@ -481,11 +482,11 @@ there is no `.github/` directory. **This is the blocker for Dependabot** — see
 
 ## Part 3 — Dependabot
 
-**Done as of 2026-09-10, except one toggle.** The order this section recommended held up:
+**Done as of 2026-09-14.** The order this section recommended held up:
 
 1. ✅ **Clear the backlog manually first** (Part 1). Not because Dependabot can't — grouped security updates would collapse all 25 into one PR — but because a bot has no idea which of these are reachable in your code. Doing the triage once is how you learn where the real risk sits.
 2. ✅ **Enable Dependency graph + Dependabot alerts** (2026-09-09). Highest value-to-noise ratio available: free, no PRs, and it tells you when something you depend on gets a new advisory. Turn this on for *every* old repo, including ones you'll never touch again.
-3. ⬜ **Enable security updates** once there's a test suite and CI. Both exist now; this is the one setting still off.
+3. ✅ **Enable security updates** once there's a test suite and CI. On as of 2026-09-14. No security PR has arrived yet, so the `security-patches` group in `dependabot.yml` is configured but not yet observed.
 4. ✅ **Version updates last**, grouped, majors ignored — PR #24. The first grouped PR (#25) arrived within minutes.
 
 The live config is [.github/dependabot.yml](.github/dependabot.yml) and the workflow is
@@ -518,18 +519,21 @@ What the Dependabot config does, and what it does not:
 ### The honest caveat for this repo
 
 **Dependabot's usefulness scales with your test suite.** When this section was written
-the project had none. It now has 9 tests, run on every PR — enough to make the bot
-trustworthy for what they cover, the database guard and the login rate limiter, and no
-further.
+the project had none. It now has 13 tests, run on every PR — enough to make the bot
+trustworthy for what they cover: the database guard, the login rate limiter, test
+teardown, and the form pages' freedom from inline scripts. That last file registers a
+user and then loads a page behind `isLoggedIn`, so a real passport session round trip is
+covered too.
 
-A green Dependabot PR still says nothing about whether a *successful* login works,
-whether comments save, or whether the map renders. None of those are tested. So the
+A green Dependabot PR still says nothing about the `POST /login` route's own success
+path, whether comments save, or whether the map renders. None of those are tested. So the
 caveat has narrowed rather than gone: merge patch bumps on green, and exercise the app by
 hand for anything that touches auth, sessions or rendering.
 
-The audit step is the other half. It gates every push on the whole dependency tree,
-regardless of Dependabot, and will deliberately fail a PR that never touched
-dependencies when a new advisory is published. It is a tripwire, not a diff check.
+The audit step is the other half. It gates every push — and, since Render's auto-deploy
+started waiting for CI on 2026-09-14, every deploy — on the whole dependency tree,
+regardless of Dependabot, and will deliberately fail a PR that never touched dependencies
+when a new advisory is published. It is a tripwire, not a diff check.
 
 And note what Dependabot would have reported on this repo **after Part 1, before Part
 2**: zero problems. Helmet disabled, unescaped API data, an unauthenticated login
@@ -550,7 +554,7 @@ for Part 2.
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
 | 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **✅ Tests PR #18, CI PR #22; `test` required on `main`** |
 | 8 | Major upgrades — mongoose first | ongoing | One library per PR |
-| 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24); security updates still off** |
+| 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24), security updates ✅ (2026-09-14)** |
 
 Steps 2–4 are the ones `npm audit` will never tell you about, and they carry more
 real risk than all 25 advisories combined.
@@ -798,7 +802,7 @@ overstates the app's actual security posture.
         date and its deletion. The keys sat in public history without being found and
         used. **Phase 2 is now complete with no outstanding exposure.**
 
-### ✅ Phase 3 — Keep it fixed (complete 2026-09-10, one toggle left)
+### ✅ Phase 3 — Keep it fixed (complete 2026-09-14)
 
 **Prerequisite, found 2026-09-08 — `app.js` cannot be imported.** ✅ **Done, PR #17.**
 `app.js` now builds and exports the app; `server.js` does `connectDB()` + `listen()`;
@@ -837,14 +841,21 @@ overstates the app's actual security posture.
       `Resolved .nvmrc as 24.14.1`, 9 passing, 0 vulnerabilities
   - **Its first run found a real bug:** the guard failing open without `.env`, fixed in
     PR #23. See Part 2
-  - **Known defect:** the step that caches the `mongod` binary saves nothing. It caches
-    `~/.cache/mongodb-binaries`, which is where the binary lands on a machine with
-    `ignore-scripts=true`; on CI the postinstall puts it in
-    `node_modules/.cache/mongodb-memory-server` instead. Cost: a ~5 s re-download per run.
-    Fix: `"config": {"mongodbMemoryServer": {"disablePostinstall": "1"}}` in
-    `package.json`, so every machine downloads to the same place
+  - **Fixed 2026-09-14, PR #30:** the step that caches the `mongod` binary saved nothing.
+    It cached `~/.cache/mongodb-binaries`, where the binary lands on a machine with
+    `ignore-scripts=true`; on CI the postinstall put it in
+    `node_modules/.cache/mongodb-memory-server` instead, which `npm ci` deletes.
+    `package.json` now sets `"config": {"mongodbMemoryServer": {"disablePostinstall": "1"}}`,
+    so every machine downloads at test time to the same place. Proven on CI: a PR run
+    saved the entry, a re-run restored it, and `main`'s first run after the merge saved
+    its own copy.
+    **Measured, the cache is break-even — not the ~5 s saving this entry once claimed.**
+    The download takes ~3–4 s, a restore ~3 s, and saving a new entry ~4 s. It is kept:
+    a run that restores the binary never contacts MongoDB's download server. The step's
+    comment in `ci.yml` records the trade-off
 - [x] Enable **Dependency graph + Dependabot alerts** — 2026-09-09
-- [ ] Enable **grouped security updates** — CI exists now; this is what's left
+- [x] Enable **security updates** — on as of 2026-09-14. The `security-patches` group in
+      `dependabot.yml` is configured but not yet observed: no security PR has arrived
 - [x] Add `.github/dependabot.yml` with majors ignored — **PR #24**. See Part 3 for the
       `0.x` gap
 - [x] **Protect `main`** — ruleset *Protect Main*, 2026-09-10: pull request required,
@@ -857,6 +868,11 @@ overstates the app's actual security posture.
       **PR #27**. A latent race; `tests/teardown.test.js` pins it
 - [x] Form pages ship no inline `<script>` — **PR #28**. `tests/inlineScripts.test.js`
       renders `/login`, `/register` and the comment form; see the CSP finding above
+- [x] **Render deploys only after CI passes** — auto-deploy set to "After CI Checks
+      Pass", 2026-09-14. A commit that fails the `test` check no longer reaches
+      production. Trade-off: the audit step checks the whole tree, so a newly published
+      high-severity advisory with no fix blocks every deploy until a fix exists. A manual
+      deploy from Render's dashboard is the override
 
 ### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
 
@@ -869,9 +885,9 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | `express` | 4.22.2 | 5.2.1 | High — v4 is in maintenance |
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
 | `joi` | 17.13.7 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch landed via Dependabot #25, 2026-09-14) |
-| `helmet` | 7.0.0 | 8.3.0 | Bundle with the CSP work above |
+| `helmet` | 7.2.0 | 8.3.0 | Bundle with the CSP work above |
 | ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
-| ~~`passport`~~ | ~~0.6.0~~ | 0.7.0 | ✅ Done, Dependabot #25 (2026-09-14) — arrived despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here |
+| ~~`passport`~~ | ~~0.6.0~~ | 0.7.0 | ✅ Done, Dependabot #25 (2026-09-14) — arrived despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here. Deployed and checked live 2026-09-14 |
 | `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it |
 | `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
 
@@ -968,11 +984,12 @@ Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk 
 25 combined** — a live XSS sink with no CSP behind it — and is complete and deployed
 (`d39d9f3`, 2026-09-08).
 
-**Phase 3 is complete as of 2026-09-10** (`22b5286`), bar the security-updates toggle.
-9 tests and an audit gate run on every pull request, and `main` will not accept a merge
-until they pass. On its very first run CI found a bug no local run could: the guard that
-keeps the test suite off the production database failed open on any machine without a
-`.env`.
+**Phase 3 is complete as of 2026-09-14.** Its pipeline landed on 2026-09-10 (`22b5286`);
+the security-updates toggle and Render's wait-for-CI setting followed. 13 tests and an
+audit gate run on every pull request, `main` will not accept a merge until they pass, and
+Render will not deploy a commit until they pass. On its very first run CI found a bug no
+local run could: the guard that keeps the test suite off the production database failed
+open on any machine without a `.env`.
 
 The argument has not changed, only narrowed. Every failure in this document's history was
 invisible to `npm audit`, which reported zero problems throughout all of them — and
