@@ -10,10 +10,12 @@ const {MemoryStore} = rateLimit
 // Only the POST routes are limited. Rendering the GET forms is harmless and
 // throttling it would just break normal browsing.
 //
-// The store is in-memory, so counters reset on deploy or restart. That is
-// accepted: an attacker cannot trigger a restart. (`rate-limit-mongo` is
-// abandoned and predates the v7 Store interface; `rate-limit-redis` is the
-// maintained option if this ever needs to survive a restart.)
+// The store is in-memory, so counters reset on deploy or restart. An attacker
+// cannot trigger either, but on Render's free instance they can wait for the
+// idle spin-down, which resets the counters too — see registerLimiter below.
+// (`rate-limit-mongo` is abandoned and predates the v7 Store interface;
+// `rate-limit-redis` is the maintained option if this ever needs to survive a
+// restart.)
 //
 // It is constructed EXPLICITLY rather than left to default so tests can call
 // `resetAll()` between cases. Every test hits from the same loopback address, so
@@ -95,15 +97,21 @@ const loginLimiter = rateLimit({
 	),
 })
 
-// Registration is stricter and over a longer window: creating accounts is rare
-// for a legitimate user and attractive for abuse. Back to 5 per hour, reverted
-// alongside the login limit above.
+// Registration is stricter than login: creating accounts is rare for a
+// legitimate user and attractive for abuse. 5 per 15 minutes.
+//
+// The window was 60 minutes until 2026-09-14. Render's free instance spins
+// down after 15 minutes without traffic, which wipes this in-memory store, so
+// an attacker could wait out the idle gap and get a fresh 5 about every 16
+// minutes. The shorter window makes the configured limit match what is
+// enforced. The cost: while the instance stays awake, it allows 20 per hour
+// instead of 5.
 const registerStore = new MemoryStore()
 
 const registerLimiter = rateLimit({
 	...common,
 	store: registerStore,
-	windowMs: 60 * 60 * 1000,
+	windowMs: 15 * 60 * 1000,
 	limit: 5,
 	handler: renderWithMessage(
 		'register',
