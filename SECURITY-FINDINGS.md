@@ -5,7 +5,7 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-10**
+> **Status — updated 2026-09-14**
 >
 > **Parts 1 and 2 are both done and on `main`.** Phase 1 cleared all 25 advisories;
 > Phase 2 — the findings `npm audit` cannot see, and the ones this document argued
@@ -13,7 +13,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > | | Shipped in |
 > |---|---|
-> | helmet + strict CSP, no `script-src 'unsafe-inline'` | PR #5, verified in production |
+> | helmet + strict CSP, no `script-src 'unsafe-inline'` | PR #5, verified in production; three inline scripts it missed fixed in PR #28, live 2026-09-14 |
 > | RIDB HTML sanitized at the fetch boundary | PR #6 / #8 |
 > | Session cookie: `expires` bug, `secure`, `sameSite`, `trust proxy` | PR #10 |
 > | Node runtime pinned + `npm ci` on deploy | PR #9 |
@@ -29,7 +29,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > **Part 3 is done, bar one toggle.** The app split (PR #17), the test harness (PR #18)
 > and CI (PR #22) have all landed. Every pull request and every push to `main` now runs
-> `npm ci`, **9 tests** and `npm audit --audit-level=high`, and a ruleset makes the
+> `npm ci`, **13 tests** and `npm audit --audit-level=high`, and a ruleset makes the
 > `test` check required before anything merges into `main`. Dependabot alerts and
 > grouped version updates are on (PR #24). Grouped **security** updates are the one
 > setting still off.
@@ -807,7 +807,7 @@ overstates the app's actual security posture.
 - [x] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
-      — **PR #18**; 9 passing after PR #23. See [HANDOFF.md](HANDOFF.md) for what each test pins
+      — **PR #18**; 9 passing after PR #23, 13 after PR #28. See [HANDOFF.md](HANDOFF.md) for what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
@@ -853,6 +853,10 @@ overstates the app's actual security posture.
 - [x] `node app.js` exits 1 with a message instead of hanging — **PR #21**, re-landing a
       commit orphaned when it was pushed to `refactor/export-app` five minutes after
       PR #17 had merged
+- [x] Test teardown waits for connect-mongo's TTL index build before closing the store —
+      **PR #27**. A latent race; `tests/teardown.test.js` pins it
+- [x] Form pages ship no inline `<script>` — **PR #28**. `tests/inlineScripts.test.js`
+      renders `/login`, `/register` and the comment form; see the CSP finding above
 
 ### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
 
@@ -864,10 +868,10 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | `mongoose` | 7.8.12 | 9.9.4 | **Highest** — 2 majors behind; verify v7 EOL status |
 | `express` | 4.22.2 | 5.2.1 | High — v4 is in maintenance |
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
-| `joi` | 17.13.6 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch in Dependabot #25) |
+| `joi` | 17.13.7 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch landed via Dependabot #25, 2026-09-14) |
 | `helmet` | 7.0.0 | 8.3.0 | Bundle with the CSP work above |
 | ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
-| `passport` | 0.6.0 | 0.7.0 | Low — **arriving via Dependabot #25** despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here |
+| ~~`passport`~~ | ~~0.6.0~~ | 0.7.0 | ✅ Done, Dependabot #25 (2026-09-14) — arrived despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here |
 | `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it |
 | `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
 
