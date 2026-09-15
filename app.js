@@ -22,7 +22,7 @@ const session = require('express-session')
 // connect-mongo 6 ships dual ESM/CJS and no longer default-exports the class to
 // CJS callers: require() returns a namespace object, so this must be destructured.
 const {MongoStore} = require('connect-mongo')
-const mongoSanitize = require('express-mongo-sanitize')
+const sanitizeRequest = require('./middleware/sanitize')
 const helmet = require('helmet')
 
 // Models
@@ -43,7 +43,7 @@ app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs')
 app.use(methodOverride('_method'))
 app.use(flash())
-app.use(mongoSanitize())
+app.use(sanitizeRequest)
 
 // Content Security Policy. Origins below were derived by scanning views/ and
 // public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
