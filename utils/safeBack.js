@@ -25,7 +25,15 @@ const safeBack = (req, fallback = '/') => {
 	if (url.host !== req.get('host')) return fallback
 
 	const path = url.pathname + url.search
-	return path.startsWith('//') ? fallback : path
+	if (path.startsWith('//')) return fallback
+
+	// A GET sent back to the page it came from is a loop: a browser keeps the
+	// same Referer when it follows a redirect, so the next request arrives
+	// identical to this one. Other methods are safe — the redirect lands on a GET
+	// of that path, which is a different handler.
+	if (req.method === 'GET' && path === req.originalUrl) return fallback
+
+	return path
 }
 
 module.exports = safeBack

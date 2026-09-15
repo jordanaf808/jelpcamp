@@ -43,3 +43,10 @@ test('falls back to / when the referrer is not a URL', async () => {
 	const res = await back('not a url')
 	assert.strictEqual(res.headers.location, '/')
 })
+
+// Browsers keep the original Referer when they follow a redirect, so a GET
+// answered with its own url would arrive again unchanged, forever.
+test('falls back to / when a GET is referred by the page it is already on', async () => {
+	const res = await back(`http://${HOST}/back`)
+	assert.strictEqual(res.headers.location, '/')
+})
