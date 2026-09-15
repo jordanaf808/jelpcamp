@@ -86,3 +86,11 @@ test('logging in after a rejected POST lands on a page, not on the POST url', as
 		.send({username: 'back-check', password: 'back-check-pw'})
 	assert.strictEqual(loggedIn.headers.location, '/campsites')
 })
+
+// Nothing parses a body for this request, so req.body is {} on Express 4 and
+// undefined on Express 5. validateComment has to reject it either way.
+test('a comment post with no form body is rejected, not a 500', async () => {
+	const res = await agent.post('/campsites/1/comments').set('Host', HOST)
+	assert.strictEqual(res.status, 302)
+	assert.strictEqual(res.headers.location, '/')
+})

@@ -78,7 +78,10 @@ module.exports = {
 		}
 	},
 	validateComment: (req, res, next) => {
-		const { error } = commentSchema.validate(req.body.comment);
+		// Express 5 leaves req.body undefined when nothing parsed a body, where
+		// Express 4 gave {}. Without the guard such a request throws a 500 instead
+		// of failing validation.
+		const { error } = commentSchema.validate(req.body?.comment);
 		if(!error){
 			next();
 		} else {
