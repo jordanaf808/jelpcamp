@@ -39,7 +39,9 @@ module.exports = {
 		if(req.isAuthenticated()){
 			return next();
 		}
-		req.session.returnTo = req.originalUrl;
+		// GET only: a POST or PUT url is not a page, so coming "back" to it after
+		// logging in lands on a route that does not answer GETs.
+		if (req.method === 'GET') req.session.returnTo = req.originalUrl;
 		req.flash("error", "Please Log in First :)")
 		res.redirect("/login");
 	},
@@ -67,11 +69,19 @@ module.exports = {
 			}
 		} else {
 			req.flash("error", "You Need To Be Logged In To Do That.");		
-			res.redirect(safeBack(req));
+			// Not safeBack: the routes behind this middleware answer GETs too, and
+			// there the referrer is this same page, so "back" would redirect to a
+			// page that redirects again. returnTo is only useful for a GET — a PUT
+			// or DELETE url is not a page to come back to after logging in.
+			if (req.method === 'GET') req.session.returnTo = req.originalUrl;
+			res.redirect("/login");
 		}
 	},
 	validateComment: (req, res, next) => {
-		const { error } = commentSchema.validate(req.body.comment);
+		// Express 5 leaves req.body undefined when nothing parsed a body, where
+		// Express 4 gave {}. Without the guard such a request throws a 500 instead
+		// of failing validation.
+		const { error } = commentSchema.validate(req.body?.comment);
 		if(!error){
 			next();
 		} else {
