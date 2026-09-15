@@ -1,5 +1,6 @@
 
 const Comment = require("../models/comment");
+const safeBack = require("../utils/safeBack");
 const mongoose = require ("mongoose");
 const BaseJoi = require('joi');
 const sanitizeHtml = require('sanitize-html');
@@ -49,7 +50,7 @@ module.exports = {
 			const foundComment = await Comment.findById(comment_id) 
 			if(!foundComment){
 				req.flash("error", "Comment Not Found...")
-				res.redirect("back");
+				res.redirect(safeBack(req));
 			} else {
 				//does user own the comment?
 				// '.equals()' is a Java function that compares the value inside
@@ -61,12 +62,12 @@ module.exports = {
 				} else {
 				//if not, redirect
 					req.flash("error", "Invalid Permission.");		
-					res.redirect("back");
+					res.redirect(safeBack(req));
 				}
 			}
 		} else {
 			req.flash("error", "You Need To Be Logged In To Do That.");		
-			res.redirect("back");
+			res.redirect(safeBack(req));
 		}
 	},
 	validateComment: (req, res, next) => {
@@ -77,7 +78,7 @@ module.exports = {
 			const msgs = error.details.map(el => el.message);
 			console.log(`error validateComment: `, msgs);
 			req.flash('error', 'Invalid Comment.');
-			return res.redirect("back");
+			return res.redirect(safeBack(req));
 		}
 	},
 	validateUser: (req, res, next) => {
@@ -88,7 +89,7 @@ module.exports = {
 			const msgs = error.details.map(el => el.message);
 			console.log(`error validateUser: `, msgs);
 			req.flash('error', msgs);
-			return res.redirect("back");
+			return res.redirect(safeBack(req));
 		}
 	},
 	storeReturnTo: (req, res, next) => {

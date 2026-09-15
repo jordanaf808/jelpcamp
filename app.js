@@ -105,6 +105,11 @@ app.use(
 				objectSrc: ["'none'"],
 			},
 		},
+		// helmet's default is no-referrer, which stops browsers sending a Referer
+		// even to this site, so utils/safeBack.js could never see the page a user
+		// came from and every "back" redirect landed on /. same-origin sends the
+		// referrer to this site only; other sites still receive nothing.
+		referrerPolicy: {policy: 'same-origin'},
 	})
 )
 
