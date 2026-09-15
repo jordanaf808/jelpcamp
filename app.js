@@ -215,7 +215,9 @@ app.use('/campsites', campsitesRoutes)
 // every 'app.'... request will append this, like a middleware.
 // 6/23/23 added 'err'
 
-app.all('*', (req, res, next) => {
+// A path-less app.use() after every route is the catch-all. Express 5 rejects
+// the bare '*' path that app.all('*') used; this form works on 4 and 5.
+app.use((req, res, next) => {
 	next(new ExpressError('Page Not Found', 404))
 })
 
