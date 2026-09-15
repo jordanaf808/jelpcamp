@@ -22,7 +22,7 @@ const session = require('express-session')
 // connect-mongo 6 ships dual ESM/CJS and no longer default-exports the class to
 // CJS callers: require() returns a namespace object, so this must be destructured.
 const {MongoStore} = require('connect-mongo')
-const mongoSanitize = require('express-mongo-sanitize')
+const sanitizeRequest = require('./middleware/sanitize')
 const helmet = require('helmet')
 
 // Models
@@ -43,7 +43,7 @@ app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs')
 app.use(methodOverride('_method'))
 app.use(flash())
-app.use(mongoSanitize())
+app.use(sanitizeRequest)
 
 // Content Security Policy. Origins below were derived by scanning views/ and
 // public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
@@ -105,6 +105,11 @@ app.use(
 				objectSrc: ["'none'"],
 			},
 		},
+		// helmet's default is no-referrer, which stops browsers sending a Referer
+		// even to this site, so utils/safeBack.js could never see the page a user
+		// came from and every "back" redirect landed on /. same-origin sends the
+		// referrer to this site only; other sites still receive nothing.
+		referrerPolicy: {policy: 'same-origin'},
 	})
 )
 
@@ -215,7 +220,9 @@ app.use('/campsites', campsitesRoutes)
 // every 'app.'... request will append this, like a middleware.
 // 6/23/23 added 'err'
 
-app.all('*', (req, res, next) => {
+// A path-less app.use() after every route is the catch-all. Express 5 rejects
+// the bare '*' path that app.all('*') used; this form works on 4 and 5.
+app.use((req, res, next) => {
 	next(new ExpressError('Page Not Found', 404))
 })
 

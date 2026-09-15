@@ -6,6 +6,7 @@ const middleware = require('../middleware');
 // import utils
 const catchAsync = require('../utils/catchAsync');
 const ExpressError = require('../utils/ExpressError');
+const safeBack = require('../utils/safeBack');
 // import models
 const User = require('../models/user');
 const Campsite = require('../models/campsite');
@@ -19,7 +20,7 @@ router.get('/:id', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id).populate('favorites').exec();
   if (!user) {
     req.flash('error', 'User Not Found...');
-    return res.redirect('back', {error: "User Not Found..." })
+    return res.redirect(safeBack(req));
   }
   res.render('users/show', { user: user });
 }));

@@ -5,6 +5,7 @@ const express = require('express'),
 const router = express.Router({ mergeParams: true });
 const middleware = require('../middleware');
 const catchAsync = require('../utils/catchAsync');
+const safeBack = require('../utils/safeBack');
 
 // =======================
 // COMMENTS ROUTES
@@ -52,7 +53,7 @@ router.get('/:comment_id/edit',
     const foundCampsite = await Campsite.findOne({ id: id });
     if(!foundCampsite){
       req.flash('error', 'No Campground Found...');
-      return res.redirect('back');
+      return res.redirect(safeBack(req));
     }
     const foundComment = await Comment.findById(req.params.comment_id);
     res.render('comments/edit', {
@@ -71,7 +72,7 @@ router.put('/:comment_id',
     updateComment = await Comment.findByIdAndUpdate(req.params.comment_id, req.body.comment);
     if(!updateComment){
       req.flash('error', 'Error Updating Comment...');
-      return res.redirect('back');
+      return res.redirect(safeBack(req));
     }
     req.flash('success', 'Comment Updated.');
     res.redirect('/campsites/show/' + req.params.id);
@@ -85,7 +86,7 @@ router.delete('/:comment_id',
     const deleteComment = await Comment.findByIdAndRemove(req.params.comment_id);
     if(!deleteComment){
       req.flash('error', 'Error Deleting Comment...');
-      return res.redirect('back');
+      return res.redirect(safeBack(req));
     }
     req.flash('success', 'Comment Deleted.');
     res.redirect('/campsites/show/' + req.params.id);
