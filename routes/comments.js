@@ -69,7 +69,7 @@ router.put('/:comment_id',
   middleware.validateComment, 
   catchAsync(async (req, res, next) => {
     console.log(req.params);
-    updateComment = await Comment.findByIdAndUpdate(req.params.comment_id, req.body.comment);
+    const updateComment = await Comment.findByIdAndUpdate(req.params.comment_id, req.body.comment);
     if(!updateComment){
       req.flash('error', 'Error Updating Comment...');
       return res.redirect(safeBack(req));
