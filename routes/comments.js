@@ -4,25 +4,24 @@ const express = require('express'),
   Comment = require('../models/comment');
 const router = express.Router({ mergeParams: true });
 const middleware = require('../middleware');
-const catchAsync = require('../utils/catchAsync');
 const safeBack = require('../utils/safeBack');
 
 // =======================
 // COMMENTS ROUTES
 // =======================
 // NEW comment
-router.get('/new', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
+router.get('/new', middleware.isLoggedIn, async (req, res, next) => {
   //find campgound by id
   const { id } = req.params;
   const campsite = await Campsite.findOne({ id: id });
   res.render('comments/new', { campsite });
-}));
+});
 
 // CREATE comments
-router.post('/', 
-  middleware.isLoggedIn, 
-  middleware.validateComment, 
-  catchAsync(async (req, res, next) => {
+router.post('/',
+  middleware.isLoggedIn,
+  middleware.validateComment,
+  async (req, res, next) => {
     //lookup campground using id
     const { id } = req.params;
     const campsite = await Campsite.findOne({ id: id });
@@ -41,13 +40,13 @@ router.post('/',
     await campsite.save();
     console.log(comment);
     res.redirect('/campsites/show/' + id);
-  })
+  }
 );
 
 //EDIT Comment route
 router.get('/:comment_id/edit',
   middleware.checkCommentOwnership,
-  catchAsync(async (req, res, next) => {
+  async (req, res, next) => {
     console.log(req.params.comment_id);
     const { id } = req.params;
     const foundCampsite = await Campsite.findOne({ id: id });
@@ -60,14 +59,14 @@ router.get('/:comment_id/edit',
       campsite_id: id,
       comment: foundComment,
     });
-  })
+  }
 );
 
 //UPDATE Comment route
-router.put('/:comment_id', 
-  middleware.checkCommentOwnership, 
-  middleware.validateComment, 
-  catchAsync(async (req, res, next) => {
+router.put('/:comment_id',
+  middleware.checkCommentOwnership,
+  middleware.validateComment,
+  async (req, res, next) => {
     console.log(req.params);
     const updateComment = await Comment.findByIdAndUpdate(req.params.comment_id, req.body.comment);
     if(!updateComment){
@@ -76,21 +75,21 @@ router.put('/:comment_id',
     }
     req.flash('success', 'Comment Updated.');
     res.redirect('/campsites/show/' + req.params.id);
-  })
+  }
 );
 
 //DESTROY Comment route
 router.delete('/:comment_id',
   middleware.checkCommentOwnership,
-  catchAsync(async (req, res, next) => {
-    const deleteComment = await Comment.findByIdAndDelete(req.params.comment_id);
+  async (req, res, next) => {
+    const deleteComment = await Comment.findByIdAndRemove(req.params.comment_id);
     if(!deleteComment){
       req.flash('error', 'Error Deleting Comment...');
       return res.redirect(safeBack(req));
     }
     req.flash('success', 'Comment Deleted.');
     res.redirect('/campsites/show/' + req.params.id);
-  })
+  }
 );
 
 module.exports = router;

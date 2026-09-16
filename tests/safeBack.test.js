@@ -1,7 +1,8 @@
-// Pins utils/safeBack.js, which replaced res.redirect('back'). Express 4 used
-// the Referer header as-is, so a request arriving from another site could be
-// bounced back to it; Express 5 removed 'back' altogether. A bare Express app
-// is enough, so this needs no database.
+// Pins utils/safeBack.js, which replaced res.redirect('back') after Express 5
+// removed it. The same-site check on the Referer header is still correct, but
+// per SECURITY-FINDINGS.md it isn't closing a usable open redirect: the only
+// way to arrive here with a cross-site Referer is from a page already on that
+// site. A bare Express app is enough, so this needs no database.
 const test = require('node:test')
 const assert = require('node:assert')
 const express = require('express')
