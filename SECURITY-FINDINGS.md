@@ -5,7 +5,11 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-14**
+> **Status — updated 2026-09-16**
+>
+> **Phase 4 has started: Express 4 → 5 is done and deployed** (2026-09-16). PR #33
+> prepared the code while it still ran on Express 4. PR #34 fixed a redirect loop that #33
+> made reachable. PR #35 bumped the version and removed the `qs` override. See Phase 4.
 >
 > **Parts 1 and 2 are both done and on `main`.** Phase 1 cleared all 25 advisories;
 > Phase 2 — the findings `npm audit` cannot see, and the ones this document argued
@@ -23,16 +27,18 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > Plus an unplanned but necessary detour: **three separate session-store failures**
 > traced to one `kruptein: ^3.0.0` range, fixed by upgrading connect-mongo to 6 (PR #7).
 >
-> **`npm audit` reports 0 vulnerabilities** as of 2026-09-06, via a `qs` override that
-> forces Express 4 past its own declared `~6.15.1` cap — a stopgap, not a fix, removed
-> when Express 5 lands. See Phase 4.
+> **`npm audit` reports 0 vulnerabilities with no override.** From 2026-09-06 to
+> 2026-09-16 that result depended on a `qs` override forcing Express 4 past its own
+> `~6.15.1` cap. That was a stopgap, and PR #35 removed it: Express 5 declares a `qs`
+> range that includes the patched version.
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
 > have all landed. Every pull request and every push to `main` now runs `npm ci`,
-> **13 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
+> **27 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
 > required before anything merges into `main`. Dependabot alerts, grouped version
-> updates (PR #24) and security updates are all on. Since 2026-09-14, Render also
-> deploys a commit only after that check passes.
+> updates (PR #24) and security updates are all on. **CI does not gate deploys.**
+> Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
+> from Render's dashboard, and nothing stops a deploy of a commit whose CI failed.
 >
 > **CI earned its place on its first run.** The test-database guard — the thing standing
 > between `npm test` and live Atlas — failed open on any machine without a `.env`, and a
@@ -169,8 +175,9 @@ advisories were published that no Express 4 release can resolve: Express 4.22.2
 (the newest 4.x) declares `qs: ~6.15.1`, which caps below the patched `qs@6.16.0`.
 `npm audit fix --force` proposes `qs@6.15.3` — still inside the vulnerable range.
 
-A `qs` override is in place as a stopgap. See **Phase 4** in the
-[Remediation checklist](#remediation-checklist) for the migration plan.
+A `qs` override was the stopgap from 2026-09-06. **✅ Express 5.2.1 landed in PR #35 on
+2026-09-16, and the override went with it.** See **Phase 4** in the
+[Remediation checklist](#remediation-checklist).
 
 ---
 
@@ -428,7 +435,7 @@ behaves the same in every environment.
 **Generalisable:** a safety check whose precondition is "the developer's machine is set
 up normally" fails open exactly where nobody is watching.
 
-### 🟡 Render's spin-down resets the registration limit early (found 2026-09-10, open)
+### 🟡 Render's spin-down resets the registration limit early (found 2026-09-10, resolved 2026-09-15)
 
 The rate limiters use express-rate-limit's in-memory store, and
 [middleware/rateLimiters.js](middleware/rateLimiters.js) justifies that with: *"counters
@@ -453,8 +460,71 @@ Low severity: resets are sequential, one counter at a time, with no amplificatio
 becomes a real problem as soon as the service runs more than one instance, because each
 instance keeps its own counter — which a paid Render plan allows.
 
-- [ ] Decide: accept it and say so in `rateLimiters.js`, or shorten `registerLimiter`'s
-      window to 15 minutes so the platform cannot undercut it
+- [x] Decide: accept it and say so in `rateLimiters.js`, or shorten `registerLimiter`'s
+      window to 15 minutes so the platform cannot undercut it — **shortened to 15
+      minutes, PR #32**, merged 2026-09-15 and deployed 2026-09-16
+
+**Resolution.** The owner chose the shorter window. `registerLimiter` is now 5 per 15
+minutes, so a spin-down can no longer reset it before its window ends. A test
+`POST /register` returned `RateLimit-Policy: 5;w=900`. The comment in `rateLimiters.js`
+no longer says a restart cannot be triggered: it says the idle spin-down resets the
+counters too.
+
+**The trade-off, accepted deliberately.** On a quiet site the limit is the same as
+before, because the spin-down already enforced about 5 per 15 minutes. **While the
+instance stays awake, it now allows 20 registrations per hour instead of 5.** No test pins
+the register window; `tests/rateLimit.test.js` covers `/login` only.
+
+### 🟡 "Back" redirects never worked, then one could loop (found and resolved 2026-09-15)
+
+Express 5 removes `res.redirect('back')`, so PR #33 replaced the remaining calls with
+[utils/safeBack.js](utils/safeBack.js). It returns the referring page's path only when the
+`Referer` is this site, and `/` otherwise. Replacing the calls turned up two problems.
+
+**1. The redirects had not worked since helmet was enabled (PR #5).** helmet's default
+`Referrer-Policy` is `no-referrer`, so browsers never sent this site a `Referer`, and every
+"back" redirect landed on `/`. No error was logged. PR #33 set the policy to `same-origin`:
+the browser now sends the referrer to this site and still sends nothing to Mapbox, Google
+Maps or the CDNs.
+
+**2. Making them work made a redirect loop reachable.** `checkCommentOwnership` sent a
+logged-out visitor "back". On the comment edit page, the referrer is the edit page:
+
+```text
+PUT  …/edit  (session ended)    → not logged in → "back" → 302 …/edit
+GET  …/edit  Referer still …/edit → not logged in → "back" → 302 …/edit
+… until the browser stops with ERR_TOO_MANY_REDIRECTS
+```
+
+A browser keeps the original `Referer` when it follows a redirect, so the second request
+arrives identical to the first. PR #34 fixed it in two places:
+
+- `checkCommentOwnership` now sends a logged-out visitor to `/login`, like `isLoggedIn`.
+- `safeBack` returns the fallback when a GET's referrer is the URL being requested, which
+  guards every call site.
+
+The two server hops were reproduced with supertest before the fix. The loop in a real
+browser was inferred, not observed: supertest does not carry `Referer` through a redirect
+the way a browser does.
+
+PR #34 also fixed three smaller bugs found next to it:
+
+- `isLoggedIn` saved `returnTo` for any method, so logging in after a blocked POST
+  redirected to that POST's URL as a GET, which no route answers. It now saves `returnTo`
+  for GET requests only.
+- A comment POST with no form body would have been a 500 on Express 5, where `req.body`
+  is `undefined` instead of `{}`.
+- The comment update handler assigned an undeclared variable, which created a global.
+
+**Severity: low, and lower than PR #33's description said.** It called Express 4's
+`'back'` an open redirect, because the `Referer` header is client-controlled. But the
+only way to send a user a cross-site `Referer` is from a page on the attacker's site. The
+redirect then returns the user to that page, where they already were. The same-site check
+is still correct, but it did not close a usable open redirect.
+
+**Generalisable:** code that reads a header can work in every test and do nothing in a
+browser, because a response header on the same site controls whether the browser sends
+it. And fixing a feature that never worked also turns on every bug in it that never ran.
 
 ### ✅ No `engines` field, no CI, no tests (resolved 2026-09-10)
 
@@ -463,7 +533,8 @@ instance keeps its own counter — which a paid Render plan allows.
 `"node": ">=22.12.0 <25"` and `.nvmrc` pins `24.14.1`, which is stricter than the
 `>=20.0.0` originally proposed here. **Tests landed 2026-09-09** (PR #18); `"test"` now
 runs `node --test --test-concurrency=1 "tests/**/*.test.js"`. **CI landed 2026-09-10**
-(PR #22) and runs the suite on every pull request — 9 tests then, 13 as of 2026-09-14. See
+(PR #22) and runs the suite on every pull request — 9 tests then, 13 as of 2026-09-14, 27
+as of 2026-09-15. See
 Part 3.
 
 As found:
@@ -519,21 +590,26 @@ What the Dependabot config does, and what it does not:
 ### The honest caveat for this repo
 
 **Dependabot's usefulness scales with your test suite.** When this section was written
-the project had none. It now has 13 tests, run on every PR — enough to make the bot
+the project had none. It now has 27 tests, run on every PR — enough to make the bot
 trustworthy for what they cover: the database guard, the login rate limiter, test
-teardown, and the form pages' freedom from inline scripts. That last file registers a
-user and then loads a page behind `isLoggedIn`, so a real passport session round trip is
-covered too.
+teardown, the form pages' freedom from inline scripts, the request sanitizer, and the
+"back" redirects, including the redirect loop and a comment POST with no form body. The
+inline-script file registers a user and then loads a page behind `isLoggedIn`, so a real
+passport session round trip is covered. Since PR #34, one test also logs in through
+`POST /login` and checks where it redirects.
 
-A green Dependabot PR still says nothing about the `POST /login` route's own success
-path, whether comments save, or whether the map renders. None of those are tested. So the
-caveat has narrowed rather than gone: merge patch bumps on green, and exercise the app by
-hand for anything that touches auth, sessions or rendering.
+A green Dependabot PR still says nothing about whether a valid comment saves, whether
+search works, or whether the map renders. None of those are tested; the campsite routes
+call the live RIDB API. So the caveat has narrowed rather than gone: merge patch bumps on
+green, and exercise the app by hand for anything that touches auth, sessions, search or
+rendering.
 
-The audit step is the other half. It gates every push — and, since Render's auto-deploy
-started waiting for CI on 2026-09-14, every deploy — on the whole dependency tree,
-regardless of Dependabot, and will deliberately fail a PR that never touched dependencies
-when a new advisory is published. It is a tripwire, not a diff check.
+The audit step is the other half. It gates every PR and every push to `main` on the whole
+dependency tree, regardless of Dependabot, and will deliberately fail a PR that never
+touched dependencies when a new advisory is published. It is a tripwire, not a diff check.
+**It does not gate deploys.** Render's auto-deploy is off, and a deploy started from the
+dashboard does not check CI. Before deploying, check that the `test` run for that commit
+passed.
 
 And note what Dependabot would have reported on this repo **after Part 1, before Part
 2**: zero problems. Helmet disabled, unescaped API data, an unauthenticated login
@@ -553,7 +629,7 @@ for Part 2.
 | 5 | Add `engines`, `.nvmrc` | 5 min | Pins the runtime |
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
 | 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **✅ Tests PR #18, CI PR #22; `test` required on `main`** |
-| 8 | Major upgrades — mongoose first | ongoing | One library per PR |
+| 8 | Major upgrades — mongoose first | ongoing | One library per PR. **Express went first instead: ✅ PR #35 (2026-09-16), forced by the `qs` advisories** |
 | 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24), security updates ✅ (2026-09-14)** |
 
 Steps 2–4 are the ones `npm audit` will never tell you about, and they carry more
@@ -671,7 +747,8 @@ overstates the app's actual security posture.
       had tested. Build command is now `npm ci`.
 - [x] **Rate-limit auth** — shipped 2026-09-05; a key bug was found and **fixed
       2026-09-08**. `express-rate-limit` 8.7.0 on **POST** `/login`
-      (10 per 15 min) and **POST** `/register` (5 per hour). GET forms are unlimited.
+      (10 per 15 min) and **POST** `/register` (5 per hour; 5 per 15 min since PR #32 —
+      see the spin-down finding in Part 2). GET forms are unlimited.
       The middleware always worked; **the key it counted by did not identify the
       client** until `trust proxy` was corrected to 3 — see below. Limits were
       briefly halved to 5/3 on a wrong diagnosis and have been reverted.
@@ -772,7 +849,9 @@ overstates the app's actual security posture.
       `4,4,4` for three consecutive requests is what exposed the bucket structure.
 
   - **Remaining known limits:** counters reset on deploy or restart (accepted — an
-    attacker cannot trigger a restart). Per-IP keying means a shared NAT shares a
+    attacker cannot trigger a restart). **Incomplete, found 2026-09-10:** Render's idle
+    spin-down resets them too, and anyone can wait for that. It is handled by PR #32; see
+    the spin-down finding in Part 2. Per-IP keying means a shared NAT shares a
     budget, and since successes count too, a busy office IP can reach 5 logins/15 min
     legitimately.
 - [x] **Google Maps keys WERE committed** — checked 2026-09-05. Two distinct keys are
@@ -811,7 +890,8 @@ overstates the app's actual security posture.
 - [x] Split `app.js` into `app.js` (builds and **exports** the app) and `server.js`
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
-      — **PR #18**; 9 passing after PR #23, 13 after PR #28. See [HANDOFF.md](HANDOFF.md) for what each test pins
+      — **PR #18**; 9 passing after PR #23, 13 after PR #28, 23 after PR #33, 27 after
+      PR #34. See [HANDOFF.md](HANDOFF.md) for what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
@@ -828,6 +908,13 @@ overstates the app's actual security posture.
   `express-mongo-sanitize`. All were scoped for the first suite and cut to keep PR #18
   reviewable. The `express-mongo-sanitize` one earns its keep twice — it is the exact
   line Express 5 breaks.
+
+  **Update 2026-09-15:** the sanitizer is covered. PR #33 replaced
+  `express-mongo-sanitize`'s middleware with [middleware/sanitize.js](middleware/sanitize.js),
+  and [tests/sanitize.test.js](tests/sanitize.test.js) pins it on both the body and the
+  query string. `checkCommentOwnership` is half covered: PR #34 tests that it sends a
+  logged-out visitor to `/login`, but nothing tests that it rejects a user who does not
+  own the comment. The `Referrer-Policy` header is tested; CSP and cookie flags are not.
   - There is **no campsite CRUD** — this checklist said so until 2026-09-08 and was wrong.
     [routes/campsites.js](routes/campsites.js) is read-only (`/`, `/search`, `/show/:id`)
     and proxies the RIDB API. The writes are in [routes/comments.js](routes/comments.js)
@@ -868,11 +955,11 @@ overstates the app's actual security posture.
       **PR #27**. A latent race; `tests/teardown.test.js` pins it
 - [x] Form pages ship no inline `<script>` — **PR #28**. `tests/inlineScripts.test.js`
       renders `/login`, `/register` and the comment form; see the CSP finding above
-- [x] **Render deploys only after CI passes** — auto-deploy set to "After CI Checks
-      Pass", 2026-09-14. A commit that fails the `test` check no longer reaches
-      production. Trade-off: the audit step checks the whole tree, so a newly published
-      high-severity advisory with no fix blocks every deploy until a fix exists. A manual
-      deploy from Render's dashboard is the override
+- [x] **Deploys are manual** — Render's auto-deploy was set to "After CI Checks Pass" on
+      2026-09-14, then turned **off** by the owner the same day. Merging to `main` deploys
+      nothing; every deploy is started from Render's dashboard. Trade-off: a manual deploy
+      does not check CI, so check that the `test` run for the commit passed first. In
+      exchange, a newly published advisory with no fix cannot block a deploy
 
 ### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
 
@@ -882,7 +969,7 @@ and an EOL major eventually means *no fix available* for a future advisory.
 | Package | Current | Latest | Priority |
 |---|---|---|---|
 | `mongoose` | 7.8.12 | 9.9.4 | **Highest** — 2 majors behind; verify v7 EOL status |
-| `express` | 4.22.2 | 5.2.1 | High — v4 is in maintenance |
+| ~~`express`~~ | ~~4.22.2~~ | 5.2.1 | ✅ Done, PR #35 (2026-09-16), deployed the same day — forced by the `qs` advisories. Prepared in #33 and #34 |
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
 | `joi` | 17.13.7 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch landed via Dependabot #25, 2026-09-14) |
 | `helmet` | 7.2.0 | 8.3.0 | Bundle with the CSP work above |
@@ -893,7 +980,7 @@ and an EOL major eventually means *no fix available* for a future advisory.
 
 Check <https://endoflife.date> before ordering these.
 
-#### 🔴 Express 4 -> 5 — required, not optional (added 2026-09-04)
+#### ✅ Express 4 -> 5 — required, not optional (added 2026-09-04, done 2026-09-16)
 
 Three new `qs` advisories ([GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/GHSA-4mjr-xmp4-gh2g),
 [GHSA-x5fp-wj9c-mxmx](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx),
@@ -902,7 +989,8 @@ unfixable on Express 4 — see the note in Part 1. This is the "EOL major means 
 available" scenario, arriving earlier than expected.
 
 **Stopgap applied 2026-09-06:** `"overrides": { "qs": "^6.16.0" }` in `package.json`.
-`npm audit` now reports **0 vulnerabilities**, down from 3 moderate.
+`npm audit` now reports **0 vulnerabilities**, down from 3 moderate. **Removed 2026-09-16 in
+PR #35** — see the end of this section.
 
 `qs@6.16.0` was published `2026-08-29T23:50Z` and `min-release-age=7` in `~/.npmrc`
 blocked it until `2026-09-05T23:50:15Z`. The guard was waited out rather than bypassed
@@ -929,9 +1017,13 @@ Bracket-key and comma parsing were tested deliberately: `GHSA-x5fp-wj9c-mxmx` is
 array-limit bypass *via bracket-key comma parsing*, so that is exactly the surface
 6.16.0 changed.
 
-**Technical debt — remove when Express 5 lands.**
+**Technical debt — remove when Express 5 lands.** Removed in PR #35.
 
-- [ ] **Migrate to Express 5** ([official guide](https://expressjs.com/en/guide/migrating-5.html))
+- [x] **Migrate to Express 5** ([official guide](https://expressjs.com/en/guide/migrating-5.html))
+      — three PRs. **#33** made every change the code needed while it still ran on
+      Express 4, so it was tested on the version production ran. **#34** fixed a redirect
+      loop #33 made reachable. **#35** was the version bump alone: `express` 5.2.1 and the
+      lockfile, with the `qs` override removed
 
 Migration surface, scanned against this codebase on 2026-09-04:
 
@@ -948,13 +1040,50 @@ Verified as **not** affected: route patterns (all plain `:param`),
 Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
 `res.json(obj, status)` or `res.send(status)` anywhere.
 
-- [ ] **Delete `routes/old.campgrounds.js` first** — not mounted in `app.js`, but holds
+- [x] **Delete `routes/old.campgrounds.js` first** — not mounted in `app.js`, but holds
       3 of the 16 `redirect('back')` hits. Deleting it before migrating avoids
-      migrating dead code.
-- [ ] **Fix the latent bug at [routes/users.js:22](routes/users.js#L22)** —
+      migrating dead code. **Done in #33**, along with `checkCampgroundOwnership` and
+      `isAdmin`, which only that file used
+- [x] **Fix the latent bug at [routes/users.js:22](routes/users.js#L22)** —
       `res.redirect('back', {error: "User Not Found..." })` passes an options object
       where Express expects a status code. That flash message has never worked.
-- [ ] **Remove the `qs` override** once Express 5 is in and `npm audit` is clean.
+      **Done in #33:** it now sets the flash with `req.flash` and redirects with
+      `safeBack`
+- [x] **Remove the `qs` override** once Express 5 is in and `npm audit` is clean.
+      **Done in #35.** `qs` still resolves to 6.16.0 without it: Express 5 declares
+      `^6.14.0` and its `body-parser` 2.3.0 declares `^6.15.2`. CI on `main` after the
+      merge: 27 passing, 0 vulnerabilities (run `35041668823`)
+
+**How each migration item was resolved:**
+
+| Change | Resolved by |
+|---|---|
+| `req.query` is a read-only getter | #33. [middleware/sanitize.js](middleware/sanitize.js) calls `express-mongo-sanitize`'s `sanitize()` function and replaces `req.query` with `Object.defineProperty`, not by assigning it. Pinned by `tests/sanitize.test.js` |
+| `res.redirect('back')` removed | #33. **The scan's count of 13 live calls was wrong:** 4 of the 9 in `middleware/index.js` were in `checkCampgroundOwnership` and `isAdmin`, which only the dead routes used. Those were deleted with 3 in `old.campgrounds.js`. The other 9 use [utils/safeBack.js](utils/safeBack.js), not the `req.get('Referrer') \|\| '/'` suggested above, which would send a user to any site in the header. #34 stopped one of them from looping. See the "back" redirects finding in Part 2 |
+| Wildcards must be named | #33. The 404 catch-all is now a path-less `app.use()`, which matches every path on both versions |
+| `req.body` is `undefined` when unparsed | #34. `validateComment` reads `req.body?.comment`. The register and login paths were checked by reading the code, not by running it: `userSchema` is `.required()`, so `validateUser` rejects an undefined body, and `passport-local`'s field lookup returns `null` for one |
+| Rejected promises auto-forwarded | **Not done, and not needed.** `catchAsync` still wraps 11 route handlers. On Express 5 it forwards the same rejection Express would, so deleting it is cleanup, not a fix |
+
+**One change the 2026-09-04 scan did not list: the default query parser.** Express 5
+changed it from `extended` to `simple`, and #35 kept the default. Query strings are now
+parsed by Node's built-in `querystring` instead of `qs`: `?a[b]=1` arrives as a key named
+`a[b]`, not a nested object, and a repeated key still becomes an array. Nothing in the app
+builds bracketed query strings; the search form sends flat `search`, `state`,
+`activities` and `limit`. `qs` still parses form bodies, because `express.urlencoded`
+is set to `extended: true`. That is how `comment[text]` becomes an object. So the
+bracket-parsing code in the `qs` advisories is now reachable only through POST bodies,
+not URLs.
+
+**Not verified live.** The suite cannot show these, because it never runs behind Render's
+proxy or in a real browser:
+
+- [ ] **Render's `Host` header.** `safeBack` compares the referrer's host with
+      `req.get('host')`. If Render rewrites `Host`, every "back" redirect quietly goes to
+      `/`. Test: post a comment under 10 characters and check that you land back on the form
+- [ ] **The redirect loop is gone in a real browser.** Test: open a comment's edit page,
+      log out in another tab, then submit the edit form
+- [ ] **Search with two activities selected** still filters by both, under the `simple`
+      query parser
 
 #### Client-side API deprecations
 
@@ -984,12 +1113,12 @@ Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk 
 25 combined** — a live XSS sink with no CSP behind it — and is complete and deployed
 (`d39d9f3`, 2026-09-08).
 
-**Phase 3 is complete as of 2026-09-14.** Its pipeline landed on 2026-09-10 (`22b5286`);
-the security-updates toggle and Render's wait-for-CI setting followed. 13 tests and an
-audit gate run on every pull request, `main` will not accept a merge until they pass, and
-Render will not deploy a commit until they pass. On its very first run CI found a bug no
-local run could: the guard that keeps the test suite off the production database failed
-open on any machine without a `.env`.
+**Phase 3 is complete as of 2026-09-14.** Its pipeline landed on 2026-09-10 (`22b5286`),
+and the security-updates toggle followed. 27 tests and an audit gate run on every pull
+request, and `main` will not accept a merge until they pass. Deploys are manual and do
+not check CI. On its very first run CI found a bug no local run could: the guard that
+keeps the test suite off the production database failed open on any machine without a
+`.env`.
 
 The argument has not changed, only narrowed. Every failure in this document's history was
 invisible to `npm audit`, which reported zero problems throughout all of them — and
@@ -997,7 +1126,13 @@ invisible to `npm audit`, which reported zero problems throughout all of them �
 store's driver across a major version, silently, with `npm audit` clean on both sides.
 `npm ci` in CI is precisely where that becomes visible.
 
-Then Phase 4, where Express 5 is the one that matters: its riskiest change
-(`req.query` becoming a read-only getter under `express-mongo-sanitize`) fails at
-runtime, not at install. That is the kind of failure a test suite catches and a human
-reading a diff does not.
+**Phase 4's Express 5 upgrade is done (2026-09-16).** Its riskiest change was `req.query`
+becoming a read-only getter under `express-mongo-sanitize`, which fails at runtime, not at
+install. It was handled before the bump, on Express 4, with a test that pins it. The bump
+itself was then a version number and a lockfile.
+
+The real bug in the migration came from the preparation, not from the bump. Making the
+"back" redirects Express-5-safe also made them work for the first time since helmet was
+enabled, and that made a redirect loop reachable (fixed in #34). #33's tests passed, and
+reading its diff did not show the loop. A review after the merge found it by tracing what
+a browser would do on each redirect; supertest then reproduced the two server hops. `mongoose`, two majors behind, is now the highest-priority upgrade left.
