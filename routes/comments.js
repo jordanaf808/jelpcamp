@@ -80,10 +80,10 @@ router.put('/:comment_id',
 );
 
 //DESTROY Comment route
-router.delete('/:comment_id', 
-  middleware.checkCommentOwnership, 
+router.delete('/:comment_id',
+  middleware.checkCommentOwnership,
   catchAsync(async (req, res, next) => {
-    const deleteComment = await Comment.findByIdAndRemove(req.params.comment_id);
+    const deleteComment = await Comment.findByIdAndDelete(req.params.comment_id);
     if(!deleteComment){
       req.flash('error', 'Error Deleting Comment...');
       return res.redirect(safeBack(req));
