@@ -10,18 +10,14 @@ const { storeReturnTo, validateUser } = require('../middleware');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiters');
 
 // import utils
-const catchAsync = require('../utils/catchAsync');
 const ExpressError = require('../utils/ExpressError');
 
-// We can wrap catchAsync around our router async callbacks 
-// to catch any errors and send them to our 'next' route handler
-router.get('/', catchAsync(async (req, res) => {
+router.get('/', async (req, res) => {
   // 	get all campgrounds from DB for background photos.
-  // try { <-- already in a try/catch with the catchAsync()
   const allCampgrounds = await Campground.find();
   // console.dir(allCampgrounds);
   res.render('landing', { campgrounds: allCampgrounds });
-}));
+});
 
 // ========================
 // AUTH ROUTES
@@ -33,10 +29,10 @@ router.get('/register', (req, res) => {
 });
 
 // Handle register logic...
-router.post('/register', 
+router.post('/register',
   registerLimiter,
   validateUser,
-  catchAsync(async (req, res, next) => {
+  async (req, res, next) => {
     const newUser = new User({ username: req.body.username });
     // if(req.body.adminCode === process.env.ADMIN_CODE) {
     //   newUser.isAdmin = true;
@@ -50,8 +46,8 @@ router.post('/register',
         req.flash('success', 'Welcome To YelpCamp ' + user.username);
         res.redirect('/campsites');
       });
-    });  
-  })
+    });
+  }
 );
 
 // show LOGIN form

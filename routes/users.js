@@ -4,7 +4,6 @@ const router = express.Router();
 const middleware = require('../middleware');
 
 // import utils
-const catchAsync = require('../utils/catchAsync');
 const ExpressError = require('../utils/ExpressError');
 const safeBack = require('../utils/safeBack');
 // import models
@@ -12,7 +11,7 @@ const User = require('../models/user');
 const Campsite = require('../models/campsite');
 
 // User Profile
-router.get('/:id', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
+router.get('/:id', middleware.isLoggedIn, async (req, res, next) => {
   const { id } = req.params
   // validate `id`
   if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('invalid id');
@@ -23,15 +22,15 @@ router.get('/:id', middleware.isLoggedIn, catchAsync(async (req, res, next) => {
     return res.redirect(safeBack(req));
   }
   res.render('users/show', { user: user });
-}));
+});
 
 // Add Favorite
-router.post('/:id/:camp_id', 
-  middleware.isLoggedIn, 
-  catchAsync(async (req, res, next) => {
+router.post('/:id/:camp_id',
+  middleware.isLoggedIn,
+  async (req, res, next) => {
     //lookup campsite and user id using req.params
     const campId = req.params.camp_id;
-    const campsite = await Campsite.findOne({ id: campId }).orFail(() => {throw err}); 
+    const campsite = await Campsite.findOne({ id: campId }).orFail(() => {throw err});
     const foundUser = await User.findById(req.params.id).orFail(() => {throw err});
     const err = new ExpressError(`campsite: ${campsite}; user: ${foundUser}`, 500);
     foundUser.favorites.push(campsite._id);
@@ -43,15 +42,15 @@ router.post('/:id/:camp_id',
     );
     res.redirect('/campsites/show/' + campId);
   }
-));
+);
 
 // Delete Favorite
-router.delete('/:id/:camp_id', 
-  middleware.isLoggedIn, 
-  catchAsync(async (req, res, next) => {
+router.delete('/:id/:camp_id',
+  middleware.isLoggedIn,
+  async (req, res, next) => {
     //lookup campsite using id
     const campId = req.params.camp_id;
-    const campsite = await Campsite.findOne({ id: campId }).orFail(() => {throw err}); 
+    const campsite = await Campsite.findOne({ id: campId }).orFail(() => {throw err});
     const foundUser = await User.findById(req.params.id).orFail(() => {throw err});
     const err = new ExpressError(`campsite: ${campsite}; user: ${foundUser}`, 500);
     console.log('found: ', foundUser);
@@ -65,6 +64,6 @@ router.delete('/:id/:camp_id',
     );
     res.redirect('/campsites/show/' + campId);
   }
-));
+);
 
 module.exports = router;
