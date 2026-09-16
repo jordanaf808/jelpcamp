@@ -968,7 +968,7 @@ and an EOL major eventually means *no fix available* for a future advisory.
 
 | Package | Current | Latest | Priority |
 |---|---|---|---|
-| `mongoose` | 7.8.12 | 9.9.4 | **Highest** — 2 majors behind; verify v7 EOL status |
+| `mongoose` | 7.8.12 | 9.10.1 | **Highest, in progress.** No formal EOL, but `7x` is not the actively developed dist-tag. Prep done in PR #38 (skips 8.x — see below); bump not started |
 | ~~`express`~~ | ~~4.22.2~~ | 5.2.1 | ✅ Done, PR #35 (2026-09-16), deployed the same day — forced by the `qs` advisories. Prepared in #33 and #34 |
 | `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
 | `joi` | 17.13.7 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch landed via Dependabot #25, 2026-09-14) |
@@ -1084,6 +1084,50 @@ proxy or in a real browser:
       log out in another tab, then submit the edit form
 - [ ] **Search with two activities selected** still filters by both, under the `simple`
       query parser
+
+#### ⬜ Mongoose 7 -> 9 — scanned before the bump (added 2026-09-16)
+
+The table above targets 9.x, skipping 8.x. Verified rather than assumed:
+
+- **No formal EOL for the 7.x line** — `npm` still carries a live `7x` dist-tag
+  (7.8.12, matching what's installed) alongside `8x` and `latest` (9.x) — but it
+  is not where development happens.
+- **Skipping 8 converges the mongodb driver instead of adding a third one.**
+  `mongoose@7.8.12` pins its own `mongodb@5.9.2`/`bson@5.5.1`, separate from the
+  `mongodb@7.6.0`/`bson@7.3.2` already hoisted for connect-mongo and
+  mongodb-memory-server (the 2026-09-09 peer-dependency finding — see HANDOFF.md).
+  `mongoose@8.x` pins `mongodb@~6.20.0`, a **third** version, temporarily.
+  `mongoose@9.x` pins `mongodb@~7.0`, which **dedupes with the driver already
+  running the session store.** Going straight to 9 simplifies the dependency
+  graph; stopping at 8 would not.
+- **Node engine already satisfied.** Mongoose 9 requires Node >=20.19.0;
+  `package.json` already declares `>=22.12.0 <25`.
+- **Full breaking-change surface, both official migration guides, checked
+  against actual usage** (`grep` across `routes/`, `models/`, `middleware/`,
+  excluding tests):
+
+  | Change | Used here? |
+  |---|---|
+  | `findOneAndRemove()` / `findByIdAndRemove()` removed (v8) | **Yes** — one call, `routes/comments.js` DESTROY route |
+  | `Model.count()` removed (v8) | No |
+  | `id` setter removed (v8) | No |
+  | `overwrite` / `rawResult` options removed (v8) | No |
+  | `orFail()` + upsert behavior change (v8) | No — this app's only `orFail()` calls are on plain `findOne()` |
+  | Pre/post schema hooks, custom `methods`/`statics` (v9 drops callback and `isAsync` support) | None defined in any model |
+  | `enum`, discriminators, `UUID` schema type (v8/v9 behavior changes) | None used |
+  | Update pipelines — array syntax to `updateOne`/`updateMany` (v9 disallows by default) | No |
+  | `useDb()` / `noListener` (v9 removed) | No — one connection, `utils/connectDB.js` |
+  | `ObjectId` constructor rejects 12-char strings (driver v6, via mongoose 8) | Only `.isValid()` is called, never the constructor; real `_id`s are 24 hex chars anyway |
+
+  **The only required change:** `Comment.findByIdAndRemove()` →
+  `Comment.findByIdAndDelete()`. Same reasoning as Express 5's #33: fix it on
+  the version production still runs, before bumping.
+
+- [x] **Prep: rename `findByIdAndRemove` → `findByIdAndDelete`**, plus a new
+      test (`tests/comments.test.js`) pinning comment deletion — previously
+      uncovered per the "Not covered" list below. **Done in PR #38.**
+- [ ] **Bump `mongoose` 7.8.12 → 9.x**, update the lockfile, re-verify
+      `npm audit` and the mongodb/bson driver convergence above. Not started.
 
 #### Client-side API deprecations
 
