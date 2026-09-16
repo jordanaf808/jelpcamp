@@ -1062,7 +1062,7 @@ Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
 | `res.redirect('back')` removed | #33. **The scan's count of 13 live calls was wrong:** 4 of the 9 in `middleware/index.js` were in `checkCampgroundOwnership` and `isAdmin`, which only the dead routes used. Those were deleted with 3 in `old.campgrounds.js`. The other 9 use [utils/safeBack.js](utils/safeBack.js), not the `req.get('Referrer') \|\| '/'` suggested above, which would send a user to any site in the header. #34 stopped one of them from looping. See the "back" redirects finding in Part 2 |
 | Wildcards must be named | #33. The 404 catch-all is now a path-less `app.use()`, which matches every path on both versions |
 | `req.body` is `undefined` when unparsed | #34. `validateComment` reads `req.body?.comment`. The register and login paths were checked by reading the code, not by running it: `userSchema` is `.required()`, so `validateUser` rejects an undefined body, and `passport-local`'s field lookup returns `null` for one |
-| Rejected promises auto-forwarded | **Not done, and not needed.** `catchAsync` still wraps 11 route handlers. On Express 5 it forwards the same rejection Express would, so deleting it is cleanup, not a fix |
+| Rejected promises auto-forwarded | **Done as cleanup, not a fix, in PR #37.** `catchAsync` wrapped 10 route handlers (the 2026-09-04 scan's count of 11 above was off by one), and on Express 5 it forwarded the same rejection Express already does natively. Deleted, and all 10 unwrapped |
 
 **One change the 2026-09-04 scan did not list: the default query parser.** Express 5
 changed it from `extended` to `simple`, and #35 kept the default. Query strings are now
