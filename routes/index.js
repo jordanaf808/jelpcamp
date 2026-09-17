@@ -1,23 +1,23 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const passport = require('passport');
-const User = require('../models/user');
-const Campground = require('../models/campground');
-const Campsite = require('../models/campsite');
+const express = require('express')
+const mongoose = require('mongoose')
+const passport = require('passport')
+const User = require('../models/user')
+const Campground = require('../models/campground')
+const Campsite = require('../models/campsite')
 // const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
-const router = express.Router();
-const { storeReturnTo, validateUser } = require('../middleware');
-const { loginLimiter, registerLimiter } = require('../middleware/rateLimiters');
+const router = express.Router()
+const {storeReturnTo, validateUser} = require('../middleware')
+const {loginLimiter, registerLimiter} = require('../middleware/rateLimiters')
 
 // import utils
-const ExpressError = require('../utils/ExpressError');
+const ExpressError = require('../utils/ExpressError')
 
 router.get('/', async (req, res) => {
-  // 	get all campgrounds from DB for background photos.
-  const allCampgrounds = await Campground.find();
-  // console.dir(allCampgrounds);
-  res.render('landing', { campgrounds: allCampgrounds });
-});
+	// 	get all campgrounds from DB for background photos.
+	const allCampgrounds = await Campground.find()
+	// console.dir(allCampgrounds);
+	res.render('landing', {campgrounds: allCampgrounds})
+})
 
 // ========================
 // AUTH ROUTES
@@ -25,60 +25,65 @@ router.get('/', async (req, res) => {
 // Show Register Form:
 
 router.get('/register', (req, res) => {
-  res.render('register');
-});
+	res.render('register')
+})
 
 // Handle register logic...
-router.post('/register',
-  registerLimiter,
-  validateUser,
-  async (req, res, next) => {
-    const newUser = new User({ username: req.body.username });
-    // if(req.body.adminCode === process.env.ADMIN_CODE) {
-    //   newUser.isAdmin = true;
-    // }
-    User.register(newUser, req.body.password, (err, user) => {
-      if (err) {
-        console.log(err);
-        return res.render('register', { error: err.message });
-      }
-      passport.authenticate('local')(req, res, () => {
-        req.flash('success', 'Welcome To YelpCamp ' + user.username);
-        res.redirect('/campsites');
-      });
-    });
-  }
-);
+router.post(
+	'/register',
+	registerLimiter,
+	validateUser,
+	async (req, res, next) => {
+		const newUser = new User({username: req.body.username})
+		// if(req.body.adminCode === process.env.ADMIN_CODE) {
+		//   newUser.isAdmin = true;
+		// }
+		let registeredUser
+		try {
+			registeredUser = await User.register(newUser, req.body.password)
+		} catch (err) {
+			console.log(err)
+			return res.render('register', {error: err.message})
+		}
+		passport.authenticate('local')(req, res, () => {
+			req.flash('success', 'Welcome To YelpCamp ' + registeredUser.username)
+			res.redirect('/campsites')
+		})
+	},
+)
 
 // show LOGIN form
 router.get('/login', (req, res) => {
-  res.render('login');
-});
+	res.render('login')
+})
 // handle LOGIN logic
-router.post('/login',
-  loginLimiter,
-  storeReturnTo,
-  passport.authenticate('local', {
-    // successRedirect: '/campsites',
-    failureFlash: "Wrong Username and/or Password...",
-    failureRedirect: '/login',
-  }),
-  (req, res) => {
-    req.flash("success", "Welcome To YelpCamp " + req.user.username);
-    const redirectUrl = res.locals.returnTo || '/campsites'; // update this line to use res.locals.returnTo now
-    delete req.session.returnTo;
-    res.redirect(redirectUrl);
-  }
-);
+router.post(
+	'/login',
+	loginLimiter,
+	storeReturnTo,
+	passport.authenticate('local', {
+		// successRedirect: '/campsites',
+		failureFlash: 'Wrong Username and/or Password...',
+		failureRedirect: '/login',
+	}),
+	(req, res) => {
+		req.flash('success', 'Welcome To YelpCamp ' + req.user.username)
+		const redirectUrl = res.locals.returnTo || '/campsites' // update this line to use res.locals.returnTo now
+		delete req.session.returnTo
+		res.redirect(redirectUrl)
+	},
+)
 
 // Logout ROUTE
 router.get('/logout', (req, res, next) => {
-  console.log('logging out');
-  req.logout((err) => {
-    if (err) { return next(err); }
-    req.flash('success', 'Logged Out.');
-    res.redirect('/campsites');
-  });
-});
+	console.log('logging out')
+	req.logout((err) => {
+		if (err) {
+			return next(err)
+		}
+		req.flash('success', 'Logged Out.')
+		res.redirect('/campsites')
+	})
+})
 
-module.exports = router;
+module.exports = router
