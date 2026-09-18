@@ -40,7 +40,6 @@ router.get('/', async (req, res) => {
 			params,
 			cache: {ttl: 1800000},
 		})
-		console.log('initial response status: ' + response.status)
 		const data = response.data.RECDATA
 		// filter out any data withOUT GEOJSON and separate data for map feature
 		const {recData, mapData} = mutateData(data)
@@ -54,8 +53,6 @@ router.get('/', async (req, res) => {
 
 router.get('/search', async (req, res) => {
 	try {
-		console.log('QUERY: ' + req.query)
-		console.log('PARAMS: ' + req.params)
 		const search = req.query.search
 		const state = req.query.state
 		const activity = req.query.activities
@@ -68,10 +65,10 @@ router.get('/search', async (req, res) => {
 			sort: 'Date',
 		}
 		const response = await axios.get('/facilities', {params: searchParams})
+		console.log('search response status: ', response.status)
 		const data = response.data.RECDATA
 		const {recData, mapData} = mutateData(data)
 		console.log('response METADATA: ', response.data.METADATA)
-		// console.log(recData)
 		res.render('campsites/results', {
 			recData,
 			mapData,
@@ -89,7 +86,6 @@ router.get('/show/:id', async (req, res) => {
 	try {
 		const showParams = {full: true}
 		const {id} = req.params
-		console.log('show facility id#' + id)
 		const url = `/facilities/${id}`
 		const response = await axios.get(url, {showParams, cache: {ttl: 1800000}})
 		const medias = await axios.get(`${url}/media`, {cache: {ttl: 1800000}})
@@ -111,7 +107,7 @@ router.get('/show/:id', async (req, res) => {
 			{cache: {ttl: 1800000}},
 		)
 		const parentRecArea = parentRecAreaResponse.data
-		console.log('Parent RecArea Name' + parentRecArea)
+		console.log('Parent RecArea: ' + parentRecArea)
 		const data = {recData, mediaData, parentRecArea, linksData}
 		const newCampsite = {
 			name: recData.FacilityName,
@@ -123,7 +119,6 @@ router.get('/show/:id', async (req, res) => {
 			.populate('comments')
 			.exec()
 		if (!foundCampsite) {
-			console.log('creating' + id)
 			const madeCampsite = await Campsite.create(newCampsite)
 			if (!madeCampsite) {
 				console.log('err: ', madeCampsite)
@@ -139,20 +134,16 @@ router.get('/show/:id', async (req, res) => {
 		} else {
 			if (req.isAuthenticated()) {
 				const user = req.user
-				console.log(`Show Route: logged in: ${user._id}:`)
 				const foundUser = await User.findById(user._id)
 					.populate('favorites')
 					.exec()
-				console.log('foundCampsite._id: ', foundCampsite._id)
 				let favorites = false
 				for (fav of foundUser.favorites) {
 					if (fav._id.toString() === foundCampsite._id.toString()) {
-						console.log('match: ', fav._id)
 						favorites = true
 					}
 				}
 				if (favorites) {
-					console.log('ALREADY added to favorites by: ', foundUser.username)
 					return res.render('campsites/show', {
 						data,
 						foundCampsite,
@@ -161,8 +152,6 @@ router.get('/show/:id', async (req, res) => {
 					})
 				}
 			}
-			// console.log("not favorite");
-			console.log('found campsite: ' + id)
 			res.render('campsites/show', {
 				data,
 				foundCampsite,
