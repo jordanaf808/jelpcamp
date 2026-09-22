@@ -1,6 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
+const {errors: plmErrors} = require('passport-local-mongoose')
 const User = require('../models/user')
 const Campground = require('../models/campground')
 const Campsite = require('../models/campsite')
@@ -42,10 +43,15 @@ router.post(
 		try {
 			registeredUser = await User.register(newUser, req.body.password)
 		} catch (err) {
-			console.log(err)
-			return res.render('register', {error: err.message})
+			if (err instanceof plmErrors.UserExistsError || err instanceof plmErrors.MissingUsernameError) {
+				return res.render('register', {error: err.message})
+			}
+			return next(err)
 		}
-		passport.authenticate('local')(req, res, () => {
+		req.login(registeredUser, (err) => {
+			if (err) {
+				return next(err)
+			}
 			req.flash('success', 'Welcome To YelpCamp ' + registeredUser.username)
 			res.redirect('/campsites')
 		})
