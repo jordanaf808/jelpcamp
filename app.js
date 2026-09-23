@@ -85,7 +85,10 @@ const connectSrcUrls = [
 	'https://code.jquery.com',
 	'https://cdnjs.cloudflare.com',
 ]
-const fontSrcUrls = ['https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com']
+const fontSrcUrls = [
+	'https://fonts.gstatic.com',
+	'https://cdnjs.cloudflare.com',
+]
 
 app.use(
 	helmet({
@@ -110,7 +113,7 @@ app.use(
 		// came from and every "back" redirect landed on /. same-origin sends the
 		// referrer to this site only; other sites still receive nothing.
 		referrerPolicy: {policy: 'same-origin'},
-	})
+	}),
 )
 
 // seed the DB
@@ -229,7 +232,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
 	const {statusCode = 500} = err
 	if (!err.message) err.message = 'Error.'
-	console.log('error route', err.message)
 	// Some errors arrive after the response has already gone out. express-session
 	// saves the session inside its res.end patch, so a session-store failure
 	// reaches here via next(err) once the body is flushed. Writing again throws
@@ -260,7 +262,7 @@ module.exports = app
 if (require.main === module) {
 	console.error(
 		'app.js builds the app but does not start a server.\n' +
-			'Run `npm start` (which runs server.js) instead.'
+			'Run `npm start` (which runs server.js) instead.',
 	)
 	process.exit(1)
 }
