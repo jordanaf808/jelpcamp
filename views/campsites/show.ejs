@@ -191,7 +191,8 @@
               <div id="map"
                 data-lat="<%= data.recData.GEOJSON.COORDINATES[1] %>"
                 data-lng="<%= data.recData.GEOJSON.COORDINATES[0] %>"
-                data-name="<%= data.recData["FacilityName"] %>"></div>
+                data-name="<%= data.recData["FacilityName"] %>"
+                data-map-id="<%= mapsMapId %>"></div>
             </div>
           </div>
         </div>
@@ -216,7 +217,7 @@
 <script
   async
   defer
-  src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap&loading=async"
+  src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap&loading=async&libraries=marker"
   type="text/javascript"
 ></script>
 <script
