@@ -117,36 +117,5 @@
 </div>	
 
 
-<script>
-	
-
-	function initMap(){
-		const lat = <%= campground.lat %>;
-		const lng = <%= campground.lng %>;
-		const center = {lat: lat, lng: lng };
-		const map = new google.maps.Map(document.getElementById("map"), {
-			zoom: 8,
-			center: center,
-			scrollwheel: false
-		});
-		const contentString = `
-			<strong><%= campground.name %><br />
-			<%= campground.location %></strong>
-			<p><%= campground.description %></p>
-			`
-		const infowindow = new google.maps.InfoWindow({
-			content: contentString
-		});
-		const marker = new google.maps.Marker({
-			position: center,
-			map: map
-		});
-		marker.addListener('click', function(){
-			infowindow.open(map, marker);
-		});
-	}
-</script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap" type="text/javascript"></script>
-
 <a href="/campgrounds">Go Back To Campgrounds.</a>
 <%- include("../partials/footer") %>
