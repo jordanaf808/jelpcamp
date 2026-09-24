@@ -99,7 +99,10 @@ app.use(
 				// 'unsafe-inline' is still required here: 10 views use inline
 				// style="..." attributes, which cannot carry a nonce.
 				styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
-				connectSrc: ["'self'", ...connectSrcUrls],
+				// data: is needed because the Google Maps label worker fetch()es
+				// base64 marker images. It reads bytes already in the page and
+				// never touches the network. Google's CSP guide lists it too.
+				connectSrc: ["'self'", 'data:', ...connectSrcUrls],
 				fontSrc: ["'self'", ...fontSrcUrls],
 				// Campsite photos come from the RIDB API, whose hosts are not known
 				// until runtime, so any https image is allowed. Images cannot execute.
