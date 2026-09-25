@@ -129,6 +129,7 @@ router.get('/show/:id', async (req, res) => {
 					foundCampsite: madeCampsite,
 					favorite: false,
 					mapsKey: process.env.MAPS_API_KEY,
+					mapsMapId: process.env.MAPS_MAP_ID,
 				})
 			}
 		} else {
@@ -149,6 +150,7 @@ router.get('/show/:id', async (req, res) => {
 						foundCampsite,
 						favorite: true,
 						mapsKey: process.env.MAPS_API_KEY,
+						mapsMapId: process.env.MAPS_MAP_ID,
 					})
 				}
 			}
@@ -157,6 +159,7 @@ router.get('/show/:id', async (req, res) => {
 				foundCampsite,
 				favorite: false,
 				mapsKey: process.env.MAPS_API_KEY,
+				mapsMapId: process.env.MAPS_MAP_ID,
 			})
 		}
 	} catch (e) {
