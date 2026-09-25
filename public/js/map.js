@@ -6,8 +6,8 @@ const mapEl = document.getElementById('map');
 const mapToken = mapEl.dataset.token;
 const campsites = JSON.parse(mapEl.dataset.campsites);
 
-mapboxgl.accessToken = mapToken;
 const map = new mapboxgl.Map({
+  accessToken: mapToken,
   container: 'map',
   style: 'mapbox://styles/mapbox/dark-v10',
   center: [-113.787, 48.7596], // starting position [lng, lat] Glacial Nat'l Park.
