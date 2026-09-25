@@ -13,6 +13,7 @@ function initMap() {
     zoom: 8,
     center: center,
     scrollwheel: false,
+    mapId: mapEl.dataset.mapId,
   });
 
   // Built as a DOM node rather than an HTML string so the facility name from
@@ -21,7 +22,7 @@ function initMap() {
   title.textContent = mapEl.dataset.name;
   const infowindow = new google.maps.InfoWindow({ content: title });
 
-  const marker = new google.maps.Marker({ position: center, map: map });
+  const marker = new google.maps.marker.AdvancedMarkerElement({ position: center, map: map });
   marker.addListener('click', function () {
     infowindow.open(map, marker);
   });
