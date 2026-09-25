@@ -28,7 +28,7 @@
     "helmet": "^8.3.0",
     "joi": "^18.2.9",
     "method-override": "^3.0.0",
-    "mongoose": "^9.10.1",
+    "mongoose": "^9.10.2",
     "node-geocoder": "^4.2.0",
     "numeral": "^2.0.6",
     "passport": "^0.7.0",
@@ -40,7 +40,7 @@
     "node": ">=22.12.0 <25"
   },
   "devDependencies": {
-    "mongodb-memory-server": "11.2.0",
-    "supertest": "7.2.2"
+    "mongodb-memory-server": "11.3.0",
+    "supertest": "7.3.0"
   }
 }
