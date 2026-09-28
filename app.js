@@ -95,7 +95,11 @@ app.use(
 		contentSecurityPolicy: {
 			directives: {
 				defaultSrc: ["'self'"],
-				scriptSrc: ["'self'", ...scriptSrcUrls],
+				// 'wasm-unsafe-eval' lets the Maps vector renderer (webgl.js,
+				// shared-label-worker.js) compile its WebAssembly module. It only
+				// covers WebAssembly.instantiate(); unlike 'unsafe-eval' it does not
+				// enable JS eval()/Function()/string setTimeout.
+				scriptSrc: ["'self'", "'wasm-unsafe-eval'", ...scriptSrcUrls],
 				// 'unsafe-inline' is still required here: 10 views use inline
 				// style="..." attributes, which cannot carry a nonce.
 				styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
