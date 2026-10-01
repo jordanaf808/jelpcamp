@@ -215,10 +215,13 @@ The advisories were published against a version that was already locked.
 described in Part 3 trips at high and above only. Security updates are on, but no
 Dependabot security PR had arrived by 2026-10-01.
 
-**Not triaged.** Whether `express-rate-limit` calls any of the affected functions has
-not been checked. The limiters do set `ipv6Subnet: 56`
-([middleware/rateLimiters.js](middleware/rateLimiters.js)), so the library's IPv6
-handling is in use.
+**Partly triaged.** `express-rate-limit`'s `ipKeyGenerator` runs on every rate-limited
+request. When `node:net`'s `isIPv6()` accepts `req.ip`, it passes that string to the
+`Address6` parser and calls `isInSubnet()`. Two of the four advisories name those. An
+IPv4 `req.ip` never reaches the library. The limiters also set `ipv6Subnet: 56`
+([middleware/rateLimiters.js](middleware/rateLimiters.js)). Whether either call is
+exploitable here was not worked out: it depends on how much of `req.ip` a client
+controls behind Render and Cloudflare.
 
 - [ ] Take the patch, then confirm `npm audit` is back to 0. 10.7.1 and 10.7.2, the
       releases outside the vulnerable range, were both published on 2026-09-15, so
@@ -1072,7 +1075,7 @@ This list was everything 1–3 majors behind after Phase 1. An EOL major eventua
 | ~~`mapbox-gl`~~ | ~~CDN v1.12.0~~ | CDN v3.30.0 | ✅ Done, PR #47 (2026-09-25). There was no npm package to bump: it was removed in Phase 1 (`c1f1220`), and this row's old `2.15.0` was stale. Only the CDN `<script>` and `<link>` pins existed. From v2 on, Mapbox GL JS is licensed under Mapbox's terms of service, not BSD, and map loads count against the Mapbox account (per the PR) — an account matter, not a code one |
 
 **Deployed, but the per-PR checks are not recorded.** The owner deployed #41–#53 by
-2026-09-28 and #54 on 2026-10-01, and reported the live site working both times. Which
+2026-09-28 and #54 and #55 on 2026-10-01, and reported the live site working each time. Which
 items in each PR's test plan were exercised is not written down anywhere.
 
 Check <https://endoflife.date> before ordering these.
@@ -1260,9 +1263,8 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
       `addEventListener('gmp-click', …)`. `gmp-click` only fires when the marker is
       created with `gmpClickable: true`, which defaults to `false`, so #55 sets it. A
       rename alone would have silenced the warning and stopped the info window opening
-  - **Live:** the owner reports the map renders, with no CSP errors after #54. **#55 has
-    not been confirmed live** — check that clicking the marker still opens the info
-    window. No test covers the client-side map code
+  - **Live:** #55 is deployed, and the owner reports everything working with no console
+    errors (2026-10-01). No test covers the client-side map code
   - Surfaced by the 2026-09-04 smoke test after the Phase 1 dependency patches —
     pre-existing, unrelated to those upgrades.
   - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations) · [`AdvancedMarkerElement` reference](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers)
@@ -1310,4 +1312,4 @@ CSP entries and a second fix that only the browser console showed. In each case 
 version number was the easy part.
 
 **Open as of 2026-10-01:** one moderate `ip-address` advisory that the audit gate lets
-through, and #55 not yet confirmed on the live site.
+through.
