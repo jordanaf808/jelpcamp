@@ -5,9 +5,22 @@ last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-09-16**
+> **Status — updated 2026-10-01**
 >
-> **Phase 4 has started: Express 4 → 5 is done and deployed** (2026-09-16). PR #33
+> **Phase 4's version bumps are done, except `connect-flash`, whose latest release is
+> still 0.1.1.** Mongoose 9 (PR #41), the Mapbox GL JS CDN pin (#47), helmet 8 (#48),
+> joi 18 (#49) and ejs 6 (#50) merged between 2026-09-18 and 2026-09-25. The owner
+> deployed them by 2026-09-28 and reported the live site working. See Phase 4.
+>
+> **`npm audit` no longer reports 0.** It reports **1 moderate**: `ip-address` 10.5.0,
+> pulled in by `express-rate-limit`. CI is still green, because its gate is
+> `--audit-level=high`. **Open** — see the end of Part 1.
+>
+> **The CSP gained two entries for Google Maps** (PRs #51 and #54) after the marker
+> migration (#46). `script-src` still has no `'unsafe-inline'` and no `'unsafe-eval'`.
+> See Part 2.
+>
+> **Express 4 → 5 is done and deployed** (2026-09-16). PR #33
 > prepared the code while it still ran on Express 4. PR #34 fixed a redirect loop that #33
 > made reachable. PR #35 bumped the version and removed the `qs` override. See Phase 4.
 >
@@ -17,7 +30,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > | | Shipped in |
 > |---|---|
-> | helmet + strict CSP, no `script-src 'unsafe-inline'` | PR #5, verified in production; three inline scripts it missed fixed in PR #28, live 2026-09-14 |
+> | helmet + strict CSP, no `script-src 'unsafe-inline'` | PR #5, verified in production; three inline scripts it missed fixed in PR #28, live 2026-09-14; two entries added for Google Maps in PRs #51 and #54 |
 > | RIDB HTML sanitized at the fetch boundary | PR #6 / #8 |
 > | Session cookie: `expires` bug, `secure`, `sameSite`, `trust proxy` | PR #10 |
 > | Node runtime pinned + `npm ci` on deploy | PR #9 |
@@ -27,14 +40,15 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > Plus an unplanned but necessary detour: **three separate session-store failures**
 > traced to one `kruptein: ^3.0.0` range, fixed by upgrading connect-mongo to 6 (PR #7).
 >
-> **`npm audit` reports 0 vulnerabilities with no override.** From 2026-09-06 to
+> **`npm audit` reported 0 vulnerabilities, with no override, from 2026-09-16 until the
+> `ip-address` advisories above.** From 2026-09-06 to
 > 2026-09-16 that result depended on a `qs` override forcing Express 4 past its own
 > `~6.15.1` cap. That was a stopgap, and PR #35 removed it: Express 5 declares a `qs`
 > range that includes the patched version.
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
 > have all landed. Every pull request and every push to `main` now runs `npm ci`,
-> **27 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
+> **28 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
 > required before anything merges into `main`. Dependabot alerts, grouped version
 > updates (PR #24) and security updates are all on. **CI does not gate deploys.**
 > Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
@@ -178,6 +192,36 @@ advisories were published that no Express 4 release can resolve: Express 4.22.2
 A `qs` override was the stopgap from 2026-09-06. **✅ Express 5.2.1 landed in PR #35 on
 2026-09-16, and the override went with it.** See **Phase 4** in the
 [Remediation checklist](#remediation-checklist).
+
+### 🟡 New since the snapshot: `ip-address` under the rate limiter (found 2026-10-01, open)
+
+`npm audit` reports **1 moderate severity vulnerability** on `main`: `ip-address`
+10.5.0, with four advisories
+([GHSA-rpw4-54j3-4h4q](https://github.com/advisories/GHSA-rpw4-54j3-4h4q),
+[GHSA-2vr4-cq9g-pvrc](https://github.com/advisories/GHSA-2vr4-cq9g-pvrc),
+[GHSA-j6r3-76f7-8jcv](https://github.com/advisories/GHSA-j6r3-76f7-8jcv),
+[GHSA-h3mg-xc3c-68pw](https://github.com/advisories/GHSA-h3mg-xc3c-68pw)).
+It is a production dependency, pulled in only by `express-rate-limit` 8.7.0, which
+declares `^10.2.0`. `npm audit` gives the vulnerable range as `<=10.7.0` and says
+`npm audit fix` resolves it, so the patch is inside the existing range.
+
+No dependency changed to cause this. CI on `main` reported 0 on 2026-09-28 (run
+`36479101715`) and 1 moderate on 2026-10-01 (run `36817391424`), and the only commit
+between them is #54, which touches `app.js`. Dependabot alert #1 opened on 2026-09-29.
+The advisories were published against a version that was already locked.
+
+**CI did not fail, and that is the configured behaviour.** The gate is
+`npm audit --audit-level=high`, so a moderate is printed and passes. The tripwire
+described in Part 3 trips at high and above only. Security updates are on, but no
+Dependabot security PR had arrived by 2026-10-01.
+
+**Not triaged.** Whether `express-rate-limit` calls any of the affected functions has
+not been checked. The limiters do set `ipv6Subnet: 56`
+([middleware/rateLimiters.js](middleware/rateLimiters.js)), so the library's IPv6
+handling is in use.
+
+- [ ] Take the patch, then confirm `npm audit` is back to 0. `min-release-age=7` in
+      `~/.npmrc` may hold back a version published in the last week
 
 ---
 
@@ -378,6 +422,48 @@ Worth generalising: a strict CSP converts "works" into "silently does nothing" f
 inline script added later. Reading the console after a deploy is what caught this; a
 test on the rendered HTML catches it before the deploy.
 
+### 🟡 The CSP blocked Google's vector map renderer (found 2026-09-23, resolved 2026-10-01)
+
+PR #46 migrated the campsite map to `AdvancedMarkerElement`, which needs a Map ID.
+After that deploy the console showed CSP violations from Google's own scripts. They
+were found in two passes, one deploy apart:
+
+| Reported | Blocked | Directive | Fix |
+| --- | --- | --- | --- |
+| 2026-09-23 | `shared-label-worker.js` calling `fetch()` on a base64 `data:` image | `connect-src` | PR #51 adds `data:` |
+| 2026-09-28 | `webgl.js` and `shared-label-worker.js` compiling a WebAssembly module | `script-src` | PR #54 adds `'wasm-unsafe-eval'` |
+
+The map rendered throughout (owner). For the second one, the browser refused both the
+streaming compile and the fallback Google's code tried after it.
+
+Both scripts belong to Google's WebGL (vector) renderer, and the errors first appeared
+after #46 added the Map ID. **That the Map ID is what turned the vector renderer on is
+inferred from the timing.** It was not checked against the Map ID's settings in Google
+Cloud Console.
+
+What each entry allows:
+
+- **`data:` in `connect-src`.** `connect-src` governs `fetch()`. `img-src` already had
+  `data:`, but one directive does not cover the other. A `fetch()` of a `data:` URI
+  decodes bytes the script already holds and never reaches the network, so it cannot
+  send anything out.
+- **`'wasm-unsafe-eval'` in `script-src`.** It permits compiling and instantiating
+  WebAssembly and nothing else: `eval()`, `Function()` and string `setTimeout` stay
+  blocked. [Google's documented policy](https://developers.google.com/maps/documentation/javascript/content-security-policy)
+  uses the broader `'unsafe-eval'`, which was not needed. If `'unsafe-eval'` is ever
+  added, it overrides this keyword
+  ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src)).
+
+**Verified:** after deploying #54 the owner saw no CSP errors on the live site
+(2026-10-01). **Not added:** Google's policy also lists `blob:` in `connect-src`. No
+violation has asked for it.
+
+Worth generalising: a third-party script can start needing a wider policy without any
+change to this repo's own scripts, and nothing in `tests/` can see it. The violations
+come from Google's code, in a browser, and the Maps key does not allow `localhost`.
+Both were found by reading the console after a deploy. Comparing the policy with
+Google's documented one before merging #46 would have shown both gaps at once.
+
 ### 🟡 Three apps shared one database (resolved 2026-09-09)
 
 v12, v13 and NodeAppFromScratch all pointed at the same Atlas database, `storybooks`,
@@ -534,7 +620,7 @@ it. And fixing a feature that never worked also turns on every bug in it that ne
 `>=20.0.0` originally proposed here. **Tests landed 2026-09-09** (PR #18); `"test"` now
 runs `node --test --test-concurrency=1 "tests/**/*.test.js"`. **CI landed 2026-09-10**
 (PR #22) and runs the suite on every pull request — 9 tests then, 13 as of 2026-09-14, 27
-as of 2026-09-15. See
+as of 2026-09-15, 28 since PR #38. See
 Part 3.
 
 As found:
@@ -590,9 +676,10 @@ What the Dependabot config does, and what it does not:
 ### The honest caveat for this repo
 
 **Dependabot's usefulness scales with your test suite.** When this section was written
-the project had none. It now has 27 tests, run on every PR — enough to make the bot
+the project had none. It now has 28 tests, run on every PR — enough to make the bot
 trustworthy for what they cover: the database guard, the login rate limiter, test
-teardown, the form pages' freedom from inline scripts, the request sanitizer, and the
+teardown, the form pages' freedom from inline scripts, the request sanitizer, deleting
+an owned comment, and the
 "back" redirects, including the redirect loop and a comment POST with no form body. The
 inline-script file registers a user and then loads a page behind `isLoggedIn`, so a real
 passport session round trip is covered. Since PR #34, one test also logs in through
@@ -629,7 +716,7 @@ for Part 2.
 | 5 | Add `engines`, `.nvmrc` | 5 min | Pins the runtime |
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
 | 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **✅ Tests PR #18, CI PR #22; `test` required on `main`** |
-| 8 | Major upgrades — mongoose first | ongoing | One library per PR. **Express went first instead: ✅ PR #35 (2026-09-16), forced by the `qs` advisories** |
+| 8 | Major upgrades — mongoose first | ongoing | One library per PR. **Express went first instead: ✅ PR #35 (2026-09-16), forced by the `qs` advisories. Mongoose ✅ #41, helmet ✅ #48, joi ✅ #49, ejs ✅ #50. Only `connect-flash` is left** |
 | 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24), security updates ✅ (2026-09-14)** |
 
 Steps 2–4 are the ones `npm audit` will never tell you about, and they carry more
@@ -690,11 +777,15 @@ overstates the app's actual security posture.
         enforced by `tests/inlineScripts.test.js`
   - [x] Verified locally: Mapbox renders, zero CSP violations — on the pages checked;
         it did not catch the three form pages
-  - [ ] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff
+  - [x] ~~Bump `helmet` 7 → 8~~ — deferred to Phase 4, kept out of the CSP diff.
+        **Done there, PR #48**
   - [x] **Google Maps CSP verified in production 2026-09-05** — deployed and checked in
         DevTools: no CSP violations, map renders. `frame-src *.google.com` was **not**
         needed. The only console output is the pre-existing `google.maps.Marker`
         deprecation warning, tracked separately under Phase 4.
+        **No longer the whole policy:** the marker migration needed `data:` in
+        `connect-src` and `'wasm-unsafe-eval'` in `script-src` (PRs #51, #54). See the
+        vector-renderer finding in Part 2
 - [x] **Sanitize RIDB API data before rendering** — done, branch `fix/sanitize-ridb-html`
   - [x] New `utils/sanitizeDescription.js` — a **display** allowlist (`p h1-h4 ul ol li
         br hr strong b em i a`), derived from 276 facilities sampled across 6 RIDB
@@ -891,7 +982,7 @@ overstates the app's actual security posture.
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
       — **PR #18**; 9 passing after PR #23, 13 after PR #28, 23 after PR #33, 27 after
-      PR #34. See [HANDOFF.md](HANDOFF.md) for what each test pins
+      PR #34, 28 after PR #38. See [HANDOFF.md](HANDOFF.md) for what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
@@ -963,20 +1054,25 @@ overstates the app's actual security posture.
 
 ### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
 
-Still outstanding after Phase 1 — `npm audit` is clean, but these are 1–3 majors behind
-and an EOL major eventually means *no fix available* for a future advisory.
+This list was everything 1–3 majors behind after Phase 1. An EOL major eventually means
+*no fix available* for a future advisory. **As of 2026-10-01 every row is done except
+`connect-flash`**, which has no newer release to move to.
 
 | Package | Current | Latest | Priority |
 |---|---|---|---|
-| `mongoose` | 7.8.12 | 9.10.1 | **Highest, in progress.** No formal EOL, but `7x` is not the actively developed dist-tag. Prep done in PR #38 (skips 8.x — see below); bump not started |
+| ~~`mongoose`~~ | ~~7.8.12~~ | 9.10.2 | ✅ Done, PR #41 (2026-09-18), skipping 8.x — see below. Prepared in #38 and #39. Patch bumps since, via Dependabot: 9.10.1 (#42), 9.10.2 (#53) |
 | ~~`express`~~ | ~~4.22.2~~ | 5.2.1 | ✅ Done, PR #35 (2026-09-16), deployed the same day — forced by the `qs` advisories. Prepared in #33 and #34 |
-| `ejs` | 3.1.10 | 6.0.1 | Medium — 3 majors behind |
-| `joi` | 17.13.7 | 18.2.5 | Medium — re-verify the custom `escapeHTML` extension. (17.13.7 patch landed via Dependabot #25, 2026-09-14) |
-| `helmet` | 7.2.0 | 8.3.0 | Bundle with the CSP work above |
+| ~~`ejs`~~ | ~~3.1.10~~ | 6.0.1 | ✅ Done, PR #50 (2026-09-25). All nine live views were rendered on 6.0.1 before the bump (see the PR) |
+| ~~`joi`~~ | ~~17.13.8~~ | 18.2.9 | ✅ Done, PR #49 (2026-09-25). The custom `escapeHTML` extension was run against 18.2.9 before the bump (see the PR) |
+| ~~`helmet`~~ | ~~7.2.0~~ | 8.3.0 | ✅ Done, PR #48 (2026-09-25). The CSP config did not change |
 | ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
 | ~~`passport`~~ | ~~0.6.0~~ | 0.7.0 | ✅ Done, Dependabot #25 (2026-09-14) — arrived despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here. Deployed and checked live 2026-09-14 |
-| `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it |
-| `mapbox-gl` | 2.15.0 | 3.29.0 | Moot if removed — but reconcile the **v1.12.0 pinned in the CDN `<script>` tags** |
+| `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it. **The only row still open**, and a version bump cannot close it |
+| ~~`mapbox-gl`~~ | ~~CDN v1.12.0~~ | CDN v3.30.0 | ✅ Done, PR #47 (2026-09-25). There was no npm package to bump: it was removed in Phase 1 (`c1f1220`), and this row's old `2.15.0` was stale. Only the CDN `<script>` and `<link>` pins existed. From v2 on, Mapbox GL JS is licensed under Mapbox's terms of service, not BSD, and map loads count against the Mapbox account (per the PR) — an account matter, not a code one |
+
+**Deployed, but the per-PR checks are not recorded.** The owner deployed #41–#53 by
+2026-09-28 and #54 on 2026-10-01, and reported the live site working both times. Which
+items in each PR's test plan were exercised is not written down anywhere.
 
 Check <https://endoflife.date> before ordering these.
 
@@ -1085,7 +1181,7 @@ proxy or in a real browser:
 - [ ] **Search with two activities selected** still filters by both, under the `simple`
       query parser
 
-#### ⬜ Mongoose 7 -> 9 — scanned before the bump (added 2026-09-16)
+#### ✅ Mongoose 7 -> 9 — scanned before the bump (added 2026-09-16, done 2026-09-18)
 
 The table above targets 9.x, skipping 8.x. Verified rather than assumed:
 
@@ -1126,30 +1222,54 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
 - [x] **Prep: rename `findByIdAndRemove` → `findByIdAndDelete`**, plus a new
       test (`tests/comments.test.js`) pinning comment deletion — previously
       uncovered per the "Not covered" list below. **Done in PR #38.**
-- [ ] **Bump `mongoose` 7.8.12 → 9.x**, update the lockfile, re-verify
-      `npm audit` and the mongodb/bson driver convergence above. Not started.
+- [x] **Bump `mongoose` 7.8.12 → 9.x**, update the lockfile, re-verify
+      `npm audit` and the mongodb/bson driver convergence above. **Done in PR #41
+      (2026-09-18):** mongoose 9.10.0, with passport-local-mongoose 8 → 9.1.0.
+  - **The convergence held for production dependencies.** The lockfile has one
+    `mongodb@7.6.0` and one `bson@7.3.2`, shared by mongoose and connect-mongo. Since
+    #53 a second `mongodb@7.5.0` is nested under `mongodb-memory-server-core` 11.3.0.
+    That is a devDependency's private copy; the app never loads it
+  - **The scan above did not cover passport-local-mongoose, and that is what broke.**
+    Version 9's `User.register` no longer takes a callback, so the callback
+    `POST /register` passed was ignored and nothing responded. The route now awaits it
+    (`c14294f`). See [HANDOFF.md](HANDOFF.md) for how it was found
+  - **Follow-ups, PR #43 (2026-09-22):** the register `catch` now handles only
+    `UserExistsError` and `MissingUsernameError` and sends anything else to
+    `next(err)`, so a database failure no longer renders as `err.message` inside the
+    form. `req.login` replaced re-authenticating a user who was just created. No test
+    covers either error path
 
 #### Client-side API deprecations
 
 Not security findings — maintenance debt in third-party browser APIs, tracked here
 because nothing else in the repo tracks it and `npm audit` cannot see it.
 
-- [ ] **`google.maps.Marker` deprecated 2024-02-21** — migrate to `google.maps.marker.AdvancedMarkerElement`
-  - [views/campsites/show.ejs:233](views/campsites/show.ejs#L233) — **the live template; this is the one that matters**
-  - [views/campgrounds/show.ejs:140](views/campgrounds/show.ejs#L140) — dead code per commit `96be9ad`; **delete rather than migrate**
-  - *Not urgent:* no discontinuation date announced, 12 months notice promised, and
-    major regressions still get fixed. But **existing bugs will not be addressed**,
-    so this is a slow leak rather than a deadline.
-  - *Not a drop-in swap:* `AdvancedMarkerElement` also requires a **Map ID** on the
-    map instance and the `marker` library in the loader (`&libraries=marker`).
-    Budget more than a find-and-replace.
+- [x] **`google.maps.Marker` deprecated 2024-02-21** — migrated to
+      `google.maps.marker.AdvancedMarkerElement`. **Done in PR #46 (2026-09-23)**
+  - The live page: [views/campsites/show.ejs](views/campsites/show.ejs) and
+    [public/js/gmap.js](public/js/gmap.js). The loader now has `&libraries=marker`, and
+    the map takes its `mapId` from a new `MAPS_MAP_ID` environment variable, passed
+    through the route and a `data-map-id` attribute
+  - `views/campgrounds/show.ejs` — dead code per commit `96be9ad`. Its map code was
+    **deleted, not migrated**. The file itself is still there, still rendered by nothing
+  - *Not a drop-in swap* was right, and it cost more than this entry budgeted:
+    - **Two CSP additions** (#51, #54). See the vector-renderer finding in Part 2
+    - **`marker.addListener('click', …)` is deprecated on the new element** and logged a
+      warning on every campsite page. **PR #55 (2026-10-01)** uses
+      `addEventListener('gmp-click', …)`. `gmp-click` only fires when the marker is
+      created with `gmpClickable: true`, which defaults to `false`, so #55 sets it. A
+      rename alone would have silenced the warning and stopped the info window opening
+  - **Live:** the owner reports the map renders, with no CSP errors after #54. **#55 has
+    not been confirmed live** — check that clicking the marker still opens the info
+    window. No test covers the client-side map code
   - Surfaced by the 2026-09-04 smoke test after the Phase 1 dependency patches —
     pre-existing, unrelated to those upgrades.
-  - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations)
+  - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations) · [`AdvancedMarkerElement` reference](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers)
 
-- [ ] *Also noticed:* both map templates use the legacy `callback=initMap` loader
-      ([campsites/show.ejs:245](views/campsites/show.ejs#L245)). Google now recommends
-      the dynamic library import. Bundle with the marker migration if you do it.
+- [ ] *Also noticed:* the map still uses the legacy `callback=initMap` loader
+      ([campsites/show.ejs:220](views/campsites/show.ejs#L220)). Google now recommends
+      the dynamic library import. It was not bundled with the marker migration, so it
+      is still open. It is the only template left that loads Google Maps.
 
 ### The one-line summary
 
@@ -1158,7 +1278,7 @@ Phase 1 took 15 minutes and closed 25 advisories. **Phase 2 held more real risk 
 (`d39d9f3`, 2026-09-08).
 
 **Phase 3 is complete as of 2026-09-14.** Its pipeline landed on 2026-09-10 (`22b5286`),
-and the security-updates toggle followed. 27 tests and an audit gate run on every pull
+and the security-updates toggle followed. 28 tests and an audit gate run on every pull
 request, and `main` will not accept a merge until they pass. Deploys are manual and do
 not check CI. On its very first run CI found a bug no local run could: the guard that
 keeps the test suite off the production database failed open on any machine without a
@@ -1179,4 +1299,14 @@ The real bug in the migration came from the preparation, not from the bump. Maki
 "back" redirects Express-5-safe also made them work for the first time since helmet was
 enabled, and that made a redirect loop reachable (fixed in #34). #33's tests passed, and
 reading its diff did not show the loop. A review after the merge found it by tracing what
-a browser would do on each redirect; supertest then reproduced the two server hops. `mongoose`, two majors behind, is now the highest-priority upgrade left.
+a browser would do on each redirect; supertest then reproduced the two server hops.
+
+**The rest of Phase 4's bumps are done (2026-10-01).** Mongoose 9, helmet 8, joi 18 and
+ejs 6 are merged and deployed; only `connect-flash` is left, and it has no newer release.
+The pattern from Express repeated twice. The Mongoose bump broke in a package the scan
+had not covered, passport-local-mongoose. The Google Maps marker migration needed two
+CSP entries and a second fix that only the browser console showed. In each case the
+version number was the easy part.
+
+**Open as of 2026-10-01:** one moderate `ip-address` advisory that the audit gate lets
+through, and #55 not yet confirmed on the live site.
