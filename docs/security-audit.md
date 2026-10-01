@@ -1,7 +1,11 @@
-# Security Findings — YelpCamp v12
+# Security Audit — YelpCamp v12
 
 Audit performed 2026-08-31 against `package-lock.json` (lockfileVersion 3,
 last updated Sep 2023) on Node v24.11.0 / npm 11.15.0.
+
+This file was `SECURITY-FINDINGS.md` in the repo root until 2026-10-01. Pull requests
+and commit messages before that date use the old name. For the short version, read
+[audit-summary.md](audit-summary.md).
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
@@ -12,9 +16,10 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > joi 18 (#49) and ejs 6 (#50) merged between 2026-09-18 and 2026-09-25. The owner
 > deployed them by 2026-09-28 and reported the live site working. See Phase 4.
 >
-> **`npm audit` no longer reports 0.** It reports **1 moderate**: `ip-address` 10.5.0,
-> pulled in by `express-rate-limit`. CI is still green, because its gate is
-> `--audit-level=high`. **Open** — see the end of Part 1.
+> **`npm audit` reports 0 again.** From 2026-09-29 it reported **1 moderate**:
+> `ip-address` 10.5.0, pulled in by `express-rate-limit`. CI stayed green, because its
+> gate is `--audit-level=high`. PR #57 patched it on 2026-10-01. The owner decided to
+> keep the gate at `high`. See the end of Part 1.
 >
 > **The CSP gained two entries for Google Maps** (PRs #51 and #54) after the marker
 > migration (#46). `script-src` still has no `'unsafe-inline'` and no `'unsafe-eval'`.
@@ -193,9 +198,9 @@ A `qs` override was the stopgap from 2026-09-06. **✅ Express 5.2.1 landed in P
 2026-09-16, and the override went with it.** See **Phase 4** in the
 [Remediation checklist](#remediation-checklist).
 
-### 🟡 New since the snapshot: `ip-address` under the rate limiter (found 2026-10-01, open)
+### 🟡 New since the snapshot: `ip-address` under the rate limiter (found and patched 2026-10-01)
 
-`npm audit` reports **1 moderate severity vulnerability** on `main`: `ip-address`
+`npm audit` reported **1 moderate severity vulnerability** on `main`: `ip-address`
 10.5.0, with four advisories
 ([GHSA-rpw4-54j3-4h4q](https://github.com/advisories/GHSA-rpw4-54j3-4h4q),
 [GHSA-2vr4-cq9g-pvrc](https://github.com/advisories/GHSA-2vr4-cq9g-pvrc),
@@ -215,6 +220,11 @@ The advisories were published against a version that was already locked.
 described in Part 3 trips at high and above only. Security updates are on, but no
 Dependabot security PR had arrived by 2026-10-01.
 
+**Decided 2026-10-01: the gate stays at `high`** (owner). At `moderate`, an advisory
+like this one turns every open PR red until it is patched, including PRs that did not
+touch dependencies. The cost of `high` is that a moderate advisory is visible only in
+the CI log and in Dependabot's alert list, so one of those has to be read.
+
 **Partly triaged.** `express-rate-limit`'s `ipKeyGenerator` runs on every rate-limited
 request. When `node:net`'s `isIPv6()` accepts `req.ip`, it passes that string to the
 `Address6` parser and calls `isInSubnet()`. Two of the four advisories name those. An
@@ -223,9 +233,11 @@ IPv4 `req.ip` never reaches the library. The limiters also set `ipv6Subnet: 56`
 exploitable here was not worked out: it depends on how much of `req.ip` a client
 controls behind Render and Cloudflare.
 
-- [ ] Take the patch, then confirm `npm audit` is back to 0. 10.7.1 and 10.7.2, the
-      releases outside the vulnerable range, were both published on 2026-09-15, so
-      `min-release-age=7` in `~/.npmrc` does not hold them back
+- [x] Take the patch, then confirm `npm audit` is back to 0. **Done in PR #57
+      (2026-10-01):** `ip-address` 10.5.0 → 10.7.2, `package-lock.json` only, applied
+      with `npm audit fix --package-lock-only`. CI on `main` after the merge: 28
+      passing, `found 0 vulnerabilities` (run `36913820267`). Dependabot has 0 open
+      alerts. Whether it has been deployed is not recorded
 
 ---
 
@@ -1263,8 +1275,9 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
       `addEventListener('gmp-click', …)`. `gmp-click` only fires when the marker is
       created with `gmpClickable: true`, which defaults to `false`, so #55 sets it. A
       rename alone would have silenced the warning and stopped the info window opening
-  - **Live:** #55 is deployed, and the owner reports everything working with no console
-    errors (2026-10-01). No test covers the client-side map code
+  - **Live:** #55 is deployed. The owner checked the marker on the live site: it
+    works, with no errors or warnings in the console (2026-10-01). No test covers the
+    client-side map code
   - Surfaced by the 2026-09-04 smoke test after the Phase 1 dependency patches —
     pre-existing, unrelated to those upgrades.
   - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations) · [`AdvancedMarkerElement` reference](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers)
@@ -1311,5 +1324,6 @@ had not covered, passport-local-mongoose. The Google Maps marker migration neede
 CSP entries and a second fix that only the browser console showed. In each case the
 version number was the easy part.
 
-**Open as of 2026-10-01:** one moderate `ip-address` advisory that the audit gate lets
-through.
+**As of 2026-10-01 `npm audit` is back to 0.** A moderate `ip-address` advisory passed
+the audit gate unnoticed for two days and was patched in PR #57. What is still open is
+listed in [audit-summary.md](audit-summary.md).
