@@ -22,8 +22,13 @@ function initMap() {
   title.textContent = mapEl.dataset.name;
   const infowindow = new google.maps.InfoWindow({ content: title });
 
-  const marker = new google.maps.marker.AdvancedMarkerElement({ position: center, map: map });
-  marker.addListener('click', function () {
+  // gmp-click only fires when gmpClickable is true; it defaults to false.
+  const marker = new google.maps.marker.AdvancedMarkerElement({
+    position: center,
+    map: map,
+    gmpClickable: true,
+  });
+  marker.addEventListener('gmp-click', function () {
     infowindow.open(map, marker);
   });
 }
