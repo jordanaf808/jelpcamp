@@ -61,7 +61,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > **Also on 2026-09-09:** the three-apps-one-database problem is fixed. v12 now uses
 > `wandur` in both local and production, v13 uses `yelpcamp_v13`, and `storybooks`
 > reverts to being NodeAppFromScratch's own database (plus a frozen v12 rollback copy).
-> See [HANDOFF.md](HANDOFF.md) for the copy procedure and the cutover verification.
+> See [handoff.md](handoff.md) for the copy procedure and the cutover verification.
 
 ## Summary
 
@@ -128,13 +128,13 @@ Sorted by actual risk to this app, which is **not** the same order as severity:
 Installed `7.5.0`; the `$nor` issue affects `<=7.8.8`, so all three apply. This
 app queries user-supplied input against Mongo throughout `routes/`, so untrusted
 input reaches the vulnerable code path on ordinary requests. `express-mongo-sanitize`
-is mounted at [app.js:36](app.js#L36), which strips `$`-prefixed keys and reduces
+is mounted at [app.js:36](../app.js#L36), which strips `$`-prefixed keys and reduces
 exposure — but it is defence-in-depth, not a patch. **Fix regardless.**
 
 **`express` open redirect** — [GHSA-rv95-896h-c2vc](https://github.com/advisories/GHSA-rv95-896h-c2vc) (moderate, affects `<4.19.2`; installed `4.18.2`).
 
 Matters here specifically because of the `returnTo` redirect pattern in
-[middleware/index.js](middleware/index.js) — `req.session.returnTo` is set from
+[middleware/index.js](../middleware/index.js) — `req.session.returnTo` is set from
 `req.originalUrl` and later redirected to. Worth confirming that path can't be
 steered to an external host after patching.
 
@@ -143,7 +143,7 @@ steered to an external host after patching.
 #### 🟡 Free to patch, low practical risk
 
 - **`form-data` weak boundary** — [GHSA-fjxv-7rqg-78g4](https://github.com/advisories/GHSA-fjxv-7rqg-78g4) (critical). Reaches you only through `axios` multipart posts. This app uses axios for `GET` requests to the RIDB API, so the vulnerable path likely never executes. Critical by CVSS, near-zero by reachability.
-- **`sanitize-html`** — [GHSA-vccv-cmxp-4j9h](https://github.com/advisories/GHSA-vccv-cmxp-4j9h) — incomplete URI-scheme validation allowing `javascript:` URIs. Your config in [middleware/index.js:18](middleware/index.js#L18) uses `allowedTags: []` / `allowedAttributes: {}` (strip everything), so the attribute-based bypass doesn't apply to how you call it. Patch anyway; don't rely on the config staying that strict.
+- **`sanitize-html`** — [GHSA-vccv-cmxp-4j9h](https://github.com/advisories/GHSA-vccv-cmxp-4j9h) — incomplete URI-scheme validation allowing `javascript:` URIs. Your config in [middleware/index.js:18](../middleware/index.js#L18) uses `allowedTags: []` / `allowedAttributes: {}` (strip everything), so the attribute-based bypass doesn't apply to how you call it. Patch anyway; don't rely on the config staying that strict.
 - **`postcss`, `nanoid`, `bn.js`, `socks`, `ip`, `protocol-buffers-schema`** — build/tooling-layer packages that never execute on a request path.
 
 #### ⚪ Removable — no patch needed
@@ -153,9 +153,9 @@ Three direct dependencies aren't used at all (verified by `grep` across
 
 | Package | Evidence | Note |
 |---|---|---|
-| `body-parser` | 0 source references | [app.js:31](app.js#L31) uses the built-in `express.urlencoded()`. Redundant since Express 4.16. Express carries its own copy — removing the direct dep is cleanup, not a fix. |
-| `connect-ensure-login` | 0 source references | Superseded by the hand-rolled `isLoggedIn` in [middleware/index.js](middleware/index.js). |
-| `mapbox-gl` | `require` commented out at [routes/index.js:7](routes/index.js#L7) | Loaded from the Mapbox CDN in [views/partials/headerBack.ejs:30](views/partials/headerBack.ejs#L30). The npm copy is a large unused browser bundle; it is the sole source of the `protocol-buffers-schema` advisory. |
+| `body-parser` | 0 source references | [app.js:31](../app.js#L31) uses the built-in `express.urlencoded()`. Redundant since Express 4.16. Express carries its own copy — removing the direct dep is cleanup, not a fix. |
+| `connect-ensure-login` | 0 source references | Superseded by the hand-rolled `isLoggedIn` in [middleware/index.js](../middleware/index.js). |
+| `mapbox-gl` | `require` commented out at [routes/index.js:7](../routes/index.js#L7) | Loaded from the Mapbox CDN in [views/partials/headerBack.ejs:30](../views/partials/headerBack.ejs#L30). The npm copy is a large unused browser bundle; it is the sole source of the `protocol-buffers-schema` advisory. |
 
 ### Recommended sequence
 
@@ -219,7 +219,7 @@ Dependabot security PR had arrived by 2026-10-01.
 request. When `node:net`'s `isIPv6()` accepts `req.ip`, it passes that string to the
 `Address6` parser and calls `isInSubnet()`. Two of the four advisories name those. An
 IPv4 `req.ip` never reaches the library. The limiters also set `ipv6Subnet: 56`
-([middleware/rateLimiters.js](middleware/rateLimiters.js)). Whether either call is
+([middleware/rateLimiters.js](../middleware/rateLimiters.js)). Whether either call is
 exploitable here was not worked out: it depends on how much of `req.ip` a client
 controls behind Render and Cloudflare.
 
@@ -246,7 +246,7 @@ see after Part 1.
 ### 🔴 Security headers are disabled
 
 `helmet` is in `dependencies` but **commented out** — the `require` at
-[app.js:13](app.js#L13) and the entire CSP block at [app.js:38–91](app.js#L38-L91).
+[app.js:13](../app.js#L13) and the entire CSP block at [app.js:38–91](../app.js#L38-L91).
 
 The app currently serves **no CSP, no `X-Frame-Options`, no `X-Content-Type-Options`,
 no HSTS.** Combined with the XSS sink below, this is the most serious finding in
@@ -271,12 +271,12 @@ inline `<script>` blocks in the campsite views into files.
 
 EJS `<%- %>` interpolates **without escaping**. These render RIDB API data:
 
-- [views/campsites/campsites.ejs:191](views/campsites/campsites.ejs#L191) — `<%-name.FacilityDescription%>`
-- [views/campsites/results.ejs:218](views/campsites/results.ejs#L218)
-- [views/campsites/index.ejs:224](views/campsites/index.ejs#L224)
-- [views/campsites/show.ejs:50](views/campsites/show.ejs#L50) — `<%-data.recData.FacilityDescription%>`
+- [views/campsites/campsites.ejs:191](../views/campsites/campsites.ejs#L191) — `<%-name.FacilityDescription%>`
+- [views/campsites/results.ejs:218](../views/campsites/results.ejs#L218)
+- [views/campsites/index.ejs:224](../views/campsites/index.ejs#L224)
+- [views/campsites/show.ejs:50](../views/campsites/show.ejs#L50) — `<%-data.recData.FacilityDescription%>`
 
-Your `sanitize-html` Joi extension in [middleware/index.js](middleware/index.js)
+Your `sanitize-html` Joi extension in [middleware/index.js](../middleware/index.js)
 correctly covers *user-submitted* content (comment text, username). **API
 responses never pass through it.** The implicit assumption is that recreation.gov
 is trustworthy — probably true, but it means your XSS posture depends on a third
@@ -291,7 +291,7 @@ rendering (keeps intended formatting, strips scripts), or switch to `<%= %>`
 `campsites.ejs` is rendered by nothing — see the dead-code list in Phase 4.
 Current line numbers are index.ejs:226, results.ejs:220, show.ejs:50.
 
-**A fourth sink, not originally listed:** [public/js/map.js](public/js/map.js)
+**A fourth sink, not originally listed:** [public/js/map.js](../public/js/map.js)
 built its Mapbox popup with `.setHTML()`, interpolating the RIDB `FacilityName`
 and `FacilityTypeDescription` straight into an HTML string. Same third-party data,
 client-side sink. `gmap.js` already avoided this using `textContent`.
@@ -303,7 +303,7 @@ Map data now travels through escaped `data-` attributes read by `public/js/map.j
 
 ### 🟡 Session cookie: two gaps
 
-[app.js:106–117](app.js#L106-L117) is largely correct — `httpOnly: true`,
+[app.js:106–117](../app.js#L106-L117) is largely correct — `httpOnly: true`,
 `resave: false`, `saveUninitialized: false`, and a real `MongoStore` rather than
 `MemoryStore`. The secret is now split in two (2026-09-05): `SESSION_SECRET` signs
 the cookie, `SESSION_STORE_SECRET` encrypts the payload at rest. Two things missing:
@@ -312,7 +312,7 @@ the cookie, `SESSION_STORE_SECRET` encrypts the payload at rest. Two things miss
 2. **No `sameSite`** — add `sameSite: 'lax'` for CSRF defence-in-depth.
 
 **Separate bug, same block:** `expires: Date.now() + 1000 * 60 * 60 * 24 * 7`
-([app.js:113](app.js#L113)) is evaluated **once at module load**, not per session.
+([app.js:113](../app.js#L113)) is evaluated **once at module load**, not per session.
 Every session issued gets an expiry of one week after *server start*, so sessions
 issued eight days into an uptime period are born already expired. `maxAge` on the
 next line is relative and works correctly — delete the `expires` line and keep
@@ -481,7 +481,7 @@ exactly such an operation.
 
 Resolved by pointing v12 at `wandur` and v13 at `yelpcamp_v13`, copying v12's data
 across with `_id`s preserved, and cutting Render over. `storybooks` was left untouched
-as a rollback path. Full procedure and verification in [HANDOFF.md](HANDOFF.md).
+as a rollback path. Full procedure and verification in [handoff.md](handoff.md).
 
 ### 🟡 Secret reuse across projects (found 2026-09-09)
 
@@ -496,12 +496,12 @@ compromises, and the Atlas user has access to every database on the cluster rath
 than the one its app needs.
 
 - [ ] Generate a distinct `SESSION_SECRET` per app (rotating v12's requires a
-      `sessions` clear — see the table in [HANDOFF.md](HANDOFF.md))
+      `sessions` clear — see the table in [handoff.md](handoff.md))
 - [ ] Create per-app Atlas database users scoped to their own database
 
 ### 🟡 The test-database guard failed open without `.env` (found and fixed 2026-09-10)
 
-[tests/helpers/assertEphemeralDb.js](tests/helpers/assertEphemeralDb.js) exists to stop
+[tests/helpers/assertEphemeralDb.js](../tests/helpers/assertEphemeralDb.js) exists to stop
 the test suite ever touching the production database. One of its functions held two
 checks with different preconditions:
 
@@ -528,7 +528,7 @@ up normally" fails open exactly where nobody is watching.
 ### 🟡 Render's spin-down resets the registration limit early (found 2026-09-10, resolved 2026-09-15)
 
 The rate limiters use express-rate-limit's in-memory store, and
-[middleware/rateLimiters.js](middleware/rateLimiters.js) justifies that with: *"counters
+[middleware/rateLimiters.js](../middleware/rateLimiters.js) justifies that with: *"counters
 reset on deploy or restart. That is accepted: an attacker cannot trigger a restart."*
 
 On Render that reasoning is incomplete. Render is not serverless — one long-lived process
@@ -568,7 +568,7 @@ the register window; `tests/rateLimit.test.js` covers `/login` only.
 ### 🟡 "Back" redirects never worked, then one could loop (found and resolved 2026-09-15)
 
 Express 5 removes `res.redirect('back')`, so PR #33 replaced the remaining calls with
-[utils/safeBack.js](utils/safeBack.js). It returns the referring page's path only when the
+[utils/safeBack.js](../utils/safeBack.js). It returns the referring page's path only when the
 `Referer` is this site, and `/` otherwise. Replacing the calls turned up two problems.
 
 **1. The redirects had not worked since helmet was enabled (PR #5).** helmet's default
@@ -650,8 +650,8 @@ there is no `.github/` directory. **This is the blocker for Dependabot** — see
 3. ✅ **Enable security updates** once there's a test suite and CI. On as of 2026-09-14. No security PR has arrived yet, so the `security-patches` group in `dependabot.yml` is configured but not yet observed.
 4. ✅ **Version updates last**, grouped, majors ignored — PR #24. The first grouped PR (#25) arrived within minutes.
 
-The live config is [.github/dependabot.yml](.github/dependabot.yml) and the workflow is
-[.github/workflows/ci.yml](.github/workflows/ci.yml). **They are linked rather than
+The live config is [.github/dependabot.yml](../.github/dependabot.yml) and the workflow is
+[.github/workflows/ci.yml](../.github/workflows/ci.yml). **They are linked rather than
 copied here on purpose.** The snippets this section used to carry went stale within
 days — `actions/*@v4` and `node-version: '22'`, where the real workflow uses `@v7` and
 reads `.nvmrc`. A copy of a config file inside a document is a second source of truth,
@@ -897,7 +897,7 @@ overstates the app's actual security posture.
       three buckets, so one person's failed logins could lock out strangers, and an
       attacker got `limit × pool_size` attempts. A brute-force defence that DoSes
       its own users is worse than the exposure it was added to close.
-    - **The fix:** `trust proxy: 3` in [app.js](app.js). Verified against the real
+    - **The fix:** `trust proxy: 3` in [app.js](../app.js). Verified against the real
       chain — one client now gets **one** bucket, counting down `9,8,7,6,5` across
       all three router addresses where it previously started a fresh bucket at 9
       for each.
@@ -986,17 +986,17 @@ overstates the app's actual security posture.
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
       — **PR #18**; 9 passing after PR #23, 13 after PR #28, 23 after PR #33, 27 after
-      PR #34, 28 after PR #38. See [HANDOFF.md](HANDOFF.md) for what each test pins
+      PR #34, 28 after PR #38. See [handoff.md](handoff.md) for what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
   forgetting to set `MONGO_URI` before requiring the app silently loaded `.env`, which
   pointed at live Atlas. A `deleteMany({})` there erased three apps' data **and the
   tests would still have passed.**
-  [tests/helpers/assertEphemeralDb.js](tests/helpers/assertEphemeralDb.js) checks the
+  [tests/helpers/assertEphemeralDb.js](../tests/helpers/assertEphemeralDb.js) checks the
   live mongoose connection rather than the env var — loopback host, the exact port
   `MongoMemoryServer` allocated, the expected database name — and
-  [tests/guard.test.js](tests/guard.test.js) proves it refuses production-shaped input.
+  [tests/guard.test.js](../tests/guard.test.js) proves it refuses production-shaped input.
 
   **Still uncovered, deliberately:** comment ownership (`checkCommentOwnership`),
   the `sanitizeDescription` unit test, CSP headers, cookie flags, and
@@ -1005,15 +1005,15 @@ overstates the app's actual security posture.
   line Express 5 breaks.
 
   **Update 2026-09-15:** the sanitizer is covered. PR #33 replaced
-  `express-mongo-sanitize`'s middleware with [middleware/sanitize.js](middleware/sanitize.js),
-  and [tests/sanitize.test.js](tests/sanitize.test.js) pins it on both the body and the
+  `express-mongo-sanitize`'s middleware with [middleware/sanitize.js](../middleware/sanitize.js),
+  and [tests/sanitize.test.js](../tests/sanitize.test.js) pins it on both the body and the
   query string. `checkCommentOwnership` is half covered: PR #34 tests that it sends a
   logged-out visitor to `/login`, but nothing tests that it rejects a user who does not
   own the comment. The `Referrer-Policy` header is tested; CSP and cookie flags are not.
   - There is **no campsite CRUD** — this checklist said so until 2026-09-08 and was wrong.
-    [routes/campsites.js](routes/campsites.js) is read-only (`/`, `/search`, `/show/:id`)
-    and proxies the RIDB API. The writes are in [routes/comments.js](routes/comments.js)
-    and [routes/users.js](routes/users.js)
+    [routes/campsites.js](../routes/campsites.js) is read-only (`/`, `/search`, `/show/:id`)
+    and proxies the RIDB API. The writes are in [routes/comments.js](../routes/comments.js)
+    and [routes/users.js](../routes/users.js)
   - The campsite routes call `ridb.recreation.gov` with a live API key, so testing them at
     all needs an HTTP interceptor (`nock`). Out of scope for the first suite; the
     `utils/sanitizeDescription.js` unit test already covers that path's security half
@@ -1129,14 +1129,14 @@ Migration surface, scanned against this codebase on 2026-09-04:
 
 | Change | Where | Notes |
 |---|---|---|
-| `req.query` is a read-only getter | [app.js:36](app.js#L36) | **Test this first.** `express-mongo-sanitize` mutates `req.query` in place; Express 5 makes it non-writable. Fails at runtime, not install. Likely needs a config change, a replacement, or `req.body`-only sanitizing |
+| `req.query` is a read-only getter | [app.js:36](../app.js#L36) | **Test this first.** `express-mongo-sanitize` mutates `req.query` in place; Express 5 makes it non-writable. Fails at runtime, not install. Likely needs a config change, a replacement, or `req.body`-only sanitizing |
 | `res.redirect('back')` removed | 13 live call sites | `middleware/index.js` x9, `routes/comments.js` x3, `routes/users.js` x1. Replace with `res.redirect(req.get('Referrer') \|\| '/')` |
-| Wildcards must be named | [app.js:144](app.js#L144) | `app.all('*', ...)` -> `app.all('*splat', ...)` |
+| Wildcards must be named | [app.js:144](../app.js#L144) | `app.all('*', ...)` -> `app.all('*splat', ...)` |
 | `req.body` is `undefined` when unparsed | any `req.body.x` | Was `{}` in v4, so bodyless requests now throw instead of yielding undefined |
-| Rejected promises auto-forwarded | [utils/catchAsync.js](utils/catchAsync.js) | **Delete it** and unwrap every `catchAsync(...)` — Express 5 does this natively |
+| Rejected promises auto-forwarded | [utils/catchAsync.js](../utils/catchAsync.js) | **Delete it** and unwrap every `catchAsync(...)` — Express 5 does this natively |
 
 Verified as **not** affected: route patterns (all plain `:param`),
-`express.urlencoded({extended: true})` (already explicit at [app.js:31](app.js#L31)),
+`express.urlencoded({extended: true})` (already explicit at [app.js:31](../app.js#L31)),
 Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
 `res.json(obj, status)` or `res.send(status)` anywhere.
 
@@ -1144,7 +1144,7 @@ Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
       3 of the 16 `redirect('back')` hits. Deleting it before migrating avoids
       migrating dead code. **Done in #33**, along with `checkCampgroundOwnership` and
       `isAdmin`, which only that file used
-- [x] **Fix the latent bug at [routes/users.js:22](routes/users.js#L22)** —
+- [x] **Fix the latent bug at [routes/users.js:22](../routes/users.js#L22)** —
       `res.redirect('back', {error: "User Not Found..." })` passes an options object
       where Express expects a status code. That flash message has never worked.
       **Done in #33:** it now sets the flash with `req.flash` and redirects with
@@ -1158,8 +1158,8 @@ Node version (24, needs >=18). No `req.param()`, `res.sendfile`, `app.del`,
 
 | Change | Resolved by |
 |---|---|
-| `req.query` is a read-only getter | #33. [middleware/sanitize.js](middleware/sanitize.js) calls `express-mongo-sanitize`'s `sanitize()` function and replaces `req.query` with `Object.defineProperty`, not by assigning it. Pinned by `tests/sanitize.test.js` |
-| `res.redirect('back')` removed | #33. **The scan's count of 13 live calls was wrong:** 4 of the 9 in `middleware/index.js` were in `checkCampgroundOwnership` and `isAdmin`, which only the dead routes used. Those were deleted with 3 in `old.campgrounds.js`. The other 9 use [utils/safeBack.js](utils/safeBack.js), not the `req.get('Referrer') \|\| '/'` suggested above, which would send a user to any site in the header. #34 stopped one of them from looping. See the "back" redirects finding in Part 2 |
+| `req.query` is a read-only getter | #33. [middleware/sanitize.js](../middleware/sanitize.js) calls `express-mongo-sanitize`'s `sanitize()` function and replaces `req.query` with `Object.defineProperty`, not by assigning it. Pinned by `tests/sanitize.test.js` |
+| `res.redirect('back')` removed | #33. **The scan's count of 13 live calls was wrong:** 4 of the 9 in `middleware/index.js` were in `checkCampgroundOwnership` and `isAdmin`, which only the dead routes used. Those were deleted with 3 in `old.campgrounds.js`. The other 9 use [utils/safeBack.js](../utils/safeBack.js), not the `req.get('Referrer') \|\| '/'` suggested above, which would send a user to any site in the header. #34 stopped one of them from looping. See the "back" redirects finding in Part 2 |
 | Wildcards must be named | #33. The 404 catch-all is now a path-less `app.use()`, which matches every path on both versions |
 | `req.body` is `undefined` when unparsed | #34. `validateComment` reads `req.body?.comment`. The register and login paths were checked by reading the code, not by running it: `userSchema` is `.required()`, so `validateUser` rejects an undefined body, and `passport-local`'s field lookup returns `null` for one |
 | Rejected promises auto-forwarded | **Done as cleanup, not a fix, in PR #37.** `catchAsync` wrapped 10 route handlers (the 2026-09-04 scan's count of 11 above was off by one), and on Express 5 it forwarded the same rejection Express already does natively. Deleted, and all 10 unwrapped |
@@ -1195,7 +1195,7 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
 - **Skipping 8 converges the mongodb driver instead of adding a third one.**
   `mongoose@7.8.12` pins its own `mongodb@5.9.2`/`bson@5.5.1`, separate from the
   `mongodb@7.6.0`/`bson@7.3.2` already hoisted for connect-mongo and
-  mongodb-memory-server (the 2026-09-09 peer-dependency finding — see HANDOFF.md).
+  mongodb-memory-server (the 2026-09-09 peer-dependency finding — see handoff.md).
   `mongoose@8.x` pins `mongodb@~6.20.0`, a **third** version, temporarily.
   `mongoose@9.x` pins `mongodb@~7.0`, which **dedupes with the driver already
   running the session store.** Going straight to 9 simplifies the dependency
@@ -1236,7 +1236,7 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
   - **The scan above did not cover passport-local-mongoose, and that is what broke.**
     Version 9's `User.register` no longer takes a callback, so the callback
     `POST /register` passed was ignored and nothing responded. The route now awaits it
-    (`c14294f`). See [HANDOFF.md](HANDOFF.md) for how it was found
+    (`c14294f`). See [handoff.md](handoff.md) for how it was found
   - **Follow-ups, PR #43 (2026-09-22):** the register `catch` now handles only
     `UserExistsError` and `MissingUsernameError` and sends anything else to
     `next(err)`, so a database failure no longer renders as `err.message` inside the
@@ -1250,8 +1250,8 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
 
 - [x] **`google.maps.Marker` deprecated 2024-02-21** — migrated to
       `google.maps.marker.AdvancedMarkerElement`. **Done in PR #46 (2026-09-23)**
-  - The live page: [views/campsites/show.ejs](views/campsites/show.ejs) and
-    [public/js/gmap.js](public/js/gmap.js). The loader now has `&libraries=marker`, and
+  - The live page: [views/campsites/show.ejs](../views/campsites/show.ejs) and
+    [public/js/gmap.js](../public/js/gmap.js). The loader now has `&libraries=marker`, and
     the map takes its `mapId` from a new `MAPS_MAP_ID` environment variable, passed
     through the route and a `data-map-id` attribute
   - `views/campgrounds/show.ejs` — dead code per commit `96be9ad`. Its map code was
@@ -1270,7 +1270,7 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
   - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations) · [`AdvancedMarkerElement` reference](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers)
 
 - [ ] *Also noticed:* the map still uses the legacy `callback=initMap` loader
-      ([campsites/show.ejs:220](views/campsites/show.ejs#L220)). Google now recommends
+      ([campsites/show.ejs:220](../views/campsites/show.ejs#L220)). Google now recommends
       the dynamic library import. It was not bundled with the marker migration, so it
       is still open. It is the only template left that loads Google Maps.
 

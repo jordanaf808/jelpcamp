@@ -38,7 +38,7 @@ const {MemoryStore} = rateLimit
 // The tell was in the RateLimit-* headers: `remaining` came back as 4,4,4 for
 // three consecutive requests from one client, meaning three counters were being
 // created rather than one decrementing. Fixed by `trust proxy: 3` in app.js —
-// see the comment there, and SECURITY-FINDINGS.md for the full write-up
+// see the comment there, and docs/security-audit.md for the full write-up
 // including the two wrong diagnoses that preceded it.
 //
 // Re-verify after any Render or Cloudflare platform change: a hop count that

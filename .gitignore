@@ -6,4 +6,6 @@ node_modules
 
 # Ignore files related to API keys
 .env
-HANDOFF.md
+
+# Local working notes, not published
+docs/handoff.md

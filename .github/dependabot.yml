@@ -26,7 +26,7 @@ updates:
 
     # Majors are deliberate work, not a bot's call. mongoose 7 -> 9, express
     # 4 -> 5 and ejs 3 -> 6 each change behaviour and each earns its own PR with
-    # its own verification — that is Phase 4 in SECURITY-FINDINGS.md.
+    # its own verification — that is Phase 4 in docs/security-audit.md.
     #
     # GitHub's docs do not state whether `ignore` also suppresses a SECURITY
     # update that happens to need a major bump. Assume it might. That is
