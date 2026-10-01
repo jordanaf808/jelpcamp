@@ -220,8 +220,9 @@ not been checked. The limiters do set `ipv6Subnet: 56`
 ([middleware/rateLimiters.js](middleware/rateLimiters.js)), so the library's IPv6
 handling is in use.
 
-- [ ] Take the patch, then confirm `npm audit` is back to 0. `min-release-age=7` in
-      `~/.npmrc` may hold back a version published in the last week
+- [ ] Take the patch, then confirm `npm audit` is back to 0. 10.7.1 and 10.7.2, the
+      releases outside the vulnerable range, were both published on 2026-09-15, so
+      `min-release-age=7` in `~/.npmrc` does not hold them back
 
 ---
 
@@ -1226,8 +1227,8 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
       `npm audit` and the mongodb/bson driver convergence above. **Done in PR #41
       (2026-09-18):** mongoose 9.10.0, with passport-local-mongoose 8 → 9.1.0.
   - **The convergence held for production dependencies.** The lockfile has one
-    `mongodb@7.6.0` and one `bson@7.3.2`, shared by mongoose and connect-mongo. Since
-    #53 a second `mongodb@7.5.0` is nested under `mongodb-memory-server-core` 11.3.0.
+    `mongodb@7.6.0` and one `bson@7.3.2`, shared by mongoose and connect-mongo. Since PR
+    53 a second `mongodb@7.5.0` is nested under `mongodb-memory-server-core` 11.3.0.
     That is a devDependency's private copy; the app never loads it
   - **The scan above did not cover passport-local-mongoose, and that is what broke.**
     Version 9's `User.register` no longer takes a callback, so the callback
