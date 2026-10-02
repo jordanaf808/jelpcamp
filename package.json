@@ -7,7 +7,8 @@
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "start": "node server.js",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "eslint ."
   },
   "config": {
     "mongodbMemoryServer": {
@@ -41,6 +42,9 @@
     "node": ">=22.12.0 <25"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
     "mongodb-memory-server": "11.3.0",
     "nock": "14.0.17",
     "prettier": "3.9.9",
