@@ -2,7 +2,6 @@ require('dotenv').config()
 const express = require('express')
 const Axios = require('axios').default
 const router = express.Router()
-const ExpressError = require('../utils/ExpressError')
 
 const Campsite = require('../models/campsite')
 const User = require('../models/user')

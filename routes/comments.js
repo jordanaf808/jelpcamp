@@ -1,5 +1,4 @@
 const express = require('express'),
-	Campground = require('../models/campground'),
 	Campsite = require('../models/campsite'),
 	Comment = require('../models/comment')
 const router = express.Router({mergeParams: true})
@@ -10,7 +9,7 @@ const safeBack = require('../utils/safeBack')
 // COMMENTS ROUTES
 // =======================
 // NEW comment
-router.get('/new', middleware.isLoggedIn, async (req, res, next) => {
+router.get('/new', middleware.isLoggedIn, async (req, res) => {
 	//find campgound by id
 	const {id} = req.params
 	const campsite = await Campsite.findOne({id: id})
@@ -22,7 +21,7 @@ router.post(
 	'/',
 	middleware.isLoggedIn,
 	middleware.validateComment,
-	async (req, res, next) => {
+	async (req, res) => {
 		//lookup campground using id
 		const {id} = req.params
 		const campsite = await Campsite.findOne({id: id})
@@ -48,7 +47,7 @@ router.post(
 router.get(
 	'/:comment_id/edit',
 	middleware.checkCommentOwnership,
-	async (req, res, next) => {
+	async (req, res) => {
 		console.log(req.params.comment_id)
 		const {id} = req.params
 		const foundCampsite = await Campsite.findOne({id: id})
@@ -69,7 +68,7 @@ router.put(
 	'/:comment_id',
 	middleware.checkCommentOwnership,
 	middleware.validateComment,
-	async (req, res, next) => {
+	async (req, res) => {
 		console.log(req.params)
 		const updateComment = await Comment.findByIdAndUpdate(
 			req.params.comment_id,
@@ -88,7 +87,7 @@ router.put(
 router.delete(
 	'/:comment_id',
 	middleware.checkCommentOwnership,
-	async (req, res, next) => {
+	async (req, res) => {
 		const deleteComment = await Comment.findByIdAndDelete(req.params.comment_id)
 		if (!deleteComment) {
 			req.flash('error', 'Error Deleting Comment...')

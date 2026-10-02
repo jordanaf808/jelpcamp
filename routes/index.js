@@ -1,17 +1,12 @@
 const express = require('express')
-const mongoose = require('mongoose')
 const passport = require('passport')
 const {errors: plmErrors} = require('passport-local-mongoose')
 const User = require('../models/user')
 const Campground = require('../models/campground')
-const Campsite = require('../models/campsite')
 // const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
 const router = express.Router()
 const {storeReturnTo, validateUser} = require('../middleware')
 const {loginLimiter, registerLimiter} = require('../middleware/rateLimiters')
-
-// import utils
-const ExpressError = require('../utils/ExpressError')
 
 router.get('/', async (req, res) => {
 	// 	get all campgrounds from DB for background photos.

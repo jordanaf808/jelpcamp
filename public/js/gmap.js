@@ -2,6 +2,7 @@
 // Values are passed via data-attributes on #map so this file stays a static
 // asset — the CSP allows script-src 'self' with no inline scripts.
 // Must be global: the Maps loader invokes it via &callback=initMap.
+/* exported initMap */
 function initMap() {
 	const mapEl = document.getElementById('map')
 	const center = {

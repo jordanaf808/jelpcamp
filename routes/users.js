@@ -11,7 +11,7 @@ const User = require('../models/user')
 const Campsite = require('../models/campsite')
 
 // User Profile
-router.get('/:id', middleware.isLoggedIn, async (req, res, next) => {
+router.get('/:id', middleware.isLoggedIn, async (req, res) => {
 	const {id} = req.params
 	// validate `id`
 	if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('invalid id')
@@ -25,7 +25,7 @@ router.get('/:id', middleware.isLoggedIn, async (req, res, next) => {
 })
 
 // Add Favorite
-router.post('/:id/:camp_id', middleware.isLoggedIn, async (req, res, next) => {
+router.post('/:id/:camp_id', middleware.isLoggedIn, async (req, res) => {
 	//lookup campsite and user id using req.params
 	const campId = req.params.camp_id
 	const campsite = await Campsite.findOne({id: campId}).orFail(() => {
@@ -43,33 +43,23 @@ router.post('/:id/:camp_id', middleware.isLoggedIn, async (req, res, next) => {
 })
 
 // Delete Favorite
-router.delete(
-	'/:id/:camp_id',
-	middleware.isLoggedIn,
-	async (req, res, next) => {
-		//lookup campsite using id
-		const campId = req.params.camp_id
-		const campsite = await Campsite.findOne({id: campId}).orFail(() => {
-			throw err
-		})
-		const foundUser = await User.findById(req.params.id).orFail(() => {
-			throw err
-		})
-		const err = new ExpressError(
-			`campsite: ${campsite}; user: ${foundUser}`,
-			500,
-		)
-		console.log('found: ', foundUser)
-		foundUser.favorites.pull(campsite._id)
-		let result = await foundUser.save()
-		console.log('removed from favorites: ', foundUser)
-		console.log('results: ', result)
-		req.flash(
-			'success',
-			campsite.name + ' has been removed from your favorites!',
-		)
-		res.redirect('/campsites/show/' + campId)
-	},
-)
+router.delete('/:id/:camp_id', middleware.isLoggedIn, async (req, res) => {
+	//lookup campsite using id
+	const campId = req.params.camp_id
+	const campsite = await Campsite.findOne({id: campId}).orFail(() => {
+		throw err
+	})
+	const foundUser = await User.findById(req.params.id).orFail(() => {
+		throw err
+	})
+	const err = new ExpressError(`campsite: ${campsite}; user: ${foundUser}`, 500)
+	console.log('found: ', foundUser)
+	foundUser.favorites.pull(campsite._id)
+	let result = await foundUser.save()
+	console.log('removed from favorites: ', foundUser)
+	console.log('results: ', result)
+	req.flash('success', campsite.name + ' has been removed from your favorites!')
+	res.redirect('/campsites/show/' + campId)
+})
 
 module.exports = router
