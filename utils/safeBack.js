@@ -5,7 +5,7 @@
 // the Referer header as-is, and that header is client-controlled — but the
 // only way to arrive here with a cross-site Referer is from a page already on
 // that other site, so bouncing back to it was never a usable open redirect
-// (see SECURITY-FINDINGS.md). The same-site check below is still correct; it
+// (see docs/security-audit.md). The same-site check below is still correct; it
 // just isn't closing a hole that worked.
 //
 // Only the path and query string are returned, so the redirect stays on this

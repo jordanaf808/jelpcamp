@@ -46,7 +46,7 @@ app.use(flash())
 app.use(sanitizeRequest)
 
 // Content Security Policy. Origins below were derived by scanning views/ and
-// public/ for every externally-loaded resource — see SECURITY-FINDINGS.md.
+// public/ for every externally-loaded resource — see docs/security-audit.md.
 // script-src has no 'unsafe-inline', so injected inline script cannot execute —
 // and neither can any inline script the views themselves ship. Page scripts
 // belong in public/js/, loaded with a src; tests/inlineScripts.test.js enforces
@@ -190,7 +190,7 @@ const sessionConfig = {
 // (10.194.193.7, 10.197.58.164, 10.199.46.133) — so express-rate-limit keyed
 // every visitor by which routing pod served them. The whole site shared roughly
 // three buckets, and one person's failed logins could lock out strangers.
-// See SECURITY-FINDINGS.md for the full write-up.
+// See docs/security-audit.md for the full write-up.
 //
 // Why not `true`: it takes the LEFTMOST entry, which is client-supplied, so
 // anyone can spoof it. Verified against the real chain — `true` returns an

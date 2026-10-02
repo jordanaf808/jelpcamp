@@ -1,7 +1,7 @@
 // Pins comment deletion end to end, ahead of the Mongoose 7 -> 9 migration:
 // the DESTROY route used Comment.findByIdAndRemove(), an alias Mongoose 8
 // removes. This proves findByIdAndDelete() behaves the same way before the
-// swap. Create and update aren't covered here; see SECURITY-FINDINGS.md.
+// swap. Create and update aren't covered here; see docs/security-audit.md.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')

@@ -1,6 +1,6 @@
 // Pins utils/safeBack.js, which replaced res.redirect('back') after Express 5
 // removed it. The same-site check on the Referer header is still correct, but
-// per SECURITY-FINDINGS.md it isn't closing a usable open redirect: the only
+// per docs/security-audit.md it isn't closing a usable open redirect: the only
 // way to arrive here with a cross-site Referer is from a page already on that
 // site. A bare Express app is enough, so this needs no database.
 const test = require('node:test')
