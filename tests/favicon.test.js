@@ -22,8 +22,16 @@ test.before(async () => {
 		.post('/register')
 		.type('form')
 		.send({username: 'favicon-check', password: 'favicon-check-pw'})
-	assert.strictEqual(res.headers.location, '/campsites', 'registration should log the agent in')
-	await Campsite.create({name: 'Favicon check', id: 1, geometry: {TYPE: 'Point', COORDINATES: [0, 0]}})
+	assert.strictEqual(
+		res.headers.location,
+		'/campsites',
+		'registration should log the agent in',
+	)
+	await Campsite.create({
+		name: 'Favicon check',
+		id: 1,
+		geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
+	})
 })
 
 test.after(async () => {
@@ -36,7 +44,8 @@ test('/favicon.svg is served as an SVG image', async () => {
 	assert.match(res.headers['content-type'], /^image\/svg\+xml/)
 })
 
-const FAVICON_LINK = /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml" \/>/
+const FAVICON_LINK =
+	/<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml" \/>/
 
 const pages = {
 	'/': 'landing.ejs',

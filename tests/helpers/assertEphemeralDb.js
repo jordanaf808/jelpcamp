@@ -37,10 +37,15 @@ const fail = (why, detail) => {
 
 // Call before ANY destructive operation. Cheap enough to call every time.
 const assertEphemeralDb = () => {
-	if (!expected) fail('no ephemeral server was registered', 'rememberEphemeralServer() was never called')
+	if (!expected)
+		fail(
+			'no ephemeral server was registered',
+			'rememberEphemeralServer() was never called',
+		)
 
 	const {readyState, host, port, name} = mongoose.connection
-	if (readyState !== 1) fail('mongoose is not connected', `readyState=${readyState}`)
+	if (readyState !== 1)
+		fail('mongoose is not connected', `readyState=${readyState}`)
 
 	// Loopback only. Atlas is never reachable this way.
 	if (!['127.0.0.1', 'localhost', '::1'].includes(host)) {
@@ -49,11 +54,17 @@ const assertEphemeralDb = () => {
 	// The specific port MongoMemoryServer allocated. A different local mongod
 	// (or a second, stale in-memory server) fails here.
 	if (String(port) !== String(expected.port)) {
-		fail('wrong port', `connected to ${host}:${port}, ephemeral server is on ${expected.port}`)
+		fail(
+			'wrong port',
+			`connected to ${host}:${port}, ephemeral server is on ${expected.port}`,
+		)
 	}
 	// And the database name, so a typo cannot redirect within the same server.
 	if (name !== expected.name) {
-		fail('wrong database name', `connected to "${name}", expected "${expected.name}"`)
+		fail(
+			'wrong database name',
+			`connected to "${name}", expected "${expected.name}"`,
+		)
 	}
 	return true
 }
@@ -71,7 +82,10 @@ const assertEphemeralDb = () => {
 // Keep the two apart: they have different preconditions.
 const assertNoRemoteHostOrCredentials = (uriInUse) => {
 	if (uriInUse.startsWith('mongodb+srv://') || uriInUse.includes('@')) {
-		fail('this URI has a remote host or credentials', 'ephemeral servers have neither')
+		fail(
+			'this URI has a remote host or credentials',
+			'ephemeral servers have neither',
+		)
 	}
 	return true
 }
@@ -91,12 +105,17 @@ const assertNotTheEnvFileDatabase = (uriInUse) => {
 	const envPath = path.join(__dirname, '..', '..', '.env')
 	if (!fs.existsSync(envPath)) return
 
-	const line = fs.readFileSync(envPath, 'utf8').match(/^\s*MONGO_URI\s*=\s*(.+)$/m)
+	const line = fs
+		.readFileSync(envPath, 'utf8')
+		.match(/^\s*MONGO_URI\s*=\s*(.+)$/m)
 	if (!line) return
 	const fromEnvFile = line[1].trim().replace(/^["']|["']$/g, '')
 
 	if (uriInUse === fromEnvFile) {
-		fail('this is the URI from .env', 'the test suite is pointed at the real database')
+		fail(
+			'this is the URI from .env',
+			'the test suite is pointed at the real database',
+		)
 	}
 }
 

@@ -1,5 +1,4 @@
-
-const mongoose = require("mongoose");
+const mongoose = require('mongoose')
 // const numeral	= require("numeral");
 //SCHEMA SETUP:
 const campgroundSchema = new mongoose.Schema({
@@ -10,21 +9,21 @@ const campgroundSchema = new mongoose.Schema({
 	location: String,
 	lat: Number,
 	lng: Number,
-	createdAt: { type: Date, default: Date.now },
+	createdAt: {type: Date, default: Date.now},
 	author: {
 		id: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "User"
-			},
-		username: String
+			ref: 'User',
 		},
+		username: String,
+	},
 	comments: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "Comment"
-		}
-	]
-});
+			ref: 'Comment',
+		},
+	],
+})
 
 // function getPrice(String){
 //     numeral(String).format('$ 0,0[.]00');
@@ -34,4 +33,4 @@ const campgroundSchema = new mongoose.Schema({
 // 	numeral(String).format('$ 0,0[.]00');
 // }
 
-module.exports = mongoose.model("Campground", campgroundSchema);
+module.exports = mongoose.model('Campground', campgroundSchema)

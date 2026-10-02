@@ -43,7 +43,10 @@ router.post(
 		try {
 			registeredUser = await User.register(newUser, req.body.password)
 		} catch (err) {
-			if (err instanceof plmErrors.UserExistsError || err instanceof plmErrors.MissingUsernameError) {
+			if (
+				err instanceof plmErrors.UserExistsError ||
+				err instanceof plmErrors.MissingUsernameError
+			) {
 				return res.render('register', {error: err.message})
 			}
 			return next(err)

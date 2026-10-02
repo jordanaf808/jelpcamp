@@ -23,8 +23,16 @@ test.before(async () => {
 		.post('/register')
 		.type('form')
 		.send({username: 'back-check', password: 'back-check-pw'})
-	assert.strictEqual(res.headers.location, '/campsites', 'registration should log the agent in')
-	await Campsite.create({name: 'Back check', id: 1, geometry: {TYPE: 'Point', COORDINATES: [0, 0]}})
+	assert.strictEqual(
+		res.headers.location,
+		'/campsites',
+		'registration should log the agent in',
+	)
+	await Campsite.create({
+		name: 'Back check',
+		id: 1,
+		geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
+	})
 })
 
 test.after(async () => {
@@ -42,7 +50,9 @@ const postInvalidComment = (referer) =>
 		.send({'comment[text]': 'too short'})
 
 test('a rejected comment returns to the referring page on this site', async () => {
-	const res = await postInvalidComment(`http://${HOST}/campsites/1/comments/new`)
+	const res = await postInvalidComment(
+		`http://${HOST}/campsites/1/comments/new`,
+	)
 	assert.strictEqual(res.status, 302)
 	assert.strictEqual(res.headers.location, '/campsites/1/comments/new')
 })

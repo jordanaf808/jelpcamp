@@ -3,32 +3,32 @@
 // asset — the CSP allows script-src 'self' with no inline scripts.
 // Must be global: the Maps loader invokes it via &callback=initMap.
 function initMap() {
-  const mapEl = document.getElementById('map');
-  const center = {
-    lat: Number(mapEl.dataset.lat),
-    lng: Number(mapEl.dataset.lng),
-  };
+	const mapEl = document.getElementById('map')
+	const center = {
+		lat: Number(mapEl.dataset.lat),
+		lng: Number(mapEl.dataset.lng),
+	}
 
-  const map = new google.maps.Map(mapEl, {
-    zoom: 8,
-    center: center,
-    scrollwheel: false,
-    mapId: mapEl.dataset.mapId,
-  });
+	const map = new google.maps.Map(mapEl, {
+		zoom: 8,
+		center: center,
+		scrollwheel: false,
+		mapId: mapEl.dataset.mapId,
+	})
 
-  // Built as a DOM node rather than an HTML string so the facility name from
-  // the RIDB API cannot inject markup.
-  const title = document.createElement('h5');
-  title.textContent = mapEl.dataset.name;
-  const infowindow = new google.maps.InfoWindow({ content: title });
+	// Built as a DOM node rather than an HTML string so the facility name from
+	// the RIDB API cannot inject markup.
+	const title = document.createElement('h5')
+	title.textContent = mapEl.dataset.name
+	const infowindow = new google.maps.InfoWindow({content: title})
 
-  // gmp-click only fires when gmpClickable is true; it defaults to false.
-  const marker = new google.maps.marker.AdvancedMarkerElement({
-    position: center,
-    map: map,
-    gmpClickable: true,
-  });
-  marker.addEventListener('gmp-click', function () {
-    infowindow.open(map, marker);
-  });
+	// gmp-click only fires when gmpClickable is true; it defaults to false.
+	const marker = new google.maps.marker.AdvancedMarkerElement({
+		position: center,
+		map: map,
+		gmpClickable: true,
+	})
+	marker.addEventListener('gmp-click', function () {
+		infowindow.open(map, marker)
+	})
 }

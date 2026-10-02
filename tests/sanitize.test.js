@@ -24,7 +24,10 @@ test('strips operator and dotted keys from the body, keeping nested fields', asy
 		.type('form')
 		.send('comment[text]=hello&comment[$where]=1&username[$gt]=&a.b=1')
 	assert.strictEqual(res.status, 200)
-	assert.deepStrictEqual(res.body.body, {comment: {text: 'hello'}, username: {}})
+	assert.deepStrictEqual(res.body.body, {
+		comment: {text: 'hello'},
+		username: {},
+	})
 })
 
 test('strips operator and dotted keys from the query string', async () => {
