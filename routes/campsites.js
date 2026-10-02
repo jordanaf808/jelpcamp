@@ -137,7 +137,7 @@ router.get('/show/:id', async (req, res) => {
 					.populate('favorites')
 					.exec()
 				let favorites = false
-				for (fav of foundUser.favorites) {
+				for (const fav of foundUser.favorites) {
 					if (fav._id.toString() === foundCampsite._id.toString()) {
 						favorites = true
 					}
