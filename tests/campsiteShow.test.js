@@ -27,32 +27,19 @@ test.after(async () => {
 	await setup.stop()
 })
 
-// Without full=true RIDB returned this same record with these five lists
-// empty. The photos (MEDIA) were present either way.
-const compact = {
-	...facility,
-	LINK: [],
-	RECAREA: [],
-	ACTIVITY: [],
-	FACILITYADDRESS: [],
-	ORGANIZATION: [],
-}
-
-// The timeout matters: the route's catch block logs and sends no response, so
+// The timeouts matter: the route's catch block logs and sends no response, so
 // an error inside it would otherwise hang the test instead of failing it.
+//
+// One mock, so this also proves the page costs one RIDB request: a second
+// request would be refused.
 test(
 	'the campsite page shows the facility, its photos, its links and its parent area',
 	{timeout: 10000},
 	async () => {
 		const ridb = nock(RIDB)
 			.get('/api/v1/facilities/233115')
-			.reply(200, compact)
-			.get('/api/v1/facilities/233115/media')
-			.reply(200, {RECDATA: facility.MEDIA})
-			.get('/api/v1/facilities/233115/links')
-			.reply(200, {RECDATA: facility.LINK})
-			.get('/api/v1/recareas/1113')
-			.reply(200, facility.RECAREA[0])
+			.query({full: 'true'})
+			.reply(200, facility)
 
 		const res = await request(app).get('/campsites/show/233115')
 		assert.strictEqual(res.status, 200)
@@ -68,5 +55,27 @@ test(
 		}
 
 		assert.ok(ridb.isDone(), `requests never made: ${ridb.pendingMocks()}`)
+	},
+)
+
+// Not a captured response: the real record with its parent removed. RIDB's
+// docs say a facility can "stand on its own" without a parent rec area.
+test(
+	'a facility with no parent rec area still gets a page',
+	{timeout: 10000},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/1')
+			.query({full: 'true'})
+			.reply(200, {
+				...facility,
+				FacilityID: '1',
+				ParentRecAreaID: '',
+				RECAREA: [],
+			})
+
+		const res = await request(app).get('/campsites/show/1')
+		assert.strictEqual(res.status, 200)
+		assert.ok(res.text.includes(facility.FacilityName))
 	},
 )
