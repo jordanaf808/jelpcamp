@@ -1,0 +1,16 @@
+# Prettier formats this repo's JavaScript and YAML. The rest is left alone.
+
+# EJS templates: Prettier has no parser for them.
+views/
+
+# main.css and landing.css are compiled from the .scss files beside them.
+public/stylesheets/
+
+# npm writes these and keeps its own two-space indent.
+package.json
+package-lock.json
+
+# Prose and hand-aligned tables.
+*.md
+
+.vscode/
