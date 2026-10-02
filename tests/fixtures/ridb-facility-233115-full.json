@@ -1,0 +1,349 @@
+{
+	"ACTIVITY": [
+		{
+			"ActivityID": 5,
+			"ActivityName": "BIKING",
+			"FacilityActivityDescription": "Biking",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 6,
+			"ActivityName": "BOATING",
+			"FacilityActivityDescription": "Boating",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 9,
+			"ActivityName": "CAMPING",
+			"FacilityActivityDescription": "Camping",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 11,
+			"ActivityName": "FISHING",
+			"FacilityActivityDescription": "Fishing",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 14,
+			"ActivityName": "HIKING",
+			"FacilityActivityDescription": "Hiking",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 20,
+			"ActivityName": "PICNICKING",
+			"FacilityActivityDescription": "Picnicking",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 25,
+			"ActivityName": "WATER SPORTS",
+			"FacilityActivityDescription": "Water Sports",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 34,
+			"ActivityName": "SWIMMING SITE",
+			"FacilityActivityDescription": "Swimming Site",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 104,
+			"ActivityName": "PHOTOGRAPHY",
+			"FacilityActivityDescription": "Photography",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100000,
+			"ActivityName": "MOTOR BOAT",
+			"FacilityActivityDescription": "Motor Boat",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100002,
+			"ActivityName": "MOUNTAIN BIKING",
+			"FacilityActivityDescription": "Mountain Biking",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100005,
+			"ActivityName": "PADDLE BOATING",
+			"FacilityActivityDescription": "Paddle Boating",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100007,
+			"ActivityName": "KAYAKING",
+			"FacilityActivityDescription": "Kayaking",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100008,
+			"ActivityName": "CANOEING",
+			"FacilityActivityDescription": "Canoeing",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100017,
+			"ActivityName": "BIRDING",
+			"FacilityActivityDescription": "Birding",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100022,
+			"ActivityName": "JET SKIING",
+			"FacilityActivityDescription": "Jet Skiing",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100023,
+			"ActivityName": "WATER SKIING",
+			"FacilityActivityDescription": "Water Skiing",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		},
+		{
+			"ActivityID": 100037,
+			"ActivityName": "SAILING",
+			"FacilityActivityDescription": "Sailing",
+			"FacilityActivityFeeDescription": "",
+			"FacilityID": "233115"
+		}
+	],
+	"CAMPSITE": [],
+	"EVENT": [],
+	"Enabled": true,
+	"FACILITYADDRESS": [
+		{
+			"AddressCountryCode": "",
+			"AddressStateCode": "OR",
+			"City": "Baker City",
+			"FacilityAddressID": "2331151000",
+			"FacilityAddressType": "Physical",
+			"FacilityID": "233115",
+			"FacilityStreetAddress1": "17564 Sumpter Stage Hwy",
+			"FacilityStreetAddress2": "",
+			"FacilityStreetAddress3": "",
+			"LastUpdatedDate": "2026-07-26",
+			"PostalCode": "97814"
+		},
+		{
+			"AddressCountryCode": "USA",
+			"AddressStateCode": "OR",
+			"City": "North Powder",
+			"FacilityAddressID": "20438462",
+			"FacilityAddressType": "Mailing",
+			"FacilityID": "233115",
+			"FacilityStreetAddress1": "47500 Anthony Lakes Hwy",
+			"FacilityStreetAddress2": "",
+			"FacilityStreetAddress3": "",
+			"LastUpdatedDate": "2026-07-26",
+			"PostalCode": "97867"
+		}
+	],
+	"FacilityAccessibilityText": "",
+	"FacilityAdaAccess": "N",
+	"FacilityDescription": "<h2>Overview</h2>\n<p>One of Eastern Oregon’s largest Forest Service campgrounds, Union Creek Campground is located 18 miles South of Baker City. Sitting along Phillips Reservoir’s North shore, Union Creek Campground boasts many amenities including over 60 tent/trailer sites, some with full hookups. There is access to boating, mountain biking, hiking and more.  <br><br>This campground is part of the Union Creek Recreation Area, which includes a picnic and day-use area. Union Creek Campground is set on three loops with separate walk-in tent camping, and it has four group sites that can accommodate large groups up to 60 people.</p>\n\n<p>PLEASE NOTE: This Union Creek Campground is located in northeastern Oregon in the Wallowa Whitman National Forest.  This is not the Union Creek Campground located in southwestern Oregon near Medford.</p>\n<h2>Recreation</h2>\nThe campground is near a boat launch and a small, rocky swim beach. Activities include swimming, fishing, boating, and water skiing.  Anglers can fish for bass, trout and perch. \n\nThere's an access point for the Phillips Lake Shoreline Trail, a scenic trail for hiking and mountain biking. This trail can be connected to make a 16 mile loop around the lake.<h2>Facilities</h2>\n<ul>\n<li>The parking spurs are paved and gravel and large enough for any size RV. Several sites offer full hookups, and some others offer water and electric.  </li>\n<li>Units are equipped with picnic tables and grills. Drinking water and flush toilets are available.</li>\n<li>Some of the facilities are handicap-accessible.</li>\n<li><strong>Sewer Dump is inluded with your fee for B and C loops.</strong></li>\n</ul>\n<h2>Natural Features</h2>\nPhillips Reservoir is a popular destination within the Wallowa-Whitman National Forest because it offers scenic views of the surrounding Elkhorn Mountains. The \nshoreline is forested with a mix of Ponderosa pine and various firs interspersed with small grasslands.  \n\nVisitors enjoy several varieties of colorful wildflowers in the spring.\n<h2>Contact Info</h2>\nFor facility specific information, please call (541) 519-3993.\n<h2>Nearby Attractions</h2>\nThe historic gold mining town of Sumpter is about 10 miles away, West of Hwy 7. Visitors can explore the Sumpter Dredge State Heritage Park, browse the holiday weekend flea markets or take a ride on a historic steam locomotive.<h2>Charges & Cancellations</h2>\n A $10.00 service fee will apply if you change or cancel your reservation. Late cancellations are subject to additional fees. For full details see NRRS Reservation Policy ",
+	"FacilityDirections": "<p>From Baker City, Oregon, travel south on Highway 7 for about 18 miles. The campground and day-use entrance is on the left side of the road. Follow the signs in the Union Creek Recreation Area down to the various campground loops and areas.</p>\n",
+	"FacilityEmail": "campgrounds@anthonylakes.com",
+	"FacilityID": "233115",
+	"FacilityLatitude": 44.4149,
+	"FacilityLongitude": -118.0107,
+	"FacilityMapURL": "",
+	"FacilityName": "UNION CREEK CAMPGROUND",
+	"FacilityPhone": "541-894-2332",
+	"FacilityReservationURL": "",
+	"FacilityTypeDescription": "Campground",
+	"FacilityUseFeeDescription": " Payment in full will be charged to your credit card upon completion of the reservation. A $10.00 non-refundable on line reservation fee may be charged for some facilities ",
+	"GEOJSON": {"COORDINATES": [-118.0107, 44.4149], "TYPE": "Point"},
+	"Keywords": "NW02,Phillips Reservoir",
+	"LINK": [
+		{
+			"Description": "Oregon State Tourism",
+			"EntityID": "233115",
+			"EntityLinkID": "r1scglb38698fa-f434-4b22-bd5f-021f0df2643a",
+			"EntityType": "Facility",
+			"LinkType": "Other",
+			"Title": "Oregon State Tourism",
+			"URL": "http://traveloregon.com"
+		},
+		{
+			"Description": "Oregon State Road Conditions",
+			"EntityID": "233115",
+			"EntityLinkID": "r1scgla3f244df-3c58-4002-a99a-a5943b0e707e",
+			"EntityType": "Facility",
+			"LinkType": "Other",
+			"Title": "Oregon State Road Conditions",
+			"URL": "http://www.oregon.gov/odot/"
+		},
+		{
+			"Description": "Anthony Lakes Mountain Resort",
+			"EntityID": "233115",
+			"EntityLinkID": "r1scgl1e9094f6-acaf-4ee7-898f-e079424923c1",
+			"EntityType": "Facility",
+			"LinkType": "Other",
+			"Title": "Anthony Lakes Mountain Resort",
+			"URL": "http://www.anthonylakescampgrounds.com"
+		},
+		{
+			"Description": "Click here to see how full Phillips Reservoir is",
+			"EntityID": "233115",
+			"EntityLinkID": "r1scgl8072b683-a76f-40e0-8e7f-9b3755424536",
+			"EntityType": "Facility",
+			"LinkType": "Other",
+			"Title": "Click here to see how full Phillips Reservoir is",
+			"URL": "https://www.usbr.gov/pn/hydromet/owytea.html"
+		}
+	],
+	"LastUpdatedDate": "2026-07-26",
+	"LegacyFacilityID": "71992",
+	"MEDIA": [
+		{
+			"Credits": "Damon Rose",
+			"Description": "Map of Union Creek Campground",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "80434d6c-3289-414f-ba24-7b8f2c1e6f2e",
+			"EntityType": "Facility",
+			"Height": 541,
+			"IsGallery": true,
+			"IsPreview": false,
+			"IsPrimary": false,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "Map",
+			"URL": "https://cdn.recreation.gov/public/2026/06/14/20/00/233115_908ab7f4-8dbd-445a-a2c5-224e992a367a_700.jpg",
+			"Width": 700
+		},
+		{
+			"Credits": "Michelle Dix",
+			"Description": "Nice representation of the Ponderosa Pine at Union Creek Campground",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "ddc9fee2-d8f1-47c4-95f2-9b763eff6a3a",
+			"EntityType": "Facility",
+			"Height": 810,
+			"IsGallery": false,
+			"IsPreview": false,
+			"IsPrimary": true,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "Fall Sunset",
+			"URL": "https://cdn.recreation.gov/public/2025/07/09/17/39/233115_6e36dc76-d0a7-46ff-af85-06489bc1324b_1440.webp",
+			"Width": 1440
+		},
+		{
+			"Credits": "Michelle Dix",
+			"Description": "View not far from first come first serve tent area",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "3620e9ba-94ce-4a16-8f6f-1b7c459e739b",
+			"EntityType": "Facility",
+			"Height": 929,
+			"IsGallery": true,
+			"IsPreview": false,
+			"IsPrimary": false,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "Lake photo from trail near tent camping",
+			"URL": "https://cdn.recreation.gov/public/2025/07/09/17/37/233115_4e78a823-b53c-449b-91e3-f77192fab071_700.webp",
+			"Width": 700
+		},
+		{
+			"Credits": "Michelle Dix",
+			"Description": "View of Phillips lake",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "b5a2501d-081a-4ac8-ade0-a66ba088a279",
+			"EntityType": "Facility",
+			"Height": 525,
+			"IsGallery": false,
+			"IsPreview": true,
+			"IsPrimary": false,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "lamke",
+			"URL": "https://cdn.recreation.gov/public/2025/02/07/18/08/233115_f72e078c-e14b-446d-a81d-ff4e5c5f3a35_700.webp",
+			"Width": 700
+		},
+		{
+			"Credits": "Michelle Dix",
+			"Description": "Veiew from other side of Phillips Lake at southwest Shore",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "023d9ff6-7729-423c-a51f-cdc405a7e537",
+			"EntityType": "Facility",
+			"Height": 525,
+			"IsGallery": true,
+			"IsPreview": false,
+			"IsPrimary": false,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "Elkhorns from Soutwest Shore Campground",
+			"URL": "https://cdn.recreation.gov/public/2018/08/07/20/52/e5a8055a-a0d1-4fb4-aa39-f24cc04a4171_700.webp",
+			"Width": 700
+		},
+		{
+			"Credits": "Unknown",
+			"Description": "boat ramp",
+			"EmbedCode": "",
+			"EntityID": "233115",
+			"EntityMediaID": "2574901",
+			"EntityType": "Facility",
+			"Height": 526,
+			"IsGallery": true,
+			"IsPreview": false,
+			"IsPrimary": false,
+			"MediaType": "Image",
+			"Subtitle": "",
+			"Title": "UNION CREEK CAMPGROUND",
+			"URL": "https://cdn.recreation.gov/public/images/68093_700.webp",
+			"Width": 700
+		}
+	],
+	"ORGANIZATION": [
+		{
+			"LastUpdatedDate": "2018-06-26",
+			"OrgAbbrevName": "FS",
+			"OrgID": "131",
+			"OrgImageURL": "fs.jpg",
+			"OrgJurisdictionType": "State",
+			"OrgName": "USDA Forest Service",
+			"OrgParentID": "163",
+			"OrgType": "Federal Agency",
+			"OrgURLAddress": "http://www.fs.fed.us",
+			"OrgURLText": ""
+		}
+	],
+	"OrgFacilityID": "AN371992",
+	"PERMITENTRANCE": [],
+	"ParentOrgID": "131",
+	"ParentRecAreaID": "1113",
+	"RECAREA": [
+		{
+			"RecAreaID": "1113",
+			"RecAreaName": "Wallowa Whitman National Forest",
+			"ResourceLink": "http://localhost:3000/api/v1/recareas/1113"
+		}
+	],
+	"Reservable": true,
+	"StayLimit": "",
+	"TOUR": []
+}
