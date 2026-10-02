@@ -1,27 +1,26 @@
-
-const mongoose = require("mongoose");
+const mongoose = require('mongoose')
 //SCHEMA SETUP:
 const campsiteSchema = new mongoose.Schema({
 	name: String,
 	id: Number,
-	createdAt: { type: Date, default: Date.now },
+	createdAt: {type: Date, default: Date.now},
 	geometry: {
 		TYPE: {
 			type: String,
 			enum: ['Point'],
-			required: true
+			required: true,
 		},
 		COORDINATES: {
 			type: [Number],
-			required: true
-		}
+			required: true,
+		},
 	},
 	comments: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "Comment"
-		}
-	]
-});
+			ref: 'Comment',
+		},
+	],
+})
 
-module.exports = mongoose.model("Campsite", campsiteSchema);
+module.exports = mongoose.model('Campsite', campsiteSchema)

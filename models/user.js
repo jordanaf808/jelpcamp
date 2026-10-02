@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const { default: passportLocalMongoose } = require("passport-local-mongoose");
+const mongoose = require('mongoose')
+const {default: passportLocalMongoose} = require('passport-local-mongoose')
 
 // const UserSchema = new mongoose.Schema({
 // 	username: String,
@@ -7,15 +7,15 @@ const { default: passportLocalMongoose } = require("passport-local-mongoose");
 
 const UserSchema = new mongoose.Schema({
 	isAdmin: {type: Boolean, default: false},
-	createdAt: { type: Date, default: Date.now },
+	createdAt: {type: Date, default: Date.now},
 	favorites: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "Campsite"
-		}
-	]
-});
+			ref: 'Campsite',
+		},
+	],
+})
 
-UserSchema.plugin(passportLocalMongoose);
+UserSchema.plugin(passportLocalMongoose)
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', UserSchema)

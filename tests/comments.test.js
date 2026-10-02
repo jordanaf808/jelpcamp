@@ -22,8 +22,16 @@ test.before(async () => {
 		.post('/register')
 		.type('form')
 		.send({username: 'comment-owner', password: 'comment-owner-pw'})
-	assert.strictEqual(res.headers.location, '/campsites', 'registration should log the agent in')
-	await Campsite.create({name: 'Comment check', id: 2, geometry: {TYPE: 'Point', COORDINATES: [0, 0]}})
+	assert.strictEqual(
+		res.headers.location,
+		'/campsites',
+		'registration should log the agent in',
+	)
+	await Campsite.create({
+		name: 'Comment check',
+		id: 2,
+		geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
+	})
 })
 
 test.after(async () => {

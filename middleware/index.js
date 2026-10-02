@@ -1,112 +1,112 @@
-
-const Comment = require("../models/comment");
-const safeBack = require("../utils/safeBack");
-const mongoose = require ("mongoose");
-const BaseJoi = require('joi');
-const sanitizeHtml = require('sanitize-html');
+const Comment = require('../models/comment')
+const safeBack = require('../utils/safeBack')
+const mongoose = require('mongoose')
+const BaseJoi = require('joi')
+const sanitizeHtml = require('sanitize-html')
 
 // Sanitize HTML extension for JOI.
 const extension = (Joi) => ({
 	type: 'string',
 	base: Joi.string(),
 	messages: {
-  	'string.escapeHTML': '{{#label}} must not include HTML.'
+		'string.escapeHTML': '{{#label}} must not include HTML.',
 	},
 	rules: {
-  	escapeHTML: {
+		escapeHTML: {
 			validate(value, helpers) {
 				const clean = sanitizeHtml(value, {
 					allowedTags: [],
-					allowedAttributes: {}
-				});
-				if (clean !== value) return helpers.error('string.escapeHTML', { value });
-				return clean;
-			}
-		}
-	}
-});
-const Joi = BaseJoi.extend(extension);
+					allowedAttributes: {},
+				})
+				if (clean !== value) return helpers.error('string.escapeHTML', {value})
+				return clean
+			},
+		},
+	},
+})
+const Joi = BaseJoi.extend(extension)
 const commentSchema = Joi.object({
 	text: Joi.string().required().min(10).max(300).escapeHTML(),
-}).required();
+}).required()
 const userSchema = Joi.object({
 	username: Joi.string().required().max(20).escapeHTML(),
 	password: Joi.string().required().min(3).max(20).escapeHTML(),
-}).required();
+}).required()
 
 module.exports = {
-	isLoggedIn: function (req, res, next){
-		if(req.isAuthenticated()){
-			return next();
+	isLoggedIn: function (req, res, next) {
+		if (req.isAuthenticated()) {
+			return next()
 		}
 		// GET only: a POST or PUT url is not a page, so coming "back" to it after
 		// logging in lands on a route that does not answer GETs.
-		if (req.method === 'GET') req.session.returnTo = req.originalUrl;
-		req.flash("error", "Please Log in First :)")
-		res.redirect("/login");
+		if (req.method === 'GET') req.session.returnTo = req.originalUrl
+		req.flash('error', 'Please Log in First :)')
+		res.redirect('/login')
 	},
-	checkCommentOwnership: async (req,res,next) => {
-		if(req.isAuthenticated()){
-			const { comment_id } = req.params
-			if (!mongoose.Types.ObjectId.isValid(comment_id)) throw new Error('invalid object id') 
-			const foundComment = await Comment.findById(comment_id) 
-			if(!foundComment){
-				req.flash("error", "Comment Not Found...")
-				res.redirect(safeBack(req));
+	checkCommentOwnership: async (req, res, next) => {
+		if (req.isAuthenticated()) {
+			const {comment_id} = req.params
+			if (!mongoose.Types.ObjectId.isValid(comment_id))
+				throw new Error('invalid object id')
+			const foundComment = await Comment.findById(comment_id)
+			if (!foundComment) {
+				req.flash('error', 'Comment Not Found...')
+				res.redirect(safeBack(req))
 			} else {
 				//does user own the comment?
 				// '.equals()' is a Java function that compares the value inside
-				// two different objects. they will show up as the same in the 
+				// two different objects. they will show up as the same in the
 				// console, but '===' will not work. because its a mongoose id.
-				if(foundComment.author.id.equals(req.user._id) || req.user.isAdmin) {
-				//continue route 	
-					next();
+				if (foundComment.author.id.equals(req.user._id) || req.user.isAdmin) {
+					//continue route
+					next()
 				} else {
-				//if not, redirect
-					req.flash("error", "Invalid Permission.");		
-					res.redirect(safeBack(req));
+					//if not, redirect
+					req.flash('error', 'Invalid Permission.')
+					res.redirect(safeBack(req))
 				}
 			}
 		} else {
-			req.flash("error", "You Need To Be Logged In To Do That.");		
+			req.flash('error', 'You Need To Be Logged In To Do That.')
 			// Not safeBack: the routes behind this middleware answer GETs too, and
 			// there the referrer is this same page, so "back" would redirect to a
 			// page that redirects again. returnTo is only useful for a GET — a PUT
 			// or DELETE url is not a page to come back to after logging in.
-			if (req.method === 'GET') req.session.returnTo = req.originalUrl;
-			res.redirect("/login");
+			if (req.method === 'GET') req.session.returnTo = req.originalUrl
+			res.redirect('/login')
 		}
 	},
 	validateComment: (req, res, next) => {
 		// Express 5 leaves req.body undefined when nothing parsed a body, where
 		// Express 4 gave {}. Without the guard such a request throws a 500 instead
 		// of failing validation.
-		const { error } = commentSchema.validate(req.body?.comment);
-		if(!error){
-			next();
+		const {error} = commentSchema.validate(req.body?.comment)
+		if (!error) {
+			next()
 		} else {
-			const msgs = error.details.map(el => el.message);
-			console.log(`error validateComment: `, msgs);
-			req.flash('error', 'Invalid Comment.');
-			return res.redirect(safeBack(req));
+			const msgs = error.details.map((el) => el.message)
+			console.log(`error validateComment: `, msgs)
+			req.flash('error', 'Invalid Comment.')
+			return res.redirect(safeBack(req))
 		}
 	},
 	validateUser: (req, res, next) => {
-		const { error } = userSchema.validate(req.body);
-		if(!error){
-			next();
+		const {error} = userSchema.validate(req.body)
+		if (!error) {
+			next()
 		} else {
-			const msgs = error.details.map(el => el.message);
-			console.log(`error validateUser: `, msgs);
-			req.flash('error', msgs);
-			return res.redirect(safeBack(req));
+			const msgs = error.details.map((el) => el.message)
+			console.log(`error validateUser: `, msgs)
+			req.flash('error', msgs)
+			return res.redirect(safeBack(req))
 		}
 	},
 	storeReturnTo: (req, res, next) => {
-    if (req.session.returnTo) {
-        res.locals.returnTo = req.session.returnTo;
-    }
-    next();
-	}
-}	
+		if (req.session.returnTo) {
+			res.locals.returnTo = req.session.returnTo
+		}
+		next()
+	},
+}
 // module.exports = middlewareObj

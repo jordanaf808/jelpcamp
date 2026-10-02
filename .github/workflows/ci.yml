@@ -71,6 +71,14 @@ jobs:
       # to cause it and `npm audit` reporting 0 throughout.
       - run: npm ci
 
+      # A step in this job, not a job of its own. The ruleset on `main` requires
+      # the check named `test`; a second job would run and report, but a failure
+      # there would not block a merge until the ruleset listed it too.
+      #
+      # Before the tests because it takes about a second and fails with the file
+      # names. Fix with `npm run format`.
+      - run: npm run format:check
+
       - run: npm test
 
       # Deliberately gates on the whole dependency tree rather than on this diff,

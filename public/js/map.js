@@ -1,159 +1,159 @@
-console.log('map.js says hi!');
+console.log('map.js says hi!')
 
 // Values are passed via data-attributes on #map so this file stays a static
 // asset — the CSP allows script-src 'self' with no inline scripts.
-const mapEl = document.getElementById('map');
-const mapToken = mapEl.dataset.token;
-const campsites = JSON.parse(mapEl.dataset.campsites);
+const mapEl = document.getElementById('map')
+const mapToken = mapEl.dataset.token
+const campsites = JSON.parse(mapEl.dataset.campsites)
 
 const map = new mapboxgl.Map({
-  accessToken: mapToken,
-  container: 'map',
-  style: 'mapbox://styles/mapbox/dark-v10',
-  center: [-113.787, 48.7596], // starting position [lng, lat] Glacial Nat'l Park.
-  zoom: 2, // starting zoom
-});
+	accessToken: mapToken,
+	container: 'map',
+	style: 'mapbox://styles/mapbox/dark-v10',
+	center: [-113.787, 48.7596], // starting position [lng, lat] Glacial Nat'l Park.
+	zoom: 2, // starting zoom
+})
 
 map.on('load', function () {
-  // Add a new source from our GeoJSON data and
-  // set the 'cluster' option to true. GL-JS will
-  // add the point_count property to your source data.
-  map.addSource('campsites', {
-    type: 'geojson',
-    // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
-    // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
-    data: campsites,
-    cluster: true,
-    clusterMaxZoom: 14, // Max zoom to cluster points on
-    clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
-  });
+	// Add a new source from our GeoJSON data and
+	// set the 'cluster' option to true. GL-JS will
+	// add the point_count property to your source data.
+	map.addSource('campsites', {
+		type: 'geojson',
+		// Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+		// from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+		data: campsites,
+		cluster: true,
+		clusterMaxZoom: 14, // Max zoom to cluster points on
+		clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
+	})
 
-  map.addLayer({
-    id: 'clusters',
-    type: 'circle',
-    source: 'campsites',
-    filter: ['has', 'point_count'],
-    paint: {
-      // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
-      // with three steps to implement three types of circles:
-      //   * Yellow, 15px circles when point count is less than 5 greater than 2
-      //   * Green, 18px circles when point count is between 5 and 15
-      //   * Pink, 22px circles when point count is greater than or equal to 15
-      'circle-color': [
-        'step',
-        ['get', 'point_count'],
-        '#51bbd6',
-        2,
-        '#f1f075',
-        5,
-        '#76e07f',
-        10,
-        '#f28cb1',
-      ],
-      'circle-radius': ['step', ['get', 'point_count'], 15, 5, 18, 15, 22],
-    },
-  });
+	map.addLayer({
+		id: 'clusters',
+		type: 'circle',
+		source: 'campsites',
+		filter: ['has', 'point_count'],
+		paint: {
+			// Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+			// with three steps to implement three types of circles:
+			//   * Yellow, 15px circles when point count is less than 5 greater than 2
+			//   * Green, 18px circles when point count is between 5 and 15
+			//   * Pink, 22px circles when point count is greater than or equal to 15
+			'circle-color': [
+				'step',
+				['get', 'point_count'],
+				'#51bbd6',
+				2,
+				'#f1f075',
+				5,
+				'#76e07f',
+				10,
+				'#f28cb1',
+			],
+			'circle-radius': ['step', ['get', 'point_count'], 15, 5, 18, 15, 22],
+		},
+	})
 
-  map.addLayer({
-    id: 'cluster-count',
-    type: 'symbol',
-    source: 'campsites',
-    filter: ['has', 'point_count'],
-    layout: {
-      'text-field': '{point_count_abbreviated}',
-      'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-      'text-size': 12,
-    },
-  });
+	map.addLayer({
+		id: 'cluster-count',
+		type: 'symbol',
+		source: 'campsites',
+		filter: ['has', 'point_count'],
+		layout: {
+			'text-field': '{point_count_abbreviated}',
+			'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+			'text-size': 12,
+		},
+	})
 
-  map.addLayer({
-    id: 'unclustered-point',
-    type: 'circle',
-    source: 'campsites',
-    filter: ['!', ['has', 'point_count']],
-    paint: {
-      'circle-color': '#11b4da',
-      'circle-radius': 6,
-      'circle-stroke-width': 1,
-      'circle-stroke-color': '#fff',
-    },
-  });
+	map.addLayer({
+		id: 'unclustered-point',
+		type: 'circle',
+		source: 'campsites',
+		filter: ['!', ['has', 'point_count']],
+		paint: {
+			'circle-color': '#11b4da',
+			'circle-radius': 6,
+			'circle-stroke-width': 1,
+			'circle-stroke-color': '#fff',
+		},
+	})
 
-  // inspect a cluster on click
-  map.on('click', 'clusters', function (e) {
-    var features = map.queryRenderedFeatures(e.point, {
-      layers: ['clusters'],
-    });
-    var clusterId = features[0].properties.cluster_id;
-    map
-      .getSource('campsites')
-      .getClusterExpansionZoom(clusterId, function (err, zoom) {
-        if (err) return;
+	// inspect a cluster on click
+	map.on('click', 'clusters', function (e) {
+		var features = map.queryRenderedFeatures(e.point, {
+			layers: ['clusters'],
+		})
+		var clusterId = features[0].properties.cluster_id
+		map
+			.getSource('campsites')
+			.getClusterExpansionZoom(clusterId, function (err, zoom) {
+				if (err) return
 
-        map.easeTo({
-          center: features[0].geometry.coordinates,
-          zoom: zoom,
-        });
-      });
-  });
+				map.easeTo({
+					center: features[0].geometry.coordinates,
+					zoom: zoom,
+				})
+			})
+	})
 
-  // When a click event occurs on a feature in
-  // the unclustered-point layer, open a popup at
-  // the location of the feature, built from its properties.
-  //
-  // Content is assembled as DOM nodes and handed to setDOMContent, not built as
-  // an HTML string for setHTML. The name and type come from the RIDB API, so an
-  // HTML string would interpolate third-party text straight into markup. Same
-  // reason gmap.js builds its InfoWindow with textContent.
-  map.on('click', 'unclustered-point', function (e) {
-    var coordinates = e.features[0].geometry.coordinates.slice();
-    const name = e.features[0].properties.title;
-    const type = e.features[0].properties.type;
-    const id = e.features[0].id;
-    const geo = e.features[0].geometry.coordinates;
+	// When a click event occurs on a feature in
+	// the unclustered-point layer, open a popup at
+	// the location of the feature, built from its properties.
+	//
+	// Content is assembled as DOM nodes and handed to setDOMContent, not built as
+	// an HTML string for setHTML. The name and type come from the RIDB API, so an
+	// HTML string would interpolate third-party text straight into markup. Same
+	// reason gmap.js builds its InfoWindow with textContent.
+	map.on('click', 'unclustered-point', function (e) {
+		var coordinates = e.features[0].geometry.coordinates.slice()
+		const name = e.features[0].properties.title
+		const type = e.features[0].properties.type
+		const id = e.features[0].id
+		const geo = e.features[0].geometry.coordinates
 
-    // Ensure that if the map is zoomed out such that
-    // multiple copies of the feature are visible, the
-    // popup appears over the copy being pointed to.
-    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-    }
+		// Ensure that if the map is zoomed out such that
+		// multiple copies of the feature are visible, the
+		// popup appears over the copy being pointed to.
+		while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+			coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+		}
 
-    const content = document.createElement('div');
+		const content = document.createElement('div')
 
-    const title = document.createElement('b');
-    title.style.textTransform = 'capitalize';
-    title.textContent = name;
-    content.append(title, document.createElement('hr'));
+		const title = document.createElement('b')
+		title.style.textTransform = 'capitalize'
+		title.textContent = name
+		content.append(title, document.createElement('hr'))
 
-    const loc = document.createElement('div');
-    loc.textContent =
-      'located at longitude: ' +
-      geo[0].toFixed(2) +
-      '°, latitude: ' +
-      geo[1].toFixed(2) +
-      '°';
-    const kind = document.createElement('div');
-    kind.textContent = 'Type: ' + type;
-    content.append(loc, kind, document.createElement('hr'));
+		const loc = document.createElement('div')
+		loc.textContent =
+			'located at longitude: ' +
+			geo[0].toFixed(2) +
+			'°, latitude: ' +
+			geo[1].toFixed(2) +
+			'°'
+		const kind = document.createElement('div')
+		kind.textContent = 'Type: ' + type
+		content.append(loc, kind, document.createElement('hr'))
 
-    const link = document.createElement('a');
-    // encodeURIComponent keeps a FacilityID from breaking out of the path.
-    link.href = '/campsites/show/' + encodeURIComponent(id);
-    link.className = 'btn btn-outline-primary btn-sm show-btn mapbox-btn';
-    link.textContent = 'More Information.';
-    content.append(link);
+		const link = document.createElement('a')
+		// encodeURIComponent keeps a FacilityID from breaking out of the path.
+		link.href = '/campsites/show/' + encodeURIComponent(id)
+		link.className = 'btn btn-outline-primary btn-sm show-btn mapbox-btn'
+		link.textContent = 'More Information.'
+		content.append(link)
 
-    new mapboxgl.Popup()
-      .setLngLat(coordinates)
-      .setDOMContent(content)
-      .addTo(map);
-  });
+		new mapboxgl.Popup()
+			.setLngLat(coordinates)
+			.setDOMContent(content)
+			.addTo(map)
+	})
 
-  map.on('mouseenter', 'clusters', function () {
-    map.getCanvas().style.cursor = 'pointer';
-  });
-  map.on('mouseleave', 'clusters', function () {
-    map.getCanvas().style.cursor = '';
-  });
-});
+	map.on('mouseenter', 'clusters', function () {
+		map.getCanvas().style.cursor = 'pointer'
+	})
+	map.on('mouseleave', 'clusters', function () {
+		map.getCanvas().style.cursor = ''
+	})
+})

@@ -20,12 +20,19 @@ test.beforeEach(() => {
 })
 
 const attempt = () =>
-	request(app).post('/login').type('form').send({username: 'nobody', password: 'wrong'})
+	request(app)
+		.post('/login')
+		.type('form')
+		.send({username: 'nobody', password: 'wrong'})
 
 test('the 11th login attempt is refused with 429', async () => {
 	for (let i = 1; i <= 10; i++) {
 		const res = await attempt()
-		assert.notStrictEqual(res.status, 429, `request ${i} should be within the budget`)
+		assert.notStrictEqual(
+			res.status,
+			429,
+			`request ${i} should be within the budget`,
+		)
 	}
 
 	const blocked = await attempt()
@@ -47,5 +54,9 @@ test('the limiter still reports its budget in RateLimit-* headers', async () => 
 	const res = await attempt()
 	assert.ok(res.headers['ratelimit-remaining'], 'standardHeaders should be on')
 	assert.strictEqual(res.headers['ratelimit-remaining'], '9')
-	assert.strictEqual(res.headers['x-ratelimit-remaining'], undefined, 'legacy headers off')
+	assert.strictEqual(
+		res.headers['x-ratelimit-remaining'],
+		undefined,
+		'legacy headers off',
+	)
 })
