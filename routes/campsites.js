@@ -84,12 +84,14 @@ router.get('/search', async (req, res) => {
 
 router.get('/show/:id', async (req, res) => {
 	try {
-		const showParams = {full: true}
 		const {id} = req.params
-		const url = `/facilities/${id}`
-		const response = await axios.get(url, {showParams, cache: {ttl: 1800000}})
-		const medias = await axios.get(`${url}/media`, {cache: {ttl: 1800000}})
-		const links = await axios.get(`${url}/links`, {cache: {ttl: 1800000}})
+		// full: true adds the facility's links and its parent rec area to the
+		// record. The photos are in it either way. This is the only RIDB request
+		// the page needs.
+		const response = await axios.get(`/facilities/${id}`, {
+			params: {full: true},
+			cache: {ttl: 1800000},
+		})
 		// The show route fetches a single facility and never passes through
 		// mutateData, so it sanitizes at its own fetch boundary.
 		const recData = {
@@ -98,17 +100,14 @@ router.get('/show/:id', async (req, res) => {
 				response.data.FacilityDescription,
 			),
 		}
-		const linksData = links.data.RECDATA
-		const mediaData = medias.data.RECDATA
-		const parentRecAreaID = recData.ParentRecAreaID
-		console.log('parent RecArea ID#' + parentRecAreaID)
-		const parentRecAreaResponse = await axios.get(
-			`/recareas/${parentRecAreaID}`,
-			{cache: {ttl: 1800000}},
-		)
-		const parentRecArea = parentRecAreaResponse.data
-		console.log('Parent RecArea: ' + parentRecArea)
-		const data = {recData, mediaData, parentRecArea, linksData}
+		const data = {
+			recData,
+			mediaData: recData.MEDIA,
+			linksData: recData.LINK,
+			// RECAREA holds a short summary of the parent rec area: its id, name
+			// and link. A facility can also stand alone, with no parent.
+			parentRecArea: recData.RECAREA[0] ?? {},
+		}
 		const newCampsite = {
 			name: recData.FacilityName,
 			id: id,
