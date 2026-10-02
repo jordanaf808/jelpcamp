@@ -1,0 +1,7 @@
+# Commits that git blame should skip: formatting only, no change in behaviour.
+# GitHub's blame view reads this file by itself. For the command line, run once:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: format the JavaScript with Prettier (#63)
+f180ff6fcc77c77ef684e9ada55791528de17851
