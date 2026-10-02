@@ -28,7 +28,6 @@ router.post(
 		const comment = await Comment.create(req.body.comment)
 		if (!comment) {
 			req.flash('error', 'Error Creating Comment.')
-			console.log(err)
 			return res.redirect(`/campsites/${id}`)
 		}
 		//add username and id to comment
