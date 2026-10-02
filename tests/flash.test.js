@@ -56,7 +56,7 @@ test('a rejected registration shows its validation message on the next page', as
 // Reading the flash messages must not write to the session. express-session
 // only skips saving a new session (saveUninitialized: false) while nothing has
 // modified it, and every page reads the messages to render its header.
-test('a visitor who is not logged in gets no session cookie', {todo: 'connect-flash writes on read'}, async () => {
+test('a visitor who is not logged in gets no session cookie', async () => {
 	const res = await request(app).get('/login')
 	assert.strictEqual(res.status, 200)
 	assert.strictEqual(res.headers['set-cookie'], undefined)
