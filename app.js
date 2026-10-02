@@ -17,12 +17,12 @@ const app = express()
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const methodOverride = require('method-override')
-const flash = require('connect-flash')
 const session = require('express-session')
 // connect-mongo 6 ships dual ESM/CJS and no longer default-exports the class to
 // CJS callers: require() returns a namespace object, so this must be destructured.
 const {MongoStore} = require('connect-mongo')
 const sanitizeRequest = require('./middleware/sanitize')
+const flash = require('./middleware/flash')
 const helmet = require('helmet')
 
 // Models
@@ -42,7 +42,6 @@ app.use(express.urlencoded({extended: true}))
 app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs')
 app.use(methodOverride('_method'))
-app.use(flash())
 app.use(sanitizeRequest)
 
 // Content Security Policy. Origins below were derived by scanning views/ and
@@ -206,6 +205,7 @@ app.set('trust proxy', 3)
 
 //PASSPORT configuration
 app.use(session(sessionConfig))
+app.use(flash)
 app.use(passport.initialize())
 app.use(passport.session())
 passport.use(new LocalStrategy(User.authenticate()))
