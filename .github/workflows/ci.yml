@@ -79,6 +79,9 @@ jobs:
       # names. Fix with `npm run format`.
       - run: npm run format:check
 
+      # Same reasoning: a step, so the required `test` check enforces it.
+      - run: npm run lint
+
       - run: npm test
 
       # Deliberately gates on the whole dependency tree rather than on this diff,

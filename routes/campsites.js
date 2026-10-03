@@ -2,7 +2,6 @@ require('dotenv').config()
 const express = require('express')
 const Axios = require('axios').default
 const router = express.Router()
-const ExpressError = require('../utils/ExpressError')
 
 const Campsite = require('../models/campsite')
 const User = require('../models/user')
@@ -138,7 +137,7 @@ router.get('/show/:id', async (req, res) => {
 					.populate('favorites')
 					.exec()
 				let favorites = false
-				for (fav of foundUser.favorites) {
+				for (const fav of foundUser.favorites) {
 					if (fav._id.toString() === foundCampsite._id.toString()) {
 						favorites = true
 					}
