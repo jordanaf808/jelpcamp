@@ -54,21 +54,13 @@ test('a user can add a campsite to their own favorites', async () => {
 	assert.deepStrictEqual(await favoritesOf('alice'), [String(campsite._id)])
 })
 
-test(
-	"a user cannot add to another user's favorites",
-	{todo: 'not enforced yet'},
-	async () => {
-		await alice.post(`/user/${bobId}/1`)
-		assert.deepStrictEqual(await favoritesOf('bob'), [])
-	},
-)
+test("a user cannot add to another user's favorites", async () => {
+	await alice.post(`/user/${bobId}/1`)
+	assert.deepStrictEqual(await favoritesOf('bob'), [])
+})
 
-test(
-	"a user cannot remove from another user's favorites",
-	{todo: 'not enforced yet'},
-	async () => {
-		await User.updateOne({username: 'bob'}, {favorites: [campsite._id]})
-		await alice.delete(`/user/${bobId}/1`)
-		assert.deepStrictEqual(await favoritesOf('bob'), [String(campsite._id)])
-	},
-)
+test("a user cannot remove from another user's favorites", async () => {
+	await User.updateOne({username: 'bob'}, {favorites: [campsite._id]})
+	await alice.delete(`/user/${bobId}/1`)
+	assert.deepStrictEqual(await favoritesOf('bob'), [String(campsite._id)])
+})
