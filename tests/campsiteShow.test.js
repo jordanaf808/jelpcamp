@@ -79,3 +79,34 @@ test(
 		assert.ok(res.text.includes(facility.FacilityName))
 	},
 )
+
+// <script> and <script defer> match; <script src="..."> does not.
+const INLINE_SCRIPT = /<script\b(?![^>]*\bsrc\s*=)[^>]*>/gi
+
+// The map loads through google.maps.importLibrary(). Google publishes its
+// loader as an inline script, which this app's CSP would block without any
+// visible error, so the loader is a file and this checks the page uses it.
+test(
+	'the campsite page loads the map from files, with no inline script',
+	{timeout: 10000},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/2')
+			.query({full: 'true'})
+			.reply(200, {...facility, FacilityID: '2'})
+
+		const res = await request(app).get('/campsites/show/2')
+		assert.strictEqual(res.status, 200)
+		assert.deepStrictEqual(res.text.match(INLINE_SCRIPT) ?? [], [])
+
+		// Loader first: gmap.js calls google.maps.importLibrary() as it runs.
+		assert.match(
+			res.text,
+			/<script src="\/js\/gmapLoader\.js"><\/script>\s*<script src="\/js\/gmap\.js"><\/script>/,
+		)
+		// The loader reads the key from here.
+		assert.match(res.text, /<div id="map"[^>]*\bdata-maps-key="/)
+		// No script tag for the API itself: the loader adds it in the browser.
+		assert.doesNotMatch(res.text, /maps\.googleapis\.com\/maps\/api\/js/)
+	},
+)

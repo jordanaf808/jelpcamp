@@ -192,7 +192,8 @@
                 data-lat="<%= data.recData.GEOJSON.COORDINATES[1] %>"
                 data-lng="<%= data.recData.GEOJSON.COORDINATES[0] %>"
                 data-name="<%= data.recData["FacilityName"] %>"
-                data-map-id="<%= mapsMapId %>"></div>
+                data-map-id="<%= mapsMapId %>"
+                data-maps-key="<%= mapsKey %>"></div>
             </div>
           </div>
         </div>
@@ -213,13 +214,8 @@
   crossorigin="anonymous"
 ></script>
 
+<script src="/js/gmapLoader.js"></script>
 <script src="/js/gmap.js"></script>
-<script
-  async
-  defer
-  src="https://maps.googleapis.com/maps/api/js?key=<%= mapsKey %>&callback=initMap&loading=async&libraries=marker"
-  type="text/javascript"
-></script>
 <script
   async
   src="//embedr.flickr.com/assets/client-code.js"
