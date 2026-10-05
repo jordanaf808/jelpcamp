@@ -1,6 +1,6 @@
-// Pins who may change a user's favorites. The routes name the user in the URL,
-// /user/:id/:camp_id, so being logged in is not enough: the logged-in user must
-// be the one the URL names.
+// Pins who may see and change a user's favorites. The routes name the user in
+// the URL, /user/:id and /user/:id/:camp_id, so being logged in is not enough:
+// the logged-in user must be the one the URL names.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
@@ -63,4 +63,16 @@ test("a user cannot remove from another user's favorites", async () => {
 	await User.updateOne({username: 'bob'}, {favorites: [campsite._id]})
 	await alice.delete(`/user/${bobId}/1`)
 	assert.deepStrictEqual(await favoritesOf('bob'), [String(campsite._id)])
+})
+
+test('a user can open their own profile page', async () => {
+	const aliceId = String((await User.findOne({username: 'alice'}))._id)
+	const res = await alice.get(`/user/${aliceId}`)
+	assert.strictEqual(res.status, 200)
+})
+
+// The profile page lists that user's favorites.
+test("a user cannot open another user's profile page", async () => {
+	const res = await alice.get(`/user/${bobId}`)
+	assert.strictEqual(res.status, 302)
 })
