@@ -77,6 +77,14 @@ module.exports = {
 			res.redirect('/login')
 		}
 	},
+	// For routes that change one user's data and name that user in the URL as
+	// :id. isLoggedIn proves someone is logged in; this proves it is that user.
+	// Mount it after isLoggedIn, which guarantees req.user.
+	checkAccountOwnership: (req, res, next) => {
+		if (String(req.user._id) === req.params.id) return next()
+		req.flash('error', 'Invalid Permission.')
+		res.redirect(safeBack(req))
+	},
 	validateComment: (req, res, next) => {
 		// Express 5 leaves req.body undefined when nothing parsed a body, where
 		// Express 4 gave {}. Without the guard such a request throws a 500 instead
