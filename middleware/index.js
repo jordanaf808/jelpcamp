@@ -77,8 +77,9 @@ module.exports = {
 			res.redirect('/login')
 		}
 	},
-	// For routes that change one user's data and name that user in the URL as
-	// :id. isLoggedIn proves someone is logged in; this proves it is that user.
+	// For routes that show or change one user's data and name that user in the
+	// URL as :id. isLoggedIn proves someone is logged in; this proves it is that
+	// user.
 	// Mount it after isLoggedIn, which guarantees req.user.
 	checkAccountOwnership: (req, res, next) => {
 		if (String(req.user._id) === req.params.id) return next()
