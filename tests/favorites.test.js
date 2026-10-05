@@ -72,11 +72,7 @@ test('a user can open their own profile page', async () => {
 })
 
 // The profile page lists that user's favorites.
-test(
-	"a user cannot open another user's profile page",
-	{todo: 'not enforced yet'},
-	async () => {
-		const res = await alice.get(`/user/${bobId}`)
-		assert.strictEqual(res.status, 302)
-	},
-)
+test("a user cannot open another user's profile page", async () => {
+	const res = await alice.get(`/user/${bobId}`)
+	assert.strictEqual(res.status, 302)
+})

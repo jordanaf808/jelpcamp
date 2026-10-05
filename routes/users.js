@@ -11,18 +11,23 @@ const User = require('../models/user')
 const Campsite = require('../models/campsite')
 
 // User Profile
-router.get('/:id', middleware.isLoggedIn, async (req, res) => {
-	const {id} = req.params
-	// validate `id`
-	if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('invalid id')
-	// get user info and populate with favorites info
-	const user = await User.findById(req.params.id).populate('favorites').exec()
-	if (!user) {
-		req.flash('error', 'User Not Found...')
-		return res.redirect(safeBack(req))
-	}
-	res.render('users/show', {user: user})
-})
+router.get(
+	'/:id',
+	middleware.isLoggedIn,
+	middleware.checkAccountOwnership,
+	async (req, res) => {
+		const {id} = req.params
+		// validate `id`
+		if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('invalid id')
+		// get user info and populate with favorites info
+		const user = await User.findById(req.params.id).populate('favorites').exec()
+		if (!user) {
+			req.flash('error', 'User Not Found...')
+			return res.redirect(safeBack(req))
+		}
+		res.render('users/show', {user: user})
+	},
+)
 
 // Add Favorite
 router.post(
