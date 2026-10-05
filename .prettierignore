@@ -13,4 +13,7 @@ package-lock.json
 # Prose and hand-aligned tables.
 *.md
 
+# Google's Maps loader, kept exactly as Google publishes it.
+public/js/gmapLoader.js
+
 .vscode/

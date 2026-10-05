@@ -1,9 +1,13 @@
-// Google Maps callback for the campsite show page.
+// Draws the Google map on the campsite show page.
 // Values are passed via data-attributes on #map so this file stays a static
 // asset — the CSP allows script-src 'self' with no inline scripts.
-// Must be global: the Maps loader invokes it via &callback=initMap.
-/* exported initMap */
-function initMap() {
+// gmapLoader.js must load first: it defines google.maps.importLibrary().
+async function initMap() {
+	// Each call resolves once that part of the API is loaded and has filled in
+	// its classes under google.maps. The first call fetches the API itself.
+	await google.maps.importLibrary('maps')
+	await google.maps.importLibrary('marker')
+
 	const mapEl = document.getElementById('map')
 	const center = {
 		lat: Number(mapEl.dataset.lat),
@@ -33,3 +37,5 @@ function initMap() {
 		infowindow.open(map, marker)
 	})
 }
+
+initMap()
