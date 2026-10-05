@@ -9,12 +9,19 @@ and commit messages before that date use the old name. For the short version, re
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-10-01**
+> **Status — updated 2026-10-05**
 >
-> **Phase 4's version bumps are done, except `connect-flash`, whose latest release is
-> still 0.1.1.** Mongoose 9 (PR #41), the Mapbox GL JS CDN pin (#47), helmet 8 (#48),
-> joi 18 (#49) and ejs 6 (#50) merged between 2026-09-18 and 2026-09-25. The owner
-> deployed them by 2026-09-28 and reported the live site working. See Phase 4.
+> **Phase 4 is complete.** Its last open row was `connect-flash`, which has no newer
+> release. PR #61 (2026-10-02) replaced it with `middleware/flash.js`. Mongoose 9
+> (PR #41), the Mapbox GL JS CDN pin (#47), helmet 8 (#48), joi 18 (#49) and ejs 6 (#50)
+> merged between 2026-09-18 and 2026-09-25. The owner deployed them by 2026-09-28 and
+> reported the live site working. See Phase 4.
+>
+> **Work after the audit, 2026-10-02 to 2026-10-05, is in pull requests #60 to #74.**
+> [audit-summary.md](audit-summary.md) says what each one answered. In short: a README,
+> Prettier and ESLint in CI, the campsite page down to one RIDB request, the Google Maps
+> loader migrated, and three access and session gaps found and fixed along the way. Those
+> three are written up at the end of Part 2.
 >
 > **`npm audit` reports 0 again.** From 2026-09-29 it reported **1 moderate**:
 > `ip-address` 10.5.0, pulled in by `express-rate-limit`. CI stayed green, because its
@@ -52,9 +59,9 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > range that includes the patched version.
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
-> have all landed. Every pull request and every push to `main` now runs `npm ci`,
-> **28 tests** and `npm audit --audit-level=high`, and a ruleset makes the `test` check
-> required before anything merges into `main`. Dependabot alerts, grouped version
+> have all landed. Every pull request and every push to `main` now runs `npm ci`, a
+> format check, ESLint, **43 tests** and `npm audit --audit-level=high`, and a ruleset
+> makes the `test` check required before anything merges into `main`. Dependabot alerts, grouped version
 > updates (PR #24) and security updates are all on. **CI does not gate deploys.**
 > Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
 > from Render's dashboard, and nothing stops a deploy of a commit whose CI failed.
@@ -628,6 +635,37 @@ is still correct, but it did not close a usable open redirect.
 browser, because a response header on the same site controls whether the browser sends
 it. And fixing a feature that never worked also turns on every bug in it that never ran.
 
+### 🟡 Three access and session gaps, found after the audit (found and fixed 2026-10-02 to 2026-10-05)
+
+None of these was on the audit's list. Each was found by reading code that a follow-up
+change was about to touch, and each was shown failing in CI before it was fixed.
+
+**Every visitor was given a stored session (PR #61).** `saveUninitialized: false` is
+meant to stop that. But `connect-flash` assigned `session.flash = {}` on every call,
+including a read, and `app.js` reads the flash messages on every request to render the
+page header. That counted as modifying the session, so every visitor, logged in or not,
+got a session document in MongoDB and a 7-day `connect.sid` cookie. A test on a plain
+`GET /login` showed the cookie on the old code. The replacement middleware does not
+write on a read.
+
+**Any logged-in user could change another user's favorites (PR #72).** `POST` and
+`DELETE /user/:id/:camp_id` took the user to change from the URL and checked only that
+someone was logged in. Low impact: favorites only, it needed the other user's id, and
+the cookie's `sameSite: 'lax'` blocked a cross-site version. The routes now run
+`checkAccountOwnership` in [middleware/index.js](../middleware/index.js): the `:id` in
+the URL must be the logged-in user's.
+
+**Any logged-in user could open another user's profile page (PR #74).** `GET /user/:id`
+rendered that user's favorites to anyone logged in. The same check now guards it.
+
+The lesson is the one from the CSP findings: a control can be configured correctly and
+still not be in effect. `saveUninitialized: false` was set the whole time. And
+`isLoggedIn` answers "is someone logged in?", which is not the question a route about
+one user's data needs answered.
+
+Four further bugs from the same reading are not security findings and are filed as
+GitHub issues #68 to #71.
+
 ### ✅ No `engines` field, no CI, no tests (resolved 2026-09-10)
 
 **Resolved.** `engines` and `.nvmrc` landed in
@@ -732,7 +770,7 @@ for Part 2.
 | 5 | Add `engines`, `.nvmrc` | 5 min | Pins the runtime |
 | 6 | Rate-limit `/login`, `/register` | 30 min | Only if publicly deployed |
 | 7 | Integration tests + CI workflow | half day | Prerequisite for trusting #9. **✅ Tests PR #18, CI PR #22; `test` required on `main`** |
-| 8 | Major upgrades — mongoose first | ongoing | One library per PR. **Express went first instead: ✅ PR #35 (2026-09-16), forced by the `qs` advisories. Mongoose ✅ #41, helmet ✅ #48, joi ✅ #49, ejs ✅ #50. Only `connect-flash` is left** |
+| 8 | Major upgrades — mongoose first | ongoing | One library per PR. **Express went first instead: ✅ PR #35 (2026-09-16), forced by the `qs` advisories. Mongoose ✅ #41, helmet ✅ #48, joi ✅ #49, ejs ✅ #50. `connect-flash` ✅ replaced in #61 (2026-10-02)** |
 | 9 | Dependabot alerts, then grouped security updates | 10 min | Keeps #1 from recurring. **Alerts ✅, version updates ✅ (PR #24), security updates ✅ (2026-09-14)** |
 
 Steps 2–4 are the ones `npm audit` will never tell you about, and they carry more
@@ -1068,11 +1106,11 @@ overstates the app's actual security posture.
       does not check CI, so check that the `test` run for the commit passed first. In
       exchange, a newly published advisory with no fix cannot block a deploy
 
-### ⬜ Phase 4 — Major upgrades (ongoing, one PR each)
+### ✅ Phase 4 — Major upgrades (complete 2026-10-02, one PR each)
 
 This list was everything 1–3 majors behind after Phase 1. An EOL major eventually means
-*no fix available* for a future advisory. **As of 2026-10-01 every row is done except
-`connect-flash`**, which has no newer release to move to.
+*no fix available* for a future advisory. **As of 2026-10-02 every row is done.**
+`connect-flash` had no newer release to move to, so it was replaced.
 
 | Package | Current | Latest | Priority |
 |---|---|---|---|
@@ -1083,7 +1121,7 @@ This list was everything 1–3 majors behind after Phase 1. An EOL major eventua
 | ~~`helmet`~~ | ~~7.2.0~~ | 8.3.0 | ✅ Done, PR #48 (2026-09-25). The CSP config did not change |
 | ~~`connect-mongo`~~ | ~~5.0.0~~ | 6.0.0 | ✅ Done, PR #7 — forced by the kruptein outages |
 | ~~`passport`~~ | ~~0.6.0~~ | 0.7.0 | ✅ Done, Dependabot #25 (2026-09-14) — arrived despite the majors rule (see Part 3). 0.7.0 only changes `assignProperty`, unused here. Deployed and checked live 2026-09-14 |
-| `connect-flash` | 0.1.1 | 0.1.1 | Low — last published 2013-05-13. Calls runtime-deprecated `util.isArray` (DEP0044) on every failed login; breaks if a future Node removes it. **The only row still open**, and a version bump cannot close it |
+| ~~`connect-flash`~~ | ~~0.1.1~~ | removed | ✅ Done, PR #61 (2026-10-02). Last published 2013-05-13, and it called runtime-deprecated `util.isArray` (DEP0044) on every failed login. No version bump could fix that, so `middleware/flash.js` (16 lines) replaced it, keeping the `req.flash(type, msg)` call shape that passport's `failureFlash` calls by name. Three tests pin it. The swap also closed a session gap — see the end of Part 2 |
 | ~~`mapbox-gl`~~ | ~~CDN v1.12.0~~ | CDN v3.30.0 | ✅ Done, PR #47 (2026-09-25). There was no npm package to bump: it was removed in Phase 1 (`c1f1220`), and this row's old `2.15.0` was stale. Only the CDN `<script>` and `<link>` pins existed. From v2 on, Mapbox GL JS is licensed under Mapbox's terms of service, not BSD, and map loads count against the Mapbox account (per the PR) — an account matter, not a code one |
 
 **Deployed, but the per-PR checks are not recorded.** The owner deployed #41–#53 by
@@ -1282,10 +1320,23 @@ because nothing else in the repo tracks it and `npm audit` cannot see it.
     pre-existing, unrelated to those upgrades.
   - [Migration guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/migration) · [Google Maps deprecations](https://developers.google.com/maps/deprecations) · [`AdvancedMarkerElement` reference](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers)
 
-- [ ] *Also noticed:* the map still uses the legacy `callback=initMap` loader
-      ([campsites/show.ejs:220](../views/campsites/show.ejs#L220)). Google now recommends
-      the dynamic library import. It was not bundled with the marker migration, so it
-      is still open. It is the only template left that loads Google Maps.
+- [x] *Also noticed:* the map used the `callback=initMap` script-tag loader.
+      **Migrated in PR #73 (2026-10-05)** to Google's dynamic library import
+  - **This entry used to call that loader "legacy". That was wrong.** Google's docs list
+    the script tag as a supported method, and its deprecations page has no entry for
+    it. The migration was a cleanup, not a deadline: `initMap` had to be a global
+    function whose only caller was a name inside a URL in the view
+  - [public/js/gmapLoader.js](../public/js/gmapLoader.js) is Google's bootstrap loader,
+    copied as published. Google ships it as an inline script; it is a file here because
+    `script-src` has no `'unsafe-inline'`. It reads the key from a `data-maps-key`
+    attribute. [public/js/gmap.js](../public/js/gmap.js) awaits
+    `google.maps.importLibrary()` for `maps` and `marker`, then draws the map as before
+  - **No CSP change was needed.** The loader requests the same
+    `https://maps.googleapis.com/maps/api/js` URL the script tag did
+  - **Live:** the owner deployed it and reported the map rendering, the marker opening
+    its info window, and no console errors (2026-10-05). Reaching the marker with Tab
+    and Enter was not mentioned. A test checks the page's HTML; nothing tests the map
+    code in a browser
 
 ### The one-line summary
 
@@ -1318,7 +1369,8 @@ reading its diff did not show the loop. A review after the merge found it by tra
 a browser would do on each redirect; supertest then reproduced the two server hops.
 
 **The rest of Phase 4's bumps are done (2026-10-01).** Mongoose 9, helmet 8, joi 18 and
-ejs 6 are merged and deployed; only `connect-flash` is left, and it has no newer release.
+ejs 6 are merged and deployed. `connect-flash` had no newer release, and PR #61 replaced it
+(2026-10-02).
 The pattern from Express repeated twice. The Mongoose bump broke in a package the scan
 had not covered, passport-local-mongoose. The Google Maps marker migration needed two
 CSP entries and a second fix that only the browser console showed. In each case the
