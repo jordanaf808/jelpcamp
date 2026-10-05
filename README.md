@@ -53,8 +53,6 @@ npm start                # http://localhost:3000
 The two map keys are visible to anyone who opens the site. Restrict each one to
 your own URLs in its provider's dashboard.
 
-`.env.example` also lists `GEOCODER_API_KEY`. Nothing reads it.
-
 If you change `SESSION_STORE_SECRET`, delete the `sessions` collection straight
 after deploying. A session the app cannot decrypt returns a 500 on every request
 for that visitor.

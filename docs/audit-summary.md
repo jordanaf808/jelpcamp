@@ -216,15 +216,17 @@ As of 2026-10-05. Bugs live in GitHub Issues; this list is for the rest.
   [security-audit.md](security-audit.md).
 - A development Maps key and a browser smoke script (critique 1). Until they exist,
   every map change is verified on the live site.
-- Two checks on #73 that nobody has reported: reaching the map marker with Tab and
-  Enter, and a single request to the Maps API.
-- Bugs filed as issues: #68, #69, #70, #71, and #1 from 2021.
+- Bugs filed as issues: #68, #69, #70 and #71. #1, from 2021, is closed as a duplicate
+  of #71.
 - No test for: search, the index page, comment create and edit, register error paths,
   the CSP header, cookie flags, any browser code.
-- `node-geocoder` and `numeral` are dependencies that nothing requires, and
-  `GEOCODER_API_KEY` is read by nothing.
-- Moving from npm to pnpm. Planned, not started. On 2026-10-01 GitHub listed
-  Dependabot support for pnpm 7 to 10 only, so check that first.
+- Moving from npm to pnpm is deferred (owner, 2026-10-05): the project stays on npm for
+  now. If it is picked up again, check Dependabot first. On 2026-10-01 GitHub listed
+  support for pnpm 7 to 10 only.
+- CI runs on `ubuntu-latest`, which GitHub moves to Ubuntu 26 from 2026-10-19. The
+  runner is not pinned (owner, 2026-10-05). The tests download a MongoDB binary built
+  for a specific Ubuntu release, so if CI turns red around that date with a `mongod`
+  error, look there first.
 - The `storybooks` database still holds a full copy of v12's data as a rollback path.
 
 Closed since the review: `connect-flash` (#61), the Google Maps loader (#73), Prettier,
