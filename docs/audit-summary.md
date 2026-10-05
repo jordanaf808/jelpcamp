@@ -3,8 +3,11 @@
 A security audit of an Express app whose lockfile had not changed since September 2023.
 It ran from 2026-08-31 to 2026-10-01 and took 53 merged pull requests (#2–#57).
 
-This is the short version, written as a senior developer's review of the work. The full
-record is [security-audit.md](security-audit.md).
+This is the short version, written as a senior developer's review of the work as it
+stood on 2026-10-01. The full record is [security-audit.md](security-audit.md).
+
+Each critique below ends with a **Since** line: what was done about it from 2026-10-02
+to 2026-10-05, in pull requests #60 to #74.
 
 ## Result
 
@@ -69,11 +72,19 @@ laptop and the live site can render the map, because the Maps key rejects `local
   or CSP violation. Run it before merging and after deploying. It would have caught
   #28, #51, #54 and #55.
 
+**Since:** partly. Tests now render the campsite page with the RIDB API mocked (#65),
+and one checks how the page loads the map (#73). Neither bullet is done. The owner
+chose not to create the development key for now, so the next map change (#73) was
+again verified on the live site. It needed no follow-up.
+
 **2. "Works great" is not a test result.** 27 of the 33 checkboxes in pull request
 test plans were never ticked. Three live checks from Express 5 have been open since
 2026-09-16. When a check is not recorded, the next person has to redo it or trust it.
 
 - Tick the boxes in the pull request as you do them. That is the record.
+
+**Since:** from #60 on, each live check is ticked in its pull request with the owner's
+own words and the date. The three Express 5 checks are still unticked.
 
 **3. The tests protect the plumbing, not the product.** The 28 tests cover the database
 guard, the rate limiter, redirects and the sanitizer. None covers search, a campsite
@@ -83,11 +94,21 @@ nothing about whether the app works.
 - Mock the RIDB API with `nock` and add one test per route.
 - Snapshot the CSP header in a test, so every policy change shows up as a reviewed diff.
 
+**Since:** 28 tests became 43. `nock` mocks RIDB, and the campsite page has its first
+tests (#65, #73). Flash messages (#61), the favicon (#60), and who may see or change a
+user's favorites (#72, #74) are covered too. Still untested: search, the index page,
+creating and editing a comment, register error paths, the CSP header, cookie flags and
+all browser code.
+
 **4. Five risky changes shipped in one deploy.** Mapbox GL v3, helmet 8, joi 18, ejs 6
 and a CSP change (#47–#51) all merged on 2026-09-25 and went live together. It worked.
 If it had not, there were five suspects.
 
 - One risky change per deploy. Check the site before starting the next.
+
+**Since:** the risky changes (#61, #65, #72, #73) were merged one at a time, and the
+owner reported each one's live checks before the next was opened. Whether each went
+out as its own deploy is not recorded.
 
 **5. The docs grew faster than they could stay true.** security-audit.md is 1,300
 lines. The status in these docs went stale four times, because it was copied by hand
@@ -97,6 +118,9 @@ is, how to run it, or which environment variables it needs.
 - Keep decisions and reasons in docs. Keep status in the tools: GitHub Issues for open
   work, `gh pr list` and `git log` for state.
 - Write the README first.
+
+**Since:** the README exists (#64). Open bugs are GitHub issues #68 to #71, not lines
+in a doc.
 
 **6. Known problems are still in the repo.** `views/campgrounds/` and
 `views/campsites/campsites.ejs` are rendered by nothing. `connect-flash` was last
@@ -108,9 +132,15 @@ There is no favicon, so every page logs a 404.
 - Delete the dead views. Replace `connect-flash` with a few lines of your own
   middleware. Fix or remove `showParams`.
 
+**Since:** all four are done. The dead views are deleted and there is a favicon (#60).
+`connect-flash` is replaced by `middleware/flash.js` (#61). `showParams` is fixed
+(#65), which cut the campsite page from four RIDB requests to one.
+
 **7. One leaked secret would compromise three apps.** v12 and v13 share a session
 secret, and all three apps on the cluster log in to Atlas as the same user. Both have
 been open since 2026-09-09. This is a 20-minute fix.
+
+**Since:** unchanged. Still open.
 
 **8. Nothing enforces code quality.** `.prettierrc` exists, but Prettier is not
 installed and nothing was reformatted. There is no linter. ESLint's `no-undef` would
@@ -118,12 +148,33 @@ have caught the undeclared global fixed in #34.
 
 - Add ESLint and Prettier, make one formatting-only pull request, then lint in CI.
 
+**Since:** done. Prettier is applied and checked in CI (#63), and `git blame` skips
+the format commit (#66). ESLint runs in CI (#67). Its first run found the kind of bug
+this critique predicted: a loop variable with no declaration, leaking onto the global
+object.
+
 **9. The audit gate has a blind spot you chose to keep.** Staying at `high` is a
 reasonable call: `moderate` would block unrelated work. The cost is that a moderate
 advisory shows only in the CI log and in Dependabot's alert list, and Dependabot did
 not open a pull request for this one.
 
 - Turn on Dependabot alert emails, or look at the alert list once a week.
+
+**Since:** unchanged. The gate is still `high`, by the owner's decision.
+
+## Found along the way
+
+The follow-up work turned up problems the audit had not listed. Each was found by
+reading the code a change was about to touch, and each has a test now.
+
+| Problem | Fixed in |
+| --- | --- |
+| Every visitor was given a stored session and a 7-day cookie, logged in or not. `connect-flash` wrote to the session even on a read | #61 |
+| Any logged-in user could add to or remove from another user's favorites | #72 |
+| Any logged-in user could open another user's profile page | #74 |
+| The campsite page made four RIDB requests where one was enough. One of the four had never been needed | #65 |
+
+Four more are filed as issues and not fixed: #68, #69, #70 and #71.
 
 ## Habits and systems
 
@@ -158,13 +209,24 @@ Two habits help:
 
 ## Still open
 
-- `connect-flash`: abandoned, and no version bump can fix that.
+As of 2026-10-05. Bugs live in GitHub Issues; this list is for the rest.
+
 - The session secret shared with v13, and the Atlas user shared by three apps.
 - Three live checks from Express 5, unticked in
   [security-audit.md](security-audit.md).
-- The legacy `callback=initMap` Google Maps loader.
-- `ip-address` 10.7.2 (#57) is merged. Whether it is deployed is not recorded.
-- No test for: campsite routes, search, comment create and edit, register error paths,
+- A development Maps key and a browser smoke script (critique 1). Until they exist,
+  every map change is verified on the live site.
+- Two checks on #73 that nobody has reported: reaching the map marker with Tab and
+  Enter, and a single request to the Maps API.
+- Bugs filed as issues: #68, #69, #70, #71, and #1 from 2021.
+- No test for: search, the index page, comment create and edit, register error paths,
   the CSP header, cookie flags, any browser code.
-- Prettier is configured but not applied. There is no linter and no README.
+- `node-geocoder` and `numeral` are dependencies that nothing requires, and
+  `GEOCODER_API_KEY` is read by nothing.
+- Moving from npm to pnpm. Planned, not started. On 2026-10-01 GitHub listed
+  Dependabot support for pnpm 7 to 10 only, so check that first.
 - The `storybooks` database still holds a full copy of v12's data as a rollback path.
+
+Closed since the review: `connect-flash` (#61), the Google Maps loader (#73), Prettier,
+ESLint and the README (#63, #67, #64). `ip-address` 10.7.2 (#57) has been part of
+every deploy since 2026-10-02; nobody checked it separately.

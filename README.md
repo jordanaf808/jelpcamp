@@ -67,18 +67,27 @@ npm test
 
 The tests start their own in-memory MongoDB, so they need no `.env` and no
 database. The first run downloads a `mongod` binary of about 150 MB. A guard
-refuses to run against any database other than that in-memory one.
+refuses to run against any database other than that in-memory one. Requests to
+the RIDB API are mocked, so the tests need no API key and no network.
 
-Pull requests run the tests and `npm audit --audit-level=high` in GitHub Actions.
-`main` only accepts pull requests that pass.
+```bash
+npm run lint           # ESLint
+npm run format:check   # Prettier, report only
+npm run format         # Prettier, rewrite files
+```
+
+Pull requests run the format check, the linter, the tests and
+`npm audit --audit-level=high` in GitHub Actions. `main` only accepts pull
+requests that pass.
 
 ## Known limits
 
 - **Maps are blank on `localhost` with the project's own keys.** They are restricted
   to the live site's URL. Use your own keys, or check maps on the live site.
-- **Nothing tests the browser code, search or the facility pages.** The tests cover
-  the database guard, rate limits, redirects, input sanitizing, deleting a comment
-  and the form pages.
+- **Nothing tests the browser code or search.** The tests cover the database guard,
+  rate limits, redirects, input sanitizing, flash messages, the login and register
+  pages, a facility's page, deleting a comment, and who may see or change a user's
+  favorites.
 
 ## Deploying
 
