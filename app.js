@@ -245,6 +245,9 @@ app.use((err, req, res, next) => {
 	// ERR_HTTP_HEADERS_SENT, which buries the error that actually mattered.
 	// Delegating to Express's default handler closes the connection instead.
 	if (res.headersSent) return next(err)
+	// err.stack, not err: an Axios error carries the request it made, and
+	// printing the object would put the RIDB key in the log.
+	if (statusCode >= 500) console.error(err.stack)
 	res.status(statusCode).send(err.message)
 })
 
