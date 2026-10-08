@@ -53,9 +53,14 @@ app.use(sanitizeRequest)
 const scriptSrcUrls = [
 	'https://api.mapbox.com',
 	'https://code.jquery.com',
-	'https://cdn.jsdelivr.net',
+	// jsDelivr serves any npm package and cdnjs a large library set, so allowing
+	// either host would allow every script on it. A source with a full path
+	// allows that one file. tests/csp.test.js fails if a page loads a script
+	// that is not listed here.
+	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
+	'https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js',
 	'https://stackpath.bootstrapcdn.com',
-	'https://cdnjs.cloudflare.com',
+	'https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js',
 	'https://maps.googleapis.com',
 	'https://embedr.flickr.com',
 	'https://widgets.flickr.com', // embedr chain-loads its client code from here

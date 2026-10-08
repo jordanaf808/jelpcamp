@@ -63,18 +63,14 @@ const assertScriptsAllowed = (res) => {
 	)
 }
 
-test(
-	'script-src allows no public CDN as a whole host',
-	{todo: 'both hosts are allowed as a whole today'},
-	async () => {
-		const res = await request(app).get('/login')
-		const sources = scriptSrc(res)
-		assert.deepStrictEqual(
-			PUBLIC_CDNS.filter((host) => sources.includes(host)),
-			[],
-		)
-	},
-)
+test('script-src allows no public CDN as a whole host', async () => {
+	const res = await request(app).get('/login')
+	const sources = scriptSrc(res)
+	assert.deepStrictEqual(
+		PUBLIC_CDNS.filter((host) => sources.includes(host)),
+		[],
+	)
+})
 
 // One page per set of script tags: landing.ejs has its own, /login gets the
 // footer's, and the campsite page adds headerBack's and its own.
