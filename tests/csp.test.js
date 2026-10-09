@@ -39,11 +39,13 @@ const scriptSrc = (res) =>
 		.slice(1)
 
 const HTML_COMMENT = /<!--[\s\S]*?-->/g
-const EXTERNAL_SCRIPT = /<script\b[^>]*\bsrc="(https?:\/\/[^"]+)"/g
+// The scheme is optional: //host/file.js is external too.
+const EXTERNAL_SCRIPT = /<script\b[^>]*\bsrc="((?:https?:)?\/\/[^"]+)"/g
 
+// The site is served over https, so that is what //host/file.js loads as.
 const externalScripts = (html) =>
 	[...html.replace(HTML_COMMENT, '').matchAll(EXTERNAL_SCRIPT)].map(
-		([, url]) => url,
+		([, src]) => (src.startsWith('//') ? `https:${src}` : src),
 	)
 
 // The two kinds of source this policy uses: a full URL allows that one file,
@@ -91,21 +93,17 @@ test('every external script on a campsite page is allowed by script-src', async 
 // A src can leave the scheme out: //host/file.js loads over the page's own.
 // The Flickr embed on the campsite page is written that way, and a check that
 // only reads URLs starting with http never sees it.
-test(
-	'the script check reads a src that has no scheme',
-	{todo: 'the check skips //host/file.js today'},
-	async () => {
-		nock(RIDB)
-			.get('/api/v1/facilities/6')
-			.query({full: 'true'})
-			.reply(200, {...facility, FacilityID: '6'})
-		const res = await request(app).get('/campsites/show/6')
-		assert.strictEqual(res.status, 200)
-		assert.ok(
-			externalScripts(res.text).includes(
-				'https://embedr.flickr.com/assets/client-code.js',
-			),
-			`the check found: ${externalScripts(res.text).join(', ')}`,
-		)
-	},
-)
+test('the script check reads a src that has no scheme', async () => {
+	nock(RIDB)
+		.get('/api/v1/facilities/6')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '6'})
+	const res = await request(app).get('/campsites/show/6')
+	assert.strictEqual(res.status, 200)
+	assert.ok(
+		externalScripts(res.text).includes(
+			'https://embedr.flickr.com/assets/client-code.js',
+		),
+		`the check found: ${externalScripts(res.text).join(', ')}`,
+	)
+})
