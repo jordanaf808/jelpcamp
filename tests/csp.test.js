@@ -87,3 +87,25 @@ test('every external script on a campsite page is allowed by script-src', async 
 		.reply(200, facility)
 	assertScriptsAllowed(await request(app).get('/campsites/show/233115'))
 })
+
+// A src can leave the scheme out: //host/file.js loads over the page's own.
+// The Flickr embed on the campsite page is written that way, and a check that
+// only reads URLs starting with http never sees it.
+test(
+	'the script check reads a src that has no scheme',
+	{todo: 'the check skips //host/file.js today'},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/6')
+			.query({full: 'true'})
+			.reply(200, {...facility, FacilityID: '6'})
+		const res = await request(app).get('/campsites/show/6')
+		assert.strictEqual(res.status, 200)
+		assert.ok(
+			externalScripts(res.text).includes(
+				'https://embedr.flickr.com/assets/client-code.js',
+			),
+			`the check found: ${externalScripts(res.text).join(', ')}`,
+		)
+	},
+)
