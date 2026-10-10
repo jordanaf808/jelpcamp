@@ -58,7 +58,6 @@ const scriptSrcUrls = [
 	// allows that one file. tests/csp.test.js fails if a page loads a script
 	// that is not listed here.
 	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
-	'https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js',
 	'https://stackpath.bootstrapcdn.com',
 	'https://maps.googleapis.com',
 	'https://embedr.flickr.com',

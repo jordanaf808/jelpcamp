@@ -110,3 +110,28 @@ test(
 		assert.doesNotMatch(res.text, /maps\.googleapis\.com\/maps\/api\/js/)
 	},
 )
+
+// The footer loads jQuery and Bootstrap for every page. The campsite page also
+// loaded its own copies first, so each click on the photo carousel or the
+// accordion was handled by two Bootstraps.
+test('the campsite page loads jQuery and Bootstrap once each', async () => {
+	nock(RIDB)
+		.get('/api/v1/facilities/5')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '5'})
+
+	const res = await request(app).get('/campsites/show/5')
+	assert.strictEqual(res.status, 200)
+
+	const scripts = [...res.text.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(
+		([, src]) => src,
+	)
+	for (const library of ['jquery', 'bootstrap']) {
+		const found = scripts.filter((src) => src.includes(library))
+		assert.strictEqual(
+			found.length,
+			1,
+			`${library} is loaded ${found.length} times: ${found.join(', ')}`,
+		)
+	}
+})
