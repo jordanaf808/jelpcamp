@@ -76,3 +76,21 @@ test("a user cannot open another user's profile page", async () => {
 	const res = await alice.get(`/user/${bobId}`)
 	assert.strictEqual(res.status, 302)
 })
+
+// #69: the routes passed orFail a callback that threw a variable declared
+// further down, so a missing campsite surfaced as a ReferenceError and a 500.
+const missing = {todo: 'throws a ReferenceError today'}
+
+test('adding a campsite that does not exist is a 404', missing, async () => {
+	const aliceId = String((await User.findOne({username: 'alice'}))._id)
+	const res = await alice.post(`/user/${aliceId}/999`)
+	assert.strictEqual(res.status, 404)
+	assert.strictEqual(res.text, 'Campsite not found')
+})
+
+test('removing a campsite that does not exist is a 404', missing, async () => {
+	const aliceId = String((await User.findOne({username: 'alice'}))._id)
+	const res = await alice.delete(`/user/${aliceId}/999`)
+	assert.strictEqual(res.status, 404)
+	assert.strictEqual(res.text, 'Campsite not found')
+})
