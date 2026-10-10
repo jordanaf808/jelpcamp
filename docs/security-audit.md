@@ -9,7 +9,16 @@ and commit messages before that date use the old name. For the short version, re
 
 Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-playbook.md`.
 
-> **Status — updated 2026-10-05**
+> **Status — updated 2026-10-10**
+>
+> **Work from 2026-10-05 to 2026-10-10 is in pull requests #76 to #85.** Two of them
+> fixed security findings that were not on the audit's list: the error page sent part of
+> the URL back as HTML (#81), and `script-src` allowed two public CDNs as whole hosts
+> (#82). Both are written up at the end of Part 2. The rest: two unused dependencies
+> removed (#76), the campsite routes answer when a request fails (#78), the campsite
+> page loads jQuery and Bootstrap once (#84), and Modernizr is gone (#85). Decisions,
+> the test suite and what is still unproven have their own sections at the end of this
+> file.
 >
 > **Phase 4 is complete.** Its last open row was `connect-flash`, which has no newer
 > release. PR #61 (2026-10-02) replaced it with `middleware/flash.js`. Mongoose 9
@@ -60,7 +69,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
 > have all landed. Every pull request and every push to `main` now runs `npm ci`, a
-> format check, ESLint, **43 tests** and `npm audit --audit-level=high`, and a ruleset
+> format check, ESLint, **55 tests** and `npm audit --audit-level=high`, and a ruleset
 > makes the `test` check required before anything merges into `main`. Dependabot alerts, grouped version
 > updates (PR #24) and security updates are all on. **CI does not gate deploys.**
 > Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
@@ -73,7 +82,8 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 > **Also on 2026-09-09:** the three-apps-one-database problem is fixed. v12 now uses
 > `wandur` in both local and production, v13 uses `yelpcamp_v13`, and `storybooks`
 > reverts to being NodeAppFromScratch's own database (plus a frozen v12 rollback copy).
-> See [handoff.md](handoff.md) for the copy procedure and the cutover verification.
+> The copy procedure and the cutover check are in the project's working log, which is
+> not part of this repository.
 
 ## Summary
 
@@ -665,6 +675,47 @@ one user's data needs answered.
 
 Four further bugs from the same reading are not security findings and are filed as
 GitHub issues #68 to #71.
+
+### 🟡 The error page echoed the URL, and the CSP allowed two whole CDNs (found and fixed 2026-10-07 to 2026-10-10)
+
+Neither was on the audit's list. The first was found while reviewing a fix for something
+else. The second was found by asking how far the first could have gone.
+
+**The error page sent part of the URL back as HTML (PR #81).** The error handler in
+`app.js` answered with `err.message`, and Express serves a string as `text/html`. An
+error's message is not always this app's own: Mongoose quotes the value it could not
+cast. `GET /campsites/:id/comments/new` looks a campsite up by the `:id` in the URL,
+which is a `Number` in the schema, so any other id came back inside a 500 page. It
+needed a logged-in visitor to follow a crafted link. A test showed it on the old code:
+the response body was `Cast to Number failed for value "<img src=x>" …`. Whether a
+script could have run from there was not tried in a browser. The handler now sends
+every error as plain text, sends a fixed message for any 5xx, and logs the stack on the
+server.
+
+**`script-src` allowed two public CDNs as whole hosts (PR #82).** `cdn.jsdelivr.net`
+serves any npm package and `cdnjs.cloudflare.com` serves a large set of libraries. So
+the policy that is meant to stop an injected script allowed every script on either
+host, where the pages loaded three files. The policy now lists files by full URL. A
+source with a full path matches that one file
+([CSP3 §6.7.2.12](https://w3c.github.io/webappsec-csp/#match-paths)). The path is not compared
+after a redirect ([§6.7.2.8](https://w3c.github.io/webappsec-csp/#match-url-to-source-expression)),
+so this depends on the CDN serving the file at that URL directly.
+
+Two of the three files then turned out not to be needed. The campsite page loaded its
+own jQuery and Bootstrap and then the footer's, so two copies of Bootstrap handled every
+click (#84). Modernizr loaded on the landing page and nothing read it (#85). One
+jsDelivr file is left in the list: Popper.
+
+**A log line printed request headers (PR #78).** The campsite routes caught every error,
+logged the whole Axios error object and sent no response. That object carries the
+request it made, headers included. The `catch` blocks are gone, so a failed RIDB request
+now gets an answer, and the handler logs `err.stack`, which is a string.
+
+The lesson is the one from the session finding above. The CSP was strict about inline
+script the whole time, and open to two CDNs. And #82's own test had a blind spot: it
+read only script tags whose URL starts with `http`, and the campsite page's Flickr embed
+is written as `//embedr.flickr.com/…`. Nothing was broken, but the check never looked at
+it (fixed in #85).
 
 ### ✅ No `engines` field, no CI, no tests (resolved 2026-09-10)
 
@@ -1378,4 +1429,230 @@ version number was the easy part.
 
 **As of 2026-10-01 `npm audit` is back to 0.** A moderate `ip-address` advisory passed
 the audit gate unnoticed for two days and was patched in PR #57. What is still open is
-listed in [audit-summary.md](audit-summary.md).
+listed under [Unproven and open](#unproven-and-open) below, and in short in
+[audit-summary.md](audit-summary.md).
+
+---
+
+## Decisions
+
+Choices already made, with who made them. Listed so they are not proposed again without
+a new reason.
+
+Since 2026-10-05:
+
+- **Modernizr was removed, not given an integrity hash** (owner, 2026-10-09). Nothing in
+  the repo read it. (#85)
+- **The campsite page uses the footer's jQuery and Bootstrap**, like every other page.
+  (#84)
+- **The Flickr hosts stay in `script-src`** (owner, 2026-10-09). The photo gallery on the
+  campsite page uses Flickr's embed script.
+- **The browser check of #82 was skipped for now** (owner, 2026-10-09: "if I see
+  something I'll let you know").
+- **`script-src` lists CDN files by full URL** (owner, 2026-10-08), chosen over hosting
+  the files in `public/`. It covers both jsDelivr and cdnjs. A new CDN script, or a
+  version bump in a view, needs its URL in `scriptSrcUrls` in `app.js`.
+  `tests/csp.test.js` fails if a page loads a script that is not listed. (#82)
+- **A security fix gets its own pull request, merged before the one that exposed it**
+  (owner, 2026-10-07). #81 merged before #78.
+- **Error responses are plain text, and any 5xx says "Something went wrong."** The
+  handler logs `err.stack` on the server. (#81)
+- **The campsite routes have no `try/catch`.** Express 5 passes a rejected handler to
+  the error handler, as decided for `catchAsync` in #37. (#78)
+
+To 2026-10-05:
+
+- **The mongod cache in `ci.yml` stays** (#30), although it measured break-even: download
+  ~3–4 s, restore 3 s, save 4 s. The owner kept it to learn cache strategy. The trade-off
+  is in the step's comment (`767e5e5`).
+- **`registerLimiter` is 5 per 15 minutes** (#32), chosen over keeping 60 minutes.
+- **Render auto-deploy is off** (2026-09-14). Deploys are manual.
+- **Express 5's `simple` query parser is kept** (#35). `app.set('query parser',
+  'extended')` would restore Express 4's parsing if something needs it.
+- **The Express 5 migration was split** into prep (#33), fix (#34) and bump (#35), so
+  that code changes were tested on the version production ran.
+- **The CI audit gate stays at `--audit-level=high`** (owner, 2026-10-01), decided
+  after a moderate `ip-address` advisory passed unnoticed for two days. `moderate`
+  would turn unrelated PRs red until a patch lands. The accepted cost: a moderate shows
+  only in the CI log and in Dependabot's alert list.
+- **The project stays on npm** (owner, 2026-10-05). The pnpm move is deferred.
+- **The CI runner is not pinned** (owner, 2026-10-05: "dont pin ubuntu"). `ubuntu-latest`
+  moves to Ubuntu 26 from 2026-10-19. mongodb-memory-server 11.3.0 falls back to the
+  Ubuntu 24.04 MongoDB build for a release it does not know; whether that binary runs
+  on 26 is unverified. A red CI with a `mongod` error around that date starts here.
+- **No development Maps key for now** (owner, 2026-10-05). Map changes are verified
+  on the live site. #73 went out that way and needed no follow-up.
+- **`showParams` was fixed, not removed** (owner, 2026-10-01), against the first
+  recommendation. It was the better call: one RIDB request where there were four.
+- **The Maps loader was migrated** (owner, 2026-10-01), also against the first
+  recommendation, knowing Google does not deprecate the script tag.
+- **Prettier covers JavaScript and YAML only.** `.prettierignore` gives the reason for
+  each exclusion. `package.json` is excluded on purpose: npm writes it.
+- **Lint and format checks are steps in the `test` job, not jobs of their own**,
+  because the ruleset requires the check named `test`.
+- **The favicon is an SVG** (owner, 2026-10-01). Safari before 26 still requests
+  `/favicon.ico` and gets a 404. The tent is a placeholder the owner may replace.
+- **Profile pages are private** (owner, 2026-10-05): #74.
+- **Security bugs are not filed as public issues before the fix.** The favorites bug
+  went straight to a PR (#72).
+- **Docs live in `docs/`, with lowercase kebab-case names** (owner asked for the folder
+  and for `security-audit`, 2026-10-01; the lowercase for the other files was Claude's
+  choice and is in #58's description for the owner to veto).
+
+---
+
+## The test suite — what each test pins
+
+`node:test`, `supertest`, `mongodb-memory-server`. Run with `npm test`. It needs no
+`.env` and no network after the first run. **Its indifference to `.env` is a feature** —
+if it ever starts caring, the guard has been bypassed.
+
+**The guard is the load-bearing part.** `app.js` calls `require('dotenv').config()`,
+and dotenv fills any variable that is not already set — so forgetting to set
+`MONGO_URI` before requiring the app silently loads `.env`, which points at live Atlas.
+[tests/helpers/assertEphemeralDb.js](../tests/helpers/assertEphemeralDb.js) checks the
+**live mongoose connection**, not the env var: loopback host, the exact port
+`MongoMemoryServer` allocated, and the database name.
+
+| Test | Pins |
+| --- | --- |
+| Atlas URI refused outright | the guard, through the `.env`-reading wrapper |
+| **remote URI refused through the unconditional check alone** | **the #23 fix — behaves the same with or without `.env`** |
+| the URI `.env` actually contains is refused | the guard, against the real file (skips if no `.env`) |
+| unregistered server refused | the guard's fail-closed default |
+| real connection on the wrong port refused | env-said-one-thing-connection-did-another |
+| wrong database name on the *right* server refused | layered checks catching what others miss |
+| 11th `POST /login` is 429, rendering the login view | the rate limiter |
+| `resetRateLimiters()` clears the counter | the explicit `MemoryStore` |
+| `RateLimit-*` headers report the budget | `standardHeaders`, the thing that made the trust-proxy bug debuggable |
+| `stop()` tears down an app that never served a request | #27 — `stop()` awaits the TTL index build. A regression fails the **file**, not the test: node:test blames the `before` hook |
+| `/login`, `/register`, comment form ship no inline `<script>` | #28 — and each loads `validateForms.js`. Its setup registers a user and loads an authenticated route |
+| `sanitize.test.js`: operator and dotted keys stripped from the body, nested fields kept | #33 — `middleware/sanitize.js` |
+| `sanitize.test.js`: the same from the query string, read after the middleware | #33 — survives Express 5's re-parsing `req.query` getter |
+| `safeBack.test.js`: a same-site referrer comes back as its path and query string | #33 |
+| `safeBack.test.js`: no referrer, another site, `//evil.example`, a non-URL → `/` | #33 — four tests |
+| `safeBack.test.js`: a GET referred by its own URL → `/` | #34 — the loop guard |
+| `redirects.test.js`: a rejected comment returns to a same-site referrer | #33 — through the real app |
+| `redirects.test.js`: a rejected comment from another site → `/` | #33 |
+| `redirects.test.js`: pages send `Referrer-Policy: same-origin` | #33 — without it the browser sends no `Referer` and every "back" goes to `/` |
+| `redirects.test.js`: the edit page sends a logged-out visitor to `/login` | #34 |
+| `redirects.test.js`: logging in after a blocked POST lands on `/campsites` | #34 — also the suite's first test of the **`POST /login` success path** |
+| `redirects.test.js`: a comment POST with no form body is a 302, not a 500 | #34 — Express 5's `undefined` `req.body` |
+| `favicon.test.js`: `/favicon.svg` is served as `image/svg+xml` | #60 |
+| `favicon.test.js`: `/`, `/login` and the comment form each link the favicon | #60 — one page per `<head>` block: `landing.ejs`, `header.ejs`, `headerBack.ejs` |
+| `flash.test.js`: a failed login shows its message on the next page, and only once | #61 — passport's `failureFlash` calls `req.flash` by name |
+| `flash.test.js`: a rejected registration shows its validation message | #61 — `validateUser` flashes an **array** |
+| `flash.test.js`: a visitor who is not logged in gets no session cookie | #61 — a flash read must not write to the session |
+| `campsiteShow.test.js`: the page shows the name, six photos, four links, the parent area | #65 — one `nock` mock, and unmocked requests are refused, so it also proves **one** RIDB request |
+| `campsiteShow.test.js`: a facility with no parent rec area still gets a page | #65 — the real record with its parent removed, not a captured response |
+| `campsiteShow.test.js`: the map loads from files, with no inline script | #73 — loader before `gmap.js`, `data-maps-key` present, no script tag for the API |
+| `favorites.test.js`: a user can add to their own favorites | #72 |
+| `favorites.test.js`: a user cannot add to, or remove from, another user's favorites | #72 — two tests; each checks the database, not the redirect |
+| `favorites.test.js`: a user can open their own profile, not another user's | #74 — two tests |
+| `campsiteErrors.test.js`: the index, search and campsite pages answer when RIDB fails | #78 — three tests; a 500, not a request left open |
+| `campsiteErrors.test.js`: a campsite page answers for a facility with no coordinates | #78 — the `Campsite` schema refuses it |
+| `errorResponse.test.js`: a page that does not exist is a 404 in plain text | #81 |
+| `errorResponse.test.js`: a server error sends a fixed message, not the error's own | #81 — the id from the URL used to come back as HTML |
+| `csp.test.js`: `script-src` allows no public CDN as a whole host | #82 |
+| `csp.test.js`: every external script on `/`, `/login` and a campsite page is allowed by `script-src` | #82 — three tests; the check that makes the narrow list safe to keep |
+| `csp.test.js`: the script check reads a `src` that has no scheme | #85 — `//host/file.js` is external too |
+| `campsiteShow.test.js`: the campsite page loads jQuery and Bootstrap once each | #84 |
+
+55 tests as of #85.
+
+**Not covered:** a valid comment saving or editing; `checkCommentOwnership` rejecting a
+user who does not own the comment; search and the index page when RIDB answers; register
+error paths; the CSP's directives other than `script-src`; cookie flags; any browser
+code. **Never checked:** that #34's four new tests fail without their fixes.
+
+`campsiteShow.test.js` still gives three of its tests a 10-second timeout, with a
+comment that says the route sends no response. #78 removed that reason, so the comment
+is out of date.
+
+---
+
+## Unproven and open
+
+Things that were inferred, read from code, or left unchecked. Bugs live in GitHub
+Issues. [audit-summary.md](audit-summary.md) has the short list.
+
+Since 2026-10-05:
+
+- **The narrow `script-src` against a script that is not on the list.** CI reads the
+  header and the HTML. The owner has used the deployed pages and reports no errors.
+  Nobody has tried to load an unlisted script from the browser console.
+- **Whether the error page before #81 could run a script.** CI showed the markup came
+  back as `text/html`. It was not tried in a browser.
+- **The landing page without Modernizr.** A search of the repo found nothing that uses
+  it. A look at the deployed page is not recorded.
+- **What RIDB answers for an id it does not know.** Either way this app answers with a
+  500, not a 404.
+- **`RateLimit-Remaining` on the live `/login` after #77**, which bumped `proxy-addr`,
+  the package that works out `req.ip`.
+- **The other hosts in `script-src`** are whole hosts and were not reviewed:
+  `code.jquery.com`, `stackpath.bootstrapcdn.com`, `api.mapbox.com`,
+  `maps.googleapis.com` and the two Flickr hosts.
+- **Dead code:** the `if (!madeCampsite)` branch in the campsite page's route cannot
+  run. `Campsite.create` returns a document or throws.
+
+Earlier, and still true:
+
+- **The nested `MEDIA` list may be capped.** `/facilities/{id}/media` is paginated; the
+  list inside the full record has no such parameters. Only facility 233115 (6 photos)
+  was checked, and `/media` itself was not requested. A facility with many photos
+  might show a different count than before #65.
+- **`MAPS_MAP_ID` with a second key.** Said to the owner as "should work with a key
+  from the same project". Never tried.
+- **None of the client-side map code has a test.** `public/js/gmap.js` and
+  `public/js/map.js` run only in a browser, and the keys do not allow `localhost`. A
+  green CI run says nothing about either map.
+- **What the per-PR test plans actually covered.** #46–#50 each list manual checks
+  (comment validation on joi 18, every live view on ejs 6, the `Referrer-Policy` header
+  on helmet 8, the Mapbox map on v3). The owner's report is "live site works great".
+  Which boxes were exercised is not recorded.
+- **Mapbox billing.** #47's description says Mapbox GL JS v2 and later are under
+  Mapbox's terms of service, and that map loads count against the account. Whether the
+  account's plan covers that was left to the owner and is not recorded.
+- **`blob:` in `connect-src`.** Google's documented policy lists it and this app's does
+  not. No violation has been reported. If one appears, that is the entry to add.
+- **Mongoose 9 against production data.** Deployed since 2026-09-23 and the owner
+  reports the site works. The two specific checks — register a new user, log in with
+  an account created before Mongoose 9 — are not recorded as run.
+- **`min-release-age=7` and `npm ci`.** Whether `npm ci` enforces the age gate or skips
+  it because it installs straight from the lockfile was **not checked**. #42, which
+  raised the question, merged 2026-09-22 without answering it.
+- **Error cases in `POST /register` are untested.** The suite exercises registration
+  that succeeds. A duplicate username (`UserExistsError`) re-rendering the form is
+  inferred from the code, not run. Since #43 there is a second untested path: any other
+  error going to `next(err)`.
+- **A restored cache can hide a regression of #30.** The postinstall checks
+  `~/.cache/mongodb-binaries` before downloading, so while a restored cache holds the
+  right binary, deleting the `config` block changes nothing visible — no download, no
+  warning. The `ci.yml` comment names the dependency instead of a symptom for that reason.
+- **The redirect loop in a real browser.** Only the two server hops were reproduced;
+  supertest does not carry `Referer` through a redirect. The loop, and the fix, are
+  inferred for a browser.
+- **#34's tests were never run red.** They were written from the reproduction, but nobody
+  checked that each fails without its fix.
+- **A bodyless `POST /register` or `/login` on Express 5** was checked by reading
+  (`userSchema` is `.required()`; `passport-local` tolerates an undefined body), not by
+  running.
+- **Render's spin-down and `loginLimiter`.** #32 fixed `registerLimiter`, deployed
+  2026-09-16. `loginLimiter` is unaffected only because its window happens to equal the
+  15-minute spin-down; widening it past 15 minutes would reopen this.
+- **The rate-limit test failed once in 49 local runs** — 302 instead of 429 on the 11th
+  request. Not reproduced in the other 48, including 12 under full CPU load. Key
+  stability checked: `RateLimit-Remaining` decrements 9→0 monotonically. If it recurs,
+  capture that header sequence first.
+- **Reading a pre-existing production session under the new driver was never
+  exercised live.** `mongodb` 6→7 / `bson` 6→7 cross-version reads are proven against
+  an in-memory mongod, and the post-deploy login proved the new stack against real
+  Atlas — but with a *fresh* session. Low-risk, not observed.
+- **Render's `Host` header.** `safeBack` compares the referrer's host with
+  `req.get('host')`. If Render rewrites `Host`, every "back" redirect quietly goes to `/`,
+  which is safe but broken. Only the live check listed under Express 5 in Phase 4 can
+  show it.
+- **The `storybooks` database still holds a full copy of v12's data and its old
+  sessions.** Kept on purpose as the rollback path. Cleaning it up is destructive and
+  belongs to a human.
+- **Secret reuse across projects.** See the finding in Part 2.
