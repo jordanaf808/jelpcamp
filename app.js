@@ -59,7 +59,6 @@ const scriptSrcUrls = [
 	// that is not listed here.
 	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
 	'https://stackpath.bootstrapcdn.com',
-	'https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js',
 	'https://maps.googleapis.com',
 	'https://embedr.flickr.com',
 	'https://widgets.flickr.com', // embedr chain-loads its client code from here
