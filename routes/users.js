@@ -45,7 +45,6 @@ router.post(
 		)
 		foundUser.favorites.push(campsite._id)
 		await foundUser.save()
-		console.log('added favorite to: ', foundUser)
 		req.flash('success', campsite.name + ' has been added to your favorites!')
 		res.redirect('/campsites/show/' + campId)
 	},
@@ -65,11 +64,8 @@ router.delete(
 		const foundUser = await User.findById(req.params.id).orFail(
 			new ExpressError('User not found', 404),
 		)
-		console.log('found: ', foundUser)
 		foundUser.favorites.pull(campsite._id)
-		let result = await foundUser.save()
-		console.log('removed from favorites: ', foundUser)
-		console.log('results: ', result)
+		await foundUser.save()
 		req.flash(
 			'success',
 			campsite.name + ' has been removed from your favorites!',
