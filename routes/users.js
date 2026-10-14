@@ -37,19 +37,14 @@ router.post(
 	async (req, res) => {
 		//lookup campsite and user id using req.params
 		const campId = req.params.camp_id
-		const campsite = await Campsite.findOne({id: campId}).orFail(() => {
-			throw err
-		})
-		const foundUser = await User.findById(req.params.id).orFail(() => {
-			throw err
-		})
-		const err = new ExpressError(
-			`campsite: ${campsite}; user: ${foundUser}`,
-			500,
+		const campsite = await Campsite.findOne({id: campId}).orFail(
+			new ExpressError('Campsite not found', 404),
+		)
+		const foundUser = await User.findById(req.params.id).orFail(
+			new ExpressError('User not found', 404),
 		)
 		foundUser.favorites.push(campsite._id)
 		await foundUser.save()
-		console.log('added favorite to: ', foundUser)
 		req.flash('success', campsite.name + ' has been added to your favorites!')
 		res.redirect('/campsites/show/' + campId)
 	},
@@ -63,21 +58,14 @@ router.delete(
 	async (req, res) => {
 		//lookup campsite using id
 		const campId = req.params.camp_id
-		const campsite = await Campsite.findOne({id: campId}).orFail(() => {
-			throw err
-		})
-		const foundUser = await User.findById(req.params.id).orFail(() => {
-			throw err
-		})
-		const err = new ExpressError(
-			`campsite: ${campsite}; user: ${foundUser}`,
-			500,
+		const campsite = await Campsite.findOne({id: campId}).orFail(
+			new ExpressError('Campsite not found', 404),
 		)
-		console.log('found: ', foundUser)
+		const foundUser = await User.findById(req.params.id).orFail(
+			new ExpressError('User not found', 404),
+		)
 		foundUser.favorites.pull(campsite._id)
-		let result = await foundUser.save()
-		console.log('removed from favorites: ', foundUser)
-		console.log('results: ', result)
+		await foundUser.save()
 		req.flash(
 			'success',
 			campsite.name + ' has been removed from your favorites!',
