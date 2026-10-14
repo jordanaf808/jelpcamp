@@ -119,8 +119,8 @@ is, how to run it, or which environment variables it needs.
   work, `gh pr list` and `git log` for state.
 - Write the README first.
 
-**Since:** the README exists (#64). Open bugs are GitHub issues #68 to #71, not lines
-in a doc.
+**Since:** the README exists (#64). Bugs are GitHub issues, #68 to #71, not lines in a
+doc. #71 was fixed in #78.
 
 **6. Known problems are still in the repo.** `views/campgrounds/` and
 `views/campsites/campsites.ejs` are rendered by nothing. `connect-flash` was last
@@ -174,7 +174,8 @@ reading the code a change was about to touch, and each has a test now.
 | Any logged-in user could open another user's profile page | #74 |
 | The campsite page made four RIDB requests where one was enough. One of the four had never been needed | #65 |
 
-Four more are filed as issues and not fixed: #68, #69, #70 and #71.
+Four more were filed as issues: #68, #69, #70 and #71. #71 was fixed in #78. The other
+three are open.
 
 ## Habits and systems
 
@@ -209,17 +210,22 @@ Two habits help:
 
 ## Still open
 
-As of 2026-10-05. Bugs live in GitHub Issues; this list is for the rest.
+As of 2026-10-10. Bugs live in GitHub Issues; this list is for the rest. The longer
+list, with what was and was not checked, is under
+[Unproven and open](security-audit.md#unproven-and-open).
 
 - The session secret shared with v13, and the Atlas user shared by three apps.
 - Three live checks from Express 5, unticked in
   [security-audit.md](security-audit.md).
 - A development Maps key and a browser smoke script (critique 1). Until they exist,
   every map change is verified on the live site.
-- Bugs filed as issues: #68, #69, #70 and #71. #1, from 2021, is closed as a duplicate
-  of #71.
-- No test for: search, the index page, comment create and edit, register error paths,
-  the CSP header, cookie flags, any browser code.
+- Bugs filed as issues: #68, #69 and #70. #71 was fixed in #78, and #1, from 2021, was
+  closed as its duplicate.
+- No test for: search and the index page when RIDB answers, comment create and edit,
+  register error paths, the CSP beyond `script-src`, cookie flags, any browser code.
+- The narrow `script-src` from #82 has not been tried in a browser against a script that
+  is not on its list (owner's choice, 2026-10-09). The other hosts in `script-src` are
+  still whole hosts and were not reviewed.
 - Moving from npm to pnpm is deferred (owner, 2026-10-05): the project stays on npm for
   now. If it is picked up again, check Dependabot first. On 2026-10-01 GitHub listed
   support for pnpm 7 to 10 only.
@@ -232,3 +238,9 @@ As of 2026-10-05. Bugs live in GitHub Issues; this list is for the rest.
 Closed since the review: `connect-flash` (#61), the Google Maps loader (#73), Prettier,
 ESLint and the README (#63, #67, #64). `ip-address` 10.7.2 (#57) has been part of
 every deploy since 2026-10-02; nobody checked it separately.
+
+Closed from 2026-10-05 to 2026-10-10: two unused dependencies (#76), the campsite
+routes that never answered when a request failed (#78), the error page that sent part of
+the URL back as HTML (#81), the two public CDNs allowed as whole hosts in `script-src`
+(#82), the campsite page loading Bootstrap twice (#84), and Modernizr, which nothing
+used (#85).
