@@ -25,11 +25,11 @@ router.post(
 		//lookup campground using id
 		const {id} = req.params
 		const campsite = await Campsite.findOne({id: id})
-		const comment = await Comment.create(req.body.comment)
-		if (!comment) {
-			req.flash('error', 'Error Creating Comment.')
-			return res.redirect(`/campsites/${id}`)
+		if (!campsite) {
+			req.flash('error', 'No Campground Found...')
+			return res.redirect(safeBack(req))
 		}
+		const comment = await Comment.create(req.body.comment)
 		//add username and id to comment
 		comment.author.id = req.user._id
 		comment.author.username = req.user.username

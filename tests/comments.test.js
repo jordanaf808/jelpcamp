@@ -63,19 +63,15 @@ test('deleting an owned comment removes it and redirects to the campsite', async
 // The create route used to save the comment first and look at the campsite
 // second, so a POST for a campsite with no record left a comment that nothing
 // pointed to, and answered with a 500.
-test(
-	'a comment for a campsite with no record is refused, and nothing is saved',
-	{todo: 'saves an orphaned comment today'},
-	async () => {
-		const before = await Comment.countDocuments()
+test('a comment for a campsite with no record is refused, and nothing is saved', async () => {
+	const before = await Comment.countDocuments()
 
-		const res = await agent
-			.post('/campsites/424242/comments')
-			.set('Host', HOST)
-			.type('form')
-			.send({'comment[text]': 'a valid comment over ten characters'})
+	const res = await agent
+		.post('/campsites/424242/comments')
+		.set('Host', HOST)
+		.type('form')
+		.send({'comment[text]': 'a valid comment over ten characters'})
 
-		assert.strictEqual(res.status, 302)
-		assert.strictEqual(await Comment.countDocuments(), before)
-	},
-)
+	assert.strictEqual(res.status, 302)
+	assert.strictEqual(await Comment.countDocuments(), before)
+})
