@@ -1,24 +1,17 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
-const ExpressError = require('./ExpressError')
 
 module.exports = async () => {
-	try {
-		const db = mongoose.connection
-		db.on('error', (err) => {
-			console.error.bind(console, 'db: connection error;')
-			throw new ExpressError(`Database Error: ${err}`, 404)
-		})
-		db.once('open', () => console.log('database connected'))
-		console.log(`MongoDB Connecting;`)
-		mongoose.connect(process.env.MONGO_URI, {
-			// useNewUrlParser: true,
-			// useUnifiedTopology: true,
-			// useFindAndModify: false,
-			// useCreateIndex: true
-		})
-	} catch (error) {
-		console.log('catch: connection monitor error: ', error.message)
-		throw new ExpressError(`Database Error: ${error}`, 400)
-	}
+	const db = mongoose.connection
+	// An error after the first connection arrives here. Throwing from an event
+	// listener would crash the process with nothing to catch it, so log instead.
+	db.on('error', (err) => console.error('db: connection error;', err.message))
+	db.once('open', () => console.log('database connected'))
+	console.log(`MongoDB Connecting;`)
+	await mongoose.connect(process.env.MONGO_URI, {
+		// useNewUrlParser: true,
+		// useUnifiedTopology: true,
+		// useFindAndModify: false,
+		// useCreateIndex: true
+	})
 }
