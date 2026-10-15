@@ -69,7 +69,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
 > have all landed. Every pull request and every push to `main` now runs `npm ci`, a
-> format check, ESLint, **55 tests** and `npm audit --audit-level=high`, and a ruleset
+> format check, ESLint, **59 tests** and `npm audit --audit-level=high`, and a ruleset
 > makes the `test` check required before anything merges into `main`. Dependabot alerts, grouped version
 > updates (PR #24) and security updates are all on. **CI does not gate deploys.**
 > Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
@@ -510,7 +510,7 @@ exactly such an operation.
 
 Resolved by pointing v12 at `wandur` and v13 at `yelpcamp_v13`, copying v12's data
 across with `_id`s preserved, and cutting Render over. `storybooks` was left untouched
-as a rollback path. Full procedure and verification in [handoff.md](handoff.md).
+as a rollback path.
 
 ### 🟡 Secret reuse across projects (found 2026-09-09)
 
@@ -524,9 +524,13 @@ Neither is an exposure — `.env` is gitignored in every project, verified, and
 compromises, and the Atlas user has access to every database on the cluster rather
 than the one its app needs.
 
-- [ ] Generate a distinct `SESSION_SECRET` per app (rotating v12's requires a
-      `sessions` clear — see the table in [handoff.md](handoff.md))
+- [ ] Generate a distinct `SESSION_SECRET` per app. It signs the cookie, so rotating
+      v12's logs everyone out once and needs no `sessions` clear. Only a
+      `SESSION_STORE_SECRET` rotation needs one. Changing v13's instead leaves v12's
+      users logged in
 - [ ] Create per-app Atlas database users scoped to their own database
+
+Both deferred by the owner, 2026-10-15: "defer until further notice".
 
 ### 🟡 The test-database guard failed open without `.env` (found and fixed 2026-09-10)
 
@@ -674,7 +678,7 @@ still not be in effect. `saveUninitialized: false` was set the whole time. And
 one user's data needs answered.
 
 Four further bugs from the same reading are not security findings and are filed as
-GitHub issues #68 to #71.
+GitHub issues #68 to #71. #69, #70 and #71 are fixed (#79, #80, #78). #68 is open.
 
 ### 🟡 The error page echoed the URL, and the CSP allowed two whole CDNs (found and fixed 2026-10-07 to 2026-10-10)
 
@@ -1087,7 +1091,8 @@ overstates the app's actual security posture.
       (`connectDB()` + `app.listen()`), then point `"start"` at `server.js` — **PR #17**
 - [x] Integration tests over the auth flow (replaces the `"no test specified"` stub)
       — **PR #18**; 9 passing after PR #23, 13 after PR #28, 23 after PR #33, 27 after
-      PR #34, 28 after PR #38. See [handoff.md](handoff.md) for what each test pins
+      PR #34, 28 after PR #38. [The test suite](#the-test-suite--what-each-test-pins) lists
+      what each test pins
 
   **The database guard is the load-bearing part, not the tests.** `app.js` calls
   `dotenv.config()`, and dotenv fills any variable that is not *already* set — so
@@ -1275,15 +1280,15 @@ is set to `extended: true`. That is how `comment[text]` becomes an object. So th
 bracket-parsing code in the `qs` advisories is now reachable only through POST bodies,
 not URLs.
 
-**Not verified live.** The suite cannot show these, because it never runs behind Render's
-proxy or in a real browser:
+**Verified live by the owner, 2026-10-15:** "all tests passed". The suite cannot show
+these, because it never runs behind Render's proxy or in a real browser:
 
-- [ ] **Render's `Host` header.** `safeBack` compares the referrer's host with
+- [x] **Render's `Host` header.** `safeBack` compares the referrer's host with
       `req.get('host')`. If Render rewrites `Host`, every "back" redirect quietly goes to
       `/`. Test: post a comment under 10 characters and check that you land back on the form
-- [ ] **The redirect loop is gone in a real browser.** Test: open a comment's edit page,
+- [x] **The redirect loop is gone in a real browser.** Test: open a comment's edit page,
       log out in another tab, then submit the edit form
-- [ ] **Search with two activities selected** still filters by both, under the `simple`
+- [x] **Search with two activities selected** still filters by both, under the `simple`
       query parser
 
 #### ✅ Mongoose 7 -> 9 — scanned before the bump (added 2026-09-16, done 2026-09-18)
@@ -1296,7 +1301,7 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
 - **Skipping 8 converges the mongodb driver instead of adding a third one.**
   `mongoose@7.8.12` pins its own `mongodb@5.9.2`/`bson@5.5.1`, separate from the
   `mongodb@7.6.0`/`bson@7.3.2` already hoisted for connect-mongo and
-  mongodb-memory-server (the 2026-09-09 peer-dependency finding — see handoff.md).
+  mongodb-memory-server (the 2026-09-09 peer-dependency finding in Part 2).
   `mongoose@8.x` pins `mongodb@~6.20.0`, a **third** version, temporarily.
   `mongoose@9.x` pins `mongodb@~7.0`, which **dedupes with the driver already
   running the session store.** Going straight to 9 simplifies the dependency
@@ -1337,7 +1342,7 @@ The table above targets 9.x, skipping 8.x. Verified rather than assumed:
   - **The scan above did not cover passport-local-mongoose, and that is what broke.**
     Version 9's `User.register` no longer takes a callback, so the callback
     `POST /register` passed was ignored and nothing responded. The route now awaits it
-    (`c14294f`). See [handoff.md](handoff.md) for how it was found
+    (`c14294f`)
   - **Follow-ups, PR #43 (2026-09-22):** the register `catch` now handles only
     `UserExistsError` and `MissingUsernameError` and sends anything else to
     `next(err)`, so a database failure no longer renders as `err.message` inside the
@@ -1441,6 +1446,11 @@ a new reason.
 
 Since 2026-10-05:
 
+- **Per-app session secrets and Atlas users are deferred** (owner, 2026-10-15: "defer
+  until further notice"). See "Secret reuse across projects" in Part 2.
+- **A failed campsite write deletes the new comment. There is no transaction** (#80).
+  MongoDB runs transactions only on a replica set, and the test database is a
+  standalone `mongod`.
 - **Modernizr was removed, not given an integrity hash** (owner, 2026-10-09). Nothing in
   the repo read it. (#85)
 - **The campsite page uses the footer's jQuery and Bootstrap**, like every other page.
@@ -1557,10 +1567,13 @@ and dotenv fills any variable that is not already set — so forgetting to set
 | `csp.test.js`: every external script on `/`, `/login` and a campsite page is allowed by `script-src` | #82 — three tests; the check that makes the narrow list safe to keep |
 | `csp.test.js`: the script check reads a `src` that has no scheme | #85 — `//host/file.js` is external too |
 | `campsiteShow.test.js`: the campsite page loads jQuery and Bootstrap once each | #84 |
+| `favorites.test.js`: adding or removing a campsite that does not exist is a 404 | #79 — two tests; `orFail` used to throw a `const` declared below it |
+| `comments.test.js`: a comment for a campsite with no record is refused, and nothing is saved | #80 — counts the comments, not only the status |
+| `comments.test.js`: a comment is not left behind when the campsite write fails | #80 — a `comments` field stored as one id makes MongoDB refuse the `$push` |
 
-55 tests as of #85.
+59 tests as of #80.
 
-**Not covered:** a valid comment saving or editing; `checkCommentOwnership` rejecting a
+**Not covered:** editing a comment; `checkCommentOwnership` rejecting a
 user who does not own the comment; search and the index page when RIDB answers; register
 error paths; the CSP's directives other than `script-src`; cookie flags; any browser
 code. **Never checked:** that #34's four new tests fail without their fixes.
@@ -1578,6 +1591,8 @@ Issues. [audit-summary.md](audit-summary.md) has the short list.
 
 Since 2026-10-05:
 
+- **If the cleanup delete fails too, the comment stays** (#80). Moving the tests to
+  `MongoMemoryReplSet` and using a transaction would close it.
 - **The narrow `script-src` against a script that is not on the list.** CI reads the
   header and the HTML. The owner has used the deployed pages and reports no errors.
   Nobody has tried to load an unlisted script from the browser console.
@@ -1629,9 +1644,6 @@ Earlier, and still true:
   `~/.cache/mongodb-binaries` before downloading, so while a restored cache holds the
   right binary, deleting the `config` block changes nothing visible — no download, no
   warning. The `ci.yml` comment names the dependency instead of a symptom for that reason.
-- **The redirect loop in a real browser.** Only the two server hops were reproduced;
-  supertest does not carry `Referer` through a redirect. The loop, and the fix, are
-  inferred for a browser.
 - **#34's tests were never run red.** They were written from the reproduction, but nobody
   checked that each fails without its fix.
 - **A bodyless `POST /register` or `/login` on Express 5** was checked by reading
@@ -1648,10 +1660,6 @@ Earlier, and still true:
   exercised live.** `mongodb` 6→7 / `bson` 6→7 cross-version reads are proven against
   an in-memory mongod, and the post-deploy login proved the new stack against real
   Atlas — but with a *fresh* session. Low-risk, not observed.
-- **Render's `Host` header.** `safeBack` compares the referrer's host with
-  `req.get('host')`. If Render rewrites `Host`, every "back" redirect quietly goes to `/`,
-  which is safe but broken. Only the live check listed under Express 5 in Phase 4 can
-  show it.
 - **The `storybooks` database still holds a full copy of v12's data and its old
   sessions.** Kept on purpose as the rollback path. Cleaning it up is destructive and
   belongs to a human.
