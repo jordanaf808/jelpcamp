@@ -11,16 +11,27 @@
 // different Next.js project on this machine.
 require('dotenv').config()
 
-const app = require('./app')
 const connectDB = require('./utils/connectDB')
 
 const port = process.env.PORT || 3000
 
-connectDB()
+// The database first, then app.js. app.js builds its session store from
+// MONGO_URI as it loads, and the store leaves a failed connection unhandled, so
+// connecting first makes a bad URI exit here with one line instead.
+const start = async () => {
+	try {
+		await connectDB()
+	} catch (err) {
+		console.error(`Could not connect to MongoDB: ${err.message}`)
+		process.exit(1)
+	}
+	const app = require('./app')
+	app.listen(port, () => {
+		console.log(`YelpCamp listening at ${port}`)
+	})
+}
 
-const server = app.listen(port, () => {
-	console.log(`YelpCamp listening at ${port}`)
-})
+start()
 
 // // Kill App On SIGTERM
 // process.on('SIGTERM', () => {
@@ -39,5 +50,3 @@ const server = app.listen(port, () => {
 //     });
 //   });
 // });
-
-module.exports = server

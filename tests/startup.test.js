@@ -28,21 +28,17 @@ const runServer = (env) =>
 		})
 	})
 
-test(
-	'server.js exits with one clear line, without listening, when the database is unreachable',
-	{todo: 'listens first, then crashes on an unhandled rejection'},
-	async () => {
-		const {code, stdout, stderr} = await runServer({
-			MONGO_URI:
-				'mongodb://127.0.0.1:1/yelpcamp_test?serverSelectionTimeoutMS=500',
-			PORT: '0',
-			SESSION_SECRET: 'test-session-secret',
-			SESSION_STORE_SECRET: 'a'.repeat(128),
-			NODE_ENV: 'test',
-		})
+test('server.js exits with one clear line, without listening, when the database is unreachable', async () => {
+	const {code, stdout, stderr} = await runServer({
+		MONGO_URI:
+			'mongodb://127.0.0.1:1/yelpcamp_test?serverSelectionTimeoutMS=500',
+		PORT: '0',
+		SESSION_SECRET: 'test-session-secret',
+		SESSION_STORE_SECRET: 'a'.repeat(128),
+		NODE_ENV: 'test',
+	})
 
-		assert.strictEqual(code, 1)
-		assert.match(stderr, /^Could not connect to MongoDB: /m)
-		assert.doesNotMatch(stdout, /listening/)
-	},
-)
+	assert.strictEqual(code, 1)
+	assert.match(stderr, /^Could not connect to MongoDB: /m)
+	assert.doesNotMatch(stdout, /listening/)
+})
