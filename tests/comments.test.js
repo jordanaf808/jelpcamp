@@ -1,9 +1,10 @@
 // Pins comment deletion end to end, ahead of the Mongoose 7 -> 9 migration:
 // the DESTROY route used Comment.findByIdAndRemove(), an alias Mongoose 8
 // removes. This proves findByIdAndDelete() behaves the same way before the
-// swap. Create and update aren't covered here; see docs/security-audit.md.
+// swap. Update isn't covered here; see docs/security-audit.md.
 const test = require('node:test')
 const assert = require('node:assert')
+const mongoose = require('mongoose')
 const request = require('supertest')
 const setup = require('./setup')
 const Campsite = require('../models/campsite')
@@ -75,3 +76,30 @@ test('a comment for a campsite with no record is refused, and nothing is saved',
 	assert.strictEqual(res.status, 302)
 	assert.strictEqual(await Comment.countDocuments(), before)
 })
+
+// The comment and the campsite's reference to it are two writes. When the
+// second one failed, the first stayed: a comment that nothing pointed to.
+// `comments` stored as one id instead of an array makes MongoDB refuse the
+// campsite write, whichever way the route makes it.
+test(
+	'a comment is not left behind when the campsite write fails',
+	{todo: 'the comment stays when the campsite write fails today'},
+	async () => {
+		await Campsite.collection.insertOne({
+			name: 'Broken comments field',
+			id: 3,
+			geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
+			comments: new mongoose.Types.ObjectId(),
+		})
+		const before = await Comment.countDocuments()
+
+		const res = await agent
+			.post('/campsites/3/comments')
+			.set('Host', HOST)
+			.type('form')
+			.send({'comment[text]': 'a valid comment over ten characters'})
+
+		assert.strictEqual(res.status, 500)
+		assert.strictEqual(await Comment.countDocuments(), before)
+	},
+)
