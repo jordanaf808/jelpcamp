@@ -25,19 +25,25 @@ router.post(
 		//lookup campground using id
 		const {id} = req.params
 		const campsite = await Campsite.findOne({id: id})
-		const comment = await Comment.create(req.body.comment)
-		if (!comment) {
-			req.flash('error', 'Error Creating Comment.')
-			return res.redirect(`/campsites/${id}`)
+		if (!campsite) {
+			req.flash('error', 'No Campground Found...')
+			return res.redirect(safeBack(req))
 		}
-		//add username and id to comment
-		comment.author.id = req.user._id
-		comment.author.username = req.user.username
-		//save comment
-		await comment.save()
-		campsite.comments.push(comment)
-		await campsite.save()
-		console.log(comment)
+		const comment = await Comment.create({
+			text: req.body.comment.text,
+			author: {id: req.user._id, username: req.user.username},
+		})
+		// Two collections and no transaction (the test database is not a replica
+		// set), so a failed campsite write removes the comment it was linking.
+		try {
+			await Campsite.updateOne(
+				{_id: campsite._id},
+				{$push: {comments: comment._id}},
+			)
+		} catch (err) {
+			await Comment.deleteOne({_id: comment._id})
+			throw err
+		}
 		res.redirect('/campsites/show/' + id)
 	},
 )
