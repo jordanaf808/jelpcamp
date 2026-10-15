@@ -120,7 +120,7 @@ is, how to run it, or which environment variables it needs.
 - Write the README first.
 
 **Since:** the README exists (#64). Bugs are GitHub issues, #68 to #71, not lines in a
-doc. #71 was fixed in #78.
+doc. #71 was fixed in #78, #69 in #79 and #70 in #80.
 
 **6. Known problems are still in the repo.** `views/campgrounds/` and
 `views/campsites/campsites.ejs` are rendered by nothing. `connect-flash` was last
@@ -174,8 +174,8 @@ reading the code a change was about to touch, and each has a test now.
 | Any logged-in user could open another user's profile page | #74 |
 | The campsite page made four RIDB requests where one was enough. One of the four had never been needed | #65 |
 
-Four more were filed as issues: #68, #69, #70 and #71. #71 was fixed in #78. The other
-three are open.
+Four more were filed as issues: #68, #69, #70 and #71. #71 was fixed in #78, #69 in #79
+and #70 in #80. #68 is open.
 
 ## Habits and systems
 
@@ -210,18 +210,17 @@ Two habits help:
 
 ## Still open
 
-As of 2026-10-10. Bugs live in GitHub Issues; this list is for the rest. The longer
+As of 2026-10-15. Bugs live in GitHub Issues; this list is for the rest. The longer
 list, with what was and was not checked, is under
 [Unproven and open](security-audit.md#unproven-and-open).
 
-- The session secret shared with v13, and the Atlas user shared by three apps.
-- Three live checks from Express 5, unticked in
-  [security-audit.md](security-audit.md).
+- The session secret shared with v13, and the Atlas user shared by three apps. Deferred
+  by the owner, 2026-10-15: "defer until further notice".
 - A development Maps key and a browser smoke script (critique 1). Until they exist,
   every map change is verified on the live site.
-- Bugs filed as issues: #68, #69 and #70. #71 was fixed in #78, and #1, from 2021, was
-  closed as its duplicate.
-- No test for: search and the index page when RIDB answers, comment create and edit,
+- Bugs filed as issues: #68. #69, #70 and #71 were fixed in #79, #80 and #78, and #1,
+  from 2021, was closed as a duplicate of #71.
+- No test for: search and the index page when RIDB answers, comment edit,
   register error paths, the CSP beyond `script-src`, cookie flags, any browser code.
 - The narrow `script-src` from #82 has not been tried in a browser against a script that
   is not on its list (owner's choice, 2026-10-09). The other hosts in `script-src` are
@@ -244,3 +243,7 @@ routes that never answered when a request failed (#78), the error page that sent
 the URL back as HTML (#81), the two public CDNs allowed as whole hosts in `script-src`
 (#82), the campsite page loading Bootstrap twice (#84), and Modernizr, which nothing
 used (#85).
+
+Closed from 2026-10-10 to 2026-10-15: the favorite routes answering a missing campsite
+with a 500 (#79), and a comment left behind when it could not be linked to its campsite
+(#80). The three live checks from Express 5 passed (owner, 2026-10-15).
