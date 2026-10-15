@@ -35,8 +35,17 @@ router.post(
 		comment.author.username = req.user.username
 		//save comment
 		await comment.save()
-		campsite.comments.push(comment)
-		await campsite.save()
+		// Two collections and no transaction (the test database is not a replica
+		// set), so a failed campsite write removes the comment it was linking.
+		try {
+			await Campsite.updateOne(
+				{_id: campsite._id},
+				{$push: {comments: comment._id}},
+			)
+		} catch (err) {
+			await Comment.deleteOne({_id: comment._id})
+			throw err
+		}
 		console.log(comment)
 		res.redirect('/campsites/show/' + id)
 	},

@@ -81,25 +81,21 @@ test('a comment for a campsite with no record is refused, and nothing is saved',
 // second one failed, the first stayed: a comment that nothing pointed to.
 // `comments` stored as one id instead of an array makes MongoDB refuse the
 // campsite write, whichever way the route makes it.
-test(
-	'a comment is not left behind when the campsite write fails',
-	{todo: 'the comment stays when the campsite write fails today'},
-	async () => {
-		await Campsite.collection.insertOne({
-			name: 'Broken comments field',
-			id: 3,
-			geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
-			comments: new mongoose.Types.ObjectId(),
-		})
-		const before = await Comment.countDocuments()
+test('a comment is not left behind when the campsite write fails', async () => {
+	await Campsite.collection.insertOne({
+		name: 'Broken comments field',
+		id: 3,
+		geometry: {TYPE: 'Point', COORDINATES: [0, 0]},
+		comments: new mongoose.Types.ObjectId(),
+	})
+	const before = await Comment.countDocuments()
 
-		const res = await agent
-			.post('/campsites/3/comments')
-			.set('Host', HOST)
-			.type('form')
-			.send({'comment[text]': 'a valid comment over ten characters'})
+	const res = await agent
+		.post('/campsites/3/comments')
+		.set('Host', HOST)
+		.type('form')
+		.send({'comment[text]': 'a valid comment over ten characters'})
 
-		assert.strictEqual(res.status, 500)
-		assert.strictEqual(await Comment.countDocuments(), before)
-	},
-)
+	assert.strictEqual(res.status, 500)
+	assert.strictEqual(await Comment.countDocuments(), before)
+})
