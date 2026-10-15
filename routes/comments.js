@@ -44,7 +44,6 @@ router.post(
 			await Comment.deleteOne({_id: comment._id})
 			throw err
 		}
-		console.log(comment)
 		res.redirect('/campsites/show/' + id)
 	},
 )
