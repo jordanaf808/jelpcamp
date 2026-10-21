@@ -162,39 +162,35 @@ const mapsKeyOn = (res) => res.text.match(/\bdata-maps-key="([^"]*)"/)?.[1]
 
 // The route renders the page from three places: a first visit, a repeat visit,
 // and a repeat visit by a user whose favorites include the campsite.
-test(
-	'on a preview, every render of the campsite page uses PREVIEW_MAPS_API_KEY',
-	{todo: 'uses MAPS_API_KEY, which a preview hostname cannot use'},
-	async (t) => {
-		withEnv(t, {IS_PULL_REQUEST: 'true', ...KEYS})
-		nock(RIDB)
-			.get('/api/v1/facilities/6')
-			.query({full: 'true'})
-			.times(3)
-			.reply(200, {...facility, FacilityID: '6'})
+test('on a preview, every render of the campsite page uses PREVIEW_MAPS_API_KEY', async (t) => {
+	withEnv(t, {IS_PULL_REQUEST: 'true', ...KEYS})
+	nock(RIDB)
+		.get('/api/v1/facilities/6')
+		.query({full: 'true'})
+		.times(3)
+		.reply(200, {...facility, FacilityID: '6'})
 
-		const firstVisit = await request(app).get('/campsites/show/6')
-		const repeatVisit = await request(app).get('/campsites/show/6')
+	const firstVisit = await request(app).get('/campsites/show/6')
+	const repeatVisit = await request(app).get('/campsites/show/6')
 
-		const agent = request.agent(app)
-		const registered = await agent
-			.post('/register')
-			.type('form')
-			.send({username: 'maps', password: 'maps-pw'})
-		assert.strictEqual(registered.headers.location, '/campsites')
-		const {_id} = await User.findOne({username: 'maps'})
-		await agent.post(`/user/${_id}/6`)
-		const {favorites} = await User.findById(_id)
-		assert.strictEqual(favorites.length, 1, 'the favorite was not saved')
-		const favoriteVisit = await agent.get('/campsites/show/6')
+	const agent = request.agent(app)
+	const registered = await agent
+		.post('/register')
+		.type('form')
+		.send({username: 'maps', password: 'maps-pw'})
+	assert.strictEqual(registered.headers.location, '/campsites')
+	const {_id} = await User.findOne({username: 'maps'})
+	await agent.post(`/user/${_id}/6`)
+	const {favorites} = await User.findById(_id)
+	assert.strictEqual(favorites.length, 1, 'the favorite was not saved')
+	const favoriteVisit = await agent.get('/campsites/show/6')
 
-		const visits = {firstVisit, repeatVisit, favoriteVisit}
-		for (const [visit, res] of Object.entries(visits)) {
-			assert.strictEqual(res.status, 200, visit)
-			assert.strictEqual(mapsKeyOn(res), 'preview-maps-key', visit)
-		}
-	},
-)
+	const visits = {firstVisit, repeatVisit, favoriteVisit}
+	for (const [visit, res] of Object.entries(visits)) {
+		assert.strictEqual(res.status, 200, visit)
+		assert.strictEqual(mapsKeyOn(res), 'preview-maps-key', visit)
+	}
+})
 
 // Render sets the STRING 'false' outside previews, and 'false' is truthy.
 test("IS_PULL_REQUEST 'false' is not a preview: the page uses MAPS_API_KEY", async (t) => {

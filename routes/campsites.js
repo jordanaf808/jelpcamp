@@ -6,6 +6,7 @@ const router = express.Router()
 const Campsite = require('../models/campsite')
 const User = require('../models/user')
 
+const mapsKey = require('../utils/mapsKey')
 const mutateData = require('../utils/mutateData')
 const sanitizeDescription = require('../utils/sanitizeDescription')
 
@@ -115,7 +116,7 @@ router.get('/show/:id', async (req, res) => {
 				data,
 				foundCampsite: madeCampsite,
 				favorite: false,
-				mapsKey: process.env.MAPS_API_KEY,
+				mapsKey: mapsKey(),
 				mapsMapId: process.env.MAPS_MAP_ID,
 			})
 		}
@@ -136,7 +137,7 @@ router.get('/show/:id', async (req, res) => {
 					data,
 					foundCampsite,
 					favorite: true,
-					mapsKey: process.env.MAPS_API_KEY,
+					mapsKey: mapsKey(),
 					mapsMapId: process.env.MAPS_MAP_ID,
 				})
 			}
@@ -145,7 +146,7 @@ router.get('/show/:id', async (req, res) => {
 			data,
 			foundCampsite,
 			favorite: false,
-			mapsKey: process.env.MAPS_API_KEY,
+			mapsKey: mapsKey(),
 			mapsMapId: process.env.MAPS_MAP_ID,
 		})
 	}
