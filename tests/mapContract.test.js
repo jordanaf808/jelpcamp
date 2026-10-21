@@ -6,10 +6,15 @@
 //
 // public/js/map.js (Mapbox, on /campsites and /campsites/search) reads
 //   #map[data-token], and #map[data-campsites] as {features: [...]}.
-//   mapbox-gl.js must load before it.
+//   mapbox-gl.js must run before it.
 // public/js/gmap.js (Google, on the campsite page) reads
 //   #map[data-lat], [data-lng], [data-name] and [data-map-id].
-//   public/js/gmapLoader.js reads [data-maps-key] and must load before gmap.js.
+//   public/js/gmapLoader.js reads [data-maps-key] and must run before gmap.js.
+//
+// Each script reads #map as soon as it runs, so #map comes first in the page.
+// "Runs before" allows both scripts plain, or both deferred (defer keeps
+// document order). It rules out async, and a deferred first script with a
+// plain second one, since either can run the second script first.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
@@ -57,9 +62,38 @@ const mapAttributes = (html) => {
 	return attributes
 }
 
-// Where a script with this file name first loads, or -1.
-const scriptAt = (html, file) =>
-	html.search(new RegExp(`<script\\b[^>]*\\bsrc="[^"]*/${file}"`))
+// The <script> tag that loads this file, its position and its flags.
+const script = (html, file) => {
+	const name = file.replaceAll('.', '\\.')
+	const tag = html.match(
+		new RegExp(`<script\\b[^>]*\\bsrc="[^"]*/${name}"[^>]*>`),
+	)
+	assert.ok(tag, `${file} should load`)
+	return {
+		file,
+		at: tag.index,
+		async: /\sasync\b/.test(tag[0]),
+		defer: /\sdefer\b/.test(tag[0]),
+	}
+}
+
+const assertRunsBefore = (first, second) => {
+	for (const {file, async} of [first, second]) {
+		assert.ok(!async, `${file} must not be async: its order would be lost`)
+	}
+	assert.ok(
+		first.at < second.at,
+		`${first.file} must come before ${second.file}`,
+	)
+	if (first.defer) {
+		assert.ok(
+			second.defer,
+			`${first.file} is deferred, so ${second.file} must be too`,
+		)
+	}
+}
+
+const mapAt = (html) => html.search(/<\w+\b[^>]*\bid="map"/)
 
 const assertMapboxContract = (res) => {
 	assert.strictEqual(res.status, 200)
@@ -84,11 +118,10 @@ const assertMapboxContract = (res) => {
 		['233115', '900001', '900002'],
 	)
 
-	const mapbox = scriptAt(res.text, 'mapbox-gl\\.js')
-	const mapJs = scriptAt(res.text, 'js/map\\.js')
-	assert.notStrictEqual(mapbox, -1, 'mapbox-gl.js should load')
-	assert.notStrictEqual(mapJs, -1, 'map.js should load')
-	assert.ok(mapbox < mapJs, 'mapbox-gl.js must load before map.js')
+	const mapbox = script(res.text, 'mapbox-gl.js')
+	const mapJs = script(res.text, 'js/map.js')
+	assertRunsBefore(mapbox, mapJs)
+	assert.ok(mapAt(res.text) < mapJs.at, '#map must come before map.js')
 }
 
 test('/campsites gives map.js its token and campsites', async () => {
@@ -117,9 +150,10 @@ test('the campsite page gives gmap.js and its loader what they read', async () =
 	assert.strictEqual(map['data-map-id'], 'test-map-id')
 	assert.strictEqual(map['data-maps-key'], 'test-maps-key')
 
-	const loader = scriptAt(res.text, 'js/gmapLoader\\.js')
-	const gmap = scriptAt(res.text, 'js/gmap\\.js')
-	assert.notStrictEqual(loader, -1, 'gmapLoader.js should load')
-	assert.notStrictEqual(gmap, -1, 'gmap.js should load')
-	assert.ok(loader < gmap, 'gmapLoader.js must load before gmap.js')
+	const loader = script(res.text, 'js/gmapLoader.js')
+	const gmap = script(res.text, 'js/gmap.js')
+	assertRunsBefore(loader, gmap)
+	const mapDiv = mapAt(res.text)
+	assert.ok(mapDiv < loader.at, '#map must come before gmapLoader.js')
+	assert.ok(mapDiv < gmap.at, '#map must come before gmap.js')
 })
