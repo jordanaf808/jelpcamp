@@ -3,6 +3,10 @@ const mongoose = require('mongoose')
 const campsiteSchema = new mongoose.Schema({
 	name: String,
 	id: Number,
+	// From RIDB, for the favorites page. Campsites saved before these existed
+	// get them on their next visit (routes/campsites.js).
+	state: String,
+	recAreaName: String,
 	createdAt: {type: Date, default: Date.now},
 	geometry: {
 		TYPE: {

@@ -97,31 +97,27 @@ test('removing a campsite that does not exist is a 404', async () => {
 // The redesigned profile page shows how many comments the user has written.
 // The view that shows it comes later, so this reads what the route hands the
 // view. app.render is what res.render calls.
-test(
-	"the profile page is given the user's comment count",
-	{todo: 'the route does not pass commentCount yet'},
-	async (t) => {
-		const aliceUser = await User.findOne({username: 'alice'})
-		const bobUser = await User.findOne({username: 'bob'})
-		const by = (user) => ({id: user._id, username: user.username})
-		await Comment.create([
-			{text: 'first comment by alice', author: by(aliceUser)},
-			{text: 'second comment by alice', author: by(aliceUser)},
-			{text: 'a comment by bob instead', author: by(bobUser)},
-		])
+test("the profile page is given the user's comment count", async (t) => {
+	const aliceUser = await User.findOne({username: 'alice'})
+	const bobUser = await User.findOne({username: 'bob'})
+	const by = (user) => ({id: user._id, username: user.username})
+	await Comment.create([
+		{text: 'first comment by alice', author: by(aliceUser)},
+		{text: 'second comment by alice', author: by(aliceUser)},
+		{text: 'a comment by bob instead', author: by(bobUser)},
+	])
 
-		let locals
-		const render = app.render
-		app.render = function (view, options, callback) {
-			if (view === 'users/show') locals = options
-			return render.call(this, view, options, callback)
-		}
-		t.after(() => {
-			app.render = render
-		})
+	let locals
+	const render = app.render
+	app.render = function (view, options, callback) {
+		if (view === 'users/show') locals = options
+		return render.call(this, view, options, callback)
+	}
+	t.after(() => {
+		app.render = render
+	})
 
-		const res = await alice.get(`/user/${aliceUser._id}`)
-		assert.strictEqual(res.status, 200)
-		assert.strictEqual(locals?.commentCount, 2)
-	},
-)
+	const res = await alice.get(`/user/${aliceUser._id}`)
+	assert.strictEqual(res.status, 200)
+	assert.strictEqual(locals?.commentCount, 2)
+})

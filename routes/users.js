@@ -9,6 +9,7 @@ const safeBack = require('../utils/safeBack')
 // import models
 const User = require('../models/user')
 const Campsite = require('../models/campsite')
+const Comment = require('../models/comment')
 
 // User Profile
 router.get(
@@ -25,7 +26,8 @@ router.get(
 			req.flash('error', 'User Not Found...')
 			return res.redirect(safeBack(req))
 		}
-		res.render('users/show', {user: user})
+		const commentCount = await Comment.countDocuments({'author.id': user._id})
+		res.render('users/show', {user, commentCount})
 	},
 )
 

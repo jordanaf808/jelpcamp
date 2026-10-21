@@ -1,0 +1,578 @@
+/*
+ * WANDUR: tokens, base elements and the shared layout (nav, flash, footer).
+ * Values come from the design, project/WANDUR Redesign.dc.html.
+ *
+ * Loaded after Bootstrap and main.css, which stay until the cleanup PR. So:
+ * - No class here shares a name with Bootstrap 4, and new views use these
+ *   classes, never Bootstrap's.
+ * - Sizes are in px. main.css sets the root font size from 10px to 20px with
+ *   !important, so rem means a different size at each screen width.
+ *
+ * Responsive rule for every page: below 900px, one column, the nav becomes
+ * the menu, and the gutter is 16px. Use var(--gutter) for side padding and
+ * @media (max-width: 899px) for the switch.
+ */
+
+:root {
+	/* Colors */
+	--bg: #101309;
+	--surface: #161a10;
+	--surface-2: #181c12;
+	--deep: #0c0f08;
+	--panel: #1b2014;
+	--text: #e9e7da;
+	--body: #d6d4c4;
+	--body-2: #c4c2b1;
+	--muted: #a3a58c;
+	/* Fails AA as text on --panel (3.39:1). The design's photo placeholder label. */
+	--faint: #6f735c;
+	--sage: #c9d4a0;
+	--olive: #8a9a4b;
+	--accent: #e8792b;
+	--accent-hover: #f08a40;
+	--on-accent: #12150e;
+	--danger: #d9674a;
+
+	/* Lines */
+	--line: rgba(201, 212, 160, 0.14);
+	--line-2: rgba(201, 212, 160, 0.22);
+	--line-3: rgba(201, 212, 160, 0.4);
+
+	/* Type */
+	--font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+	--font-body: Barlow, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+	/* Type scale. Display sizes shrink with the viewport and reach the
+	   design's size at 1280px. */
+	--fs-display: clamp(56px, 8.2vw, 104px); /* landing H1 */
+	--fs-h1: clamp(44px, 6.6vw, 84px); /* campsite H1 */
+	--fs-h1-sm: clamp(40px, 5.7vw, 72px); /* profile H1 */
+	--fs-h2: clamp(32px, 3.5vw, 44px); /* section heading */
+	--fs-h2-sm: 36px; /* comments heading */
+	--fs-h3: 26px; /* card title */
+	--fs-lead: 18px;
+	--fs-body: 17px;
+	--fs-body-sm: 15px;
+	--fs-ui: 14px; /* nav links, text links */
+	--fs-mono: 12px; /* eyebrows, meta lines */
+	--fs-mono-sm: 11px;
+	--fs-mono-xs: 10px; /* field labels, tags */
+
+	/* Layout */
+	--gutter: 40px;
+	--nav-height: 64px;
+}
+
+@media (max-width: 899px) {
+	:root {
+		--gutter: 16px;
+	}
+}
+
+/* Base */
+
+[hidden] {
+	display: none !important;
+}
+
+body {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	background-color: var(--bg);
+	color: var(--text);
+	font: 400 16px/1.5 var(--font-body);
+}
+
+main {
+	flex: 1 0 auto;
+}
+
+#main:focus {
+	outline: none;
+}
+
+/* The faint topo map behind every page. topo.png doesn't tile, so it covers
+   the viewport once. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background: url('/images/topo.png') center / cover no-repeat;
+	opacity: 0.07;
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--font-display);
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: 0.01em;
+	text-transform: uppercase;
+	color: var(--text);
+}
+
+a {
+	color: var(--accent);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--accent-hover);
+	text-decoration: none;
+}
+
+/* Higher specificity than main.css's button:focus, which removes the outline. */
+:is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.skip-link {
+	position: absolute;
+	top: -100px;
+	left: var(--gutter);
+	z-index: 2000;
+	padding: 10px 16px;
+	background: var(--accent);
+	color: var(--on-accent);
+	font: 600 14px var(--font-body);
+}
+
+.skip-link:focus,
+.skip-link:hover {
+	top: 12px;
+	color: var(--on-accent);
+}
+
+/* The contour camo, from P1b's camo-contour.png. The image is 1400x900 and
+   doesn't tile, so it shows once: at its design size, or stretched to the
+   width on anything wider, with the deep colour below it. */
+.camo {
+	background: var(--deep) url('/images/camo-contour.png') center top /
+		max(1400px, 100%) auto no-repeat;
+}
+
+/* Type helpers */
+
+.eyebrow {
+	font: 500 var(--fs-mono) / 1.2 var(--font-mono);
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--sage);
+}
+
+.section-label {
+	font: 500 var(--fs-mono-sm) / 1.2 var(--font-mono);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--sage);
+}
+
+.meta {
+	font: 400 var(--fs-mono) / 1.4 var(--font-mono);
+	letter-spacing: 0.06em;
+	color: var(--muted);
+}
+
+/* Type and state badges. */
+.tag {
+	display: inline-block;
+	padding: 3px 7px;
+	border: 1px solid rgba(201, 212, 160, 0.25);
+	background: var(--bg);
+	color: var(--sage);
+	font: 500 var(--fs-mono-xs) / 1.2 var(--font-mono);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+.tag--plain {
+	border-color: transparent;
+	color: var(--text);
+}
+
+/* Buttons. Each rule names :focus too, because main.css greys every focused
+   button with button:focus. */
+
+.button,
+.button:focus {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 13px 23px;
+	border: 1px solid transparent;
+	border-radius: 0;
+	background-color: var(--accent);
+	color: var(--on-accent);
+	font: 700 16px/1.1 var(--font-display);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background-color 0.2s,
+		border-color 0.2s,
+		color 0.2s;
+}
+
+.button:hover {
+	background-color: var(--accent-hover);
+	color: var(--on-accent);
+}
+
+.button--outline,
+.button--outline:focus {
+	border-color: var(--line-3);
+	background-color: var(--bg);
+	color: var(--text);
+}
+
+.button--outline:hover {
+	border-color: var(--sage);
+	background-color: var(--bg);
+	color: var(--text);
+}
+
+.button--danger,
+.button--danger:focus {
+	border-color: rgba(217, 103, 74, 0.5);
+	background-color: transparent;
+	color: var(--danger);
+}
+
+.button--danger:hover {
+	border-color: var(--danger);
+	background-color: rgba(217, 103, 74, 0.12);
+	color: var(--danger);
+}
+
+.button--sm,
+.button--sm:focus {
+	padding: 7px 13px;
+	font: 600 13px/1.2 var(--font-body);
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+.button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Form fields. Markup:
+   <label class="field">
+     <span class="field__label">USERNAME</span>
+     <input class="input" required>
+     <span class="field__error">Enter a username.</span>
+   </label>
+   validateForms.js adds .was-validated to the form on submit, which shows
+   .field__error after an invalid input. */
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.field__label {
+	font: 500 var(--fs-mono-xs) / 1.2 var(--font-mono);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.input {
+	display: block;
+	width: 100%;
+	padding: 12px 14px;
+	border: 1px solid var(--line-2);
+	border-radius: 0;
+	background-color: var(--deep);
+	color: var(--text);
+	font: 500 var(--fs-body) / 1.3 var(--font-body);
+}
+
+.input::placeholder {
+	color: var(--muted);
+	opacity: 1;
+}
+
+.input:focus {
+	border-color: var(--sage);
+}
+
+select.input {
+	appearance: none;
+	padding-right: 40px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23a3a58c' stroke-width='1.5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 14px center;
+}
+
+textarea.input {
+	min-height: 88px;
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.field__error {
+	display: none;
+	color: var(--danger);
+	font: 500 var(--fs-mono) / 1.4 var(--font-mono);
+	letter-spacing: 0.04em;
+}
+
+.was-validated .input:invalid,
+.input[aria-invalid='true'] {
+	border-color: var(--danger);
+}
+
+.was-validated .input:valid {
+	border-color: var(--olive);
+}
+
+.was-validated .input:invalid ~ .field__error,
+.input[aria-invalid='true'] ~ .field__error {
+	display: block;
+}
+
+/* Nav */
+
+.site-nav {
+	position: sticky;
+	top: 0;
+	z-index: 1020;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	height: var(--nav-height);
+	padding: 0 var(--gutter);
+	border-bottom: 1px solid var(--line);
+	background: rgba(16, 19, 9, 0.92);
+}
+
+.site-nav__brand,
+.site-nav__brand:hover {
+	display: flex;
+	align-items: baseline;
+	gap: 14px;
+	color: var(--text);
+}
+
+.site-nav__logo {
+	font: 700 26px/1 var(--font-display);
+	letter-spacing: 0.14em;
+}
+
+.site-nav__tagline {
+	font: 400 var(--fs-mono-sm) var(--font-mono);
+	letter-spacing: 0.08em;
+	color: var(--muted);
+}
+
+.site-nav__menu {
+	display: flex;
+	align-items: center;
+	gap: 28px;
+	font: 500 var(--fs-ui) var(--font-body);
+}
+
+.site-nav__link {
+	padding: 5px 0 3px;
+	border-bottom: 2px solid transparent;
+	color: var(--muted);
+}
+
+.site-nav__link:hover {
+	color: var(--text);
+}
+
+.site-nav__link[aria-current='page'] {
+	border-bottom-color: var(--accent);
+	color: var(--text);
+}
+
+.site-nav__cta,
+.site-nav__cta:focus {
+	padding: 9px 18px;
+	background-color: var(--accent);
+	color: var(--on-accent);
+	font-weight: 600;
+}
+
+.site-nav__cta:hover {
+	background-color: var(--accent-hover);
+	color: var(--on-accent);
+}
+
+/* Shown by nav.js, below 900px only. */
+.site-nav__toggle,
+.site-nav__toggle:focus {
+	display: none;
+	padding: 8px 12px;
+	border: 1px solid var(--line-2);
+	border-radius: 0;
+	background-color: transparent;
+	color: var(--text);
+	font: 500 var(--fs-mono) / 1 var(--font-mono);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+@media (max-width: 899px) {
+	.site-nav.is-enhanced .site-nav__toggle {
+		display: inline-flex;
+	}
+
+	.site-nav.is-enhanced .site-nav__menu {
+		display: none;
+	}
+
+	.site-nav.is-enhanced.is-open .site-nav__menu {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+		padding: 8px var(--gutter) 16px;
+		border-bottom: 1px solid var(--line);
+		background: var(--bg);
+		font-size: 16px;
+	}
+
+	.site-nav.is-open .site-nav__link {
+		padding: 14px 0;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.site-nav.is-open .site-nav__link[aria-current='page'] {
+		border-bottom-color: var(--line);
+		box-shadow: inset 3px 0 0 var(--accent);
+		padding-left: 12px;
+	}
+
+	.site-nav.is-open .site-nav__cta {
+		margin-top: 16px;
+		text-align: center;
+	}
+}
+
+@media (max-width: 479px) {
+	.site-nav__tagline {
+		display: none;
+	}
+}
+
+/* Flash messages */
+
+.flash-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 20px var(--gutter) 0;
+}
+
+.flash {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 12px 12px 18px;
+	border: 1px solid var(--line-2);
+	border-left: 3px solid var(--sage);
+	background: var(--surface-2);
+	color: var(--text);
+}
+
+.flash--error {
+	border-left-color: var(--danger);
+}
+
+.flash__text {
+	margin: 0;
+	font: 500 var(--fs-body-sm) / 1.45 var(--font-body);
+}
+
+/* Shown by flash.js. */
+.flash__close,
+.flash__close:focus {
+	display: none;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--muted);
+	font: 400 22px/1 var(--font-body);
+	cursor: pointer;
+}
+
+.flash__close:hover {
+	color: var(--text);
+}
+
+.flash-stack.is-enhanced .flash__close {
+	display: inline-flex;
+}
+
+/* Footer */
+
+.site-footer {
+	border-top: 1px solid var(--line);
+}
+
+.site-footer__inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 28px var(--gutter);
+	background: rgba(12, 15, 8, 0.55);
+}
+
+.site-footer__logo {
+	font: 700 22px/1 var(--font-display);
+	letter-spacing: 0.14em;
+}
+
+.site-footer__credit {
+	font: 400 var(--fs-mono-sm) / 1.5 var(--font-mono);
+	letter-spacing: 0.06em;
+	color: var(--body-2);
+}
+
+@media (max-width: 899px) {
+	.site-footer__inner {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+
+/* Legacy: pages not yet redesigned put Bootstrap's white cards on this dark
+   page, and those cards take their text colour from <body>. This keeps their
+   text dark. Remove with Bootstrap in the cleanup PR. */
+
+.card,
+.search-description,
+.favorites-list {
+	color: #212529;
+}
+
+.card a:not(.btn) {
+	color: #0056b3;
+}

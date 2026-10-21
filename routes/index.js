@@ -2,17 +2,21 @@ const express = require('express')
 const passport = require('passport')
 const {errors: plmErrors} = require('passport-local-mongoose')
 const User = require('../models/user')
-const Campground = require('../models/campground')
 // const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
 const router = express.Router()
 const {storeReturnTo, validateUser} = require('../middleware')
 const {loginLimiter, registerLimiter} = require('../middleware/rateLimiters')
 
-router.get('/', async (req, res) => {
-	// 	get all campgrounds from DB for background photos.
-	const allCampgrounds = await Campground.find()
-	// console.dir(allCampgrounds);
-	res.render('landing', {campgrounds: allCampgrounds})
+// The campsites list is the landing page.
+//
+// safeBack() falls back to /, so messages often arrive here. app.js has
+// already read them out of the session for this request, so they are queued
+// again for /campsites, or this hop would drop them.
+router.get('/', (req, res) => {
+	for (const type of ['error', 'success']) {
+		for (const message of res.locals[type]) req.flash(type, message)
+	}
+	res.redirect('/campsites')
 })
 
 // ========================

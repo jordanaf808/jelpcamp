@@ -1,16 +1,13 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Yelp Camp 2020</title>
+    <title>WANDUR · Public Lands Finder</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
+    <%# Bootstrap, Font Awesome and main.css style the pages not yet redesigned. The cleanup PR removes them. %>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -23,77 +20,73 @@
       integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
       crossorigin="anonymous"
     />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Paytone+One&family=Special+Elite&display=swap"
-      rel="stylesheet" crossorigin="anonymous"
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+    <% if (typeof mapBox !== 'undefined' && mapBox) { %>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.30.0/mapbox-gl.js" crossorigin="anonymous"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/v3.30.0/mapbox-gl.css"
+      crossorigin="anonymous"
+    />
+    <% } %>
     <link rel="stylesheet" href="/stylesheets/main.css" />
+    <link rel="stylesheet" href="/stylesheets/wandur.css" />
+    <%# back.js serves the "Go Back." link on the edit-comment page. %>
+    <script src="/js/back.js" defer></script>
+    <script src="/js/nav.js" defer></script>
+    <script src="/js/flash.js" defer></script>
   </head>
 
   <body>
-    <div class="container-fluid">
-      <nav class="navbar navbar-expand-md fixed-top navbar-light bg-light py-0">
-        <a class="navbar-brand px-0" href="/campsites"
-          >WANDUR <i class="fas fa-campground mx-1"></i>
-        </a>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-        <button
-          class="navbar-toggler p-4 border-0"
-          type="button"
-          data-toggle="offcanvas"
-          data-target="#navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="hamburger"></span>
-          <!-- <span class="navbar-toggler-icon"></span> -->
-        </button>
-
-        <div
-          class="navbar-collapse offcanvas-collapse justify-content-end"
-          id="navbarNav"
-        >
-          <ul class="navbar-nav">
-            <%if(!currentUser){%>
-            <li class="nav-item my-3 my-lg-0">
-              <a class="nav-link text-body" href="/login">Login</a>
-            </li>
-            <li class="nav-item my-3 my-lg-0">
-              <a class="nav-link text-body" href="/register">Register</a>
-            </li>
-            <% } else { %>
-            <li class="nav-item my-3 my-lg-0">
-              <a class="nav-link text-body" href="/user/<%=currentUser._id%>"
-                ><%=currentUser.username%>'s favorites &#11088;</a
-              >
-            </li>
-            <li class="nav-item my-3 my-lg-0">
-              <a class="nav-link text-body" href="/logout">Logout</a>
-            </li>
-            <% } %>
-          </ul>
-        </div>
+    <header class="site-nav" data-site-nav>
+      <a class="site-nav__brand" href="/campsites">
+        <span class="site-nav__logo">WANDUR</span>
+        <span class="site-nav__tagline">PUBLIC LANDS FINDER</span>
+      </a>
+      <button
+        class="site-nav__toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-menu"
+        data-nav-toggle
+      >
+        Menu
+      </button>
+      <nav class="site-nav__menu" id="site-menu" aria-label="Main">
+        <a class="site-nav__link" href="/campsites" data-nav-link>Campsites</a>
+        <% if (!currentUser) { %>
+        <a class="site-nav__link" href="/login" data-nav-link>Login</a>
+        <a class="site-nav__cta" href="/register">Register</a>
+        <% } else { %>
+        <a class="site-nav__link" href="/user/<%= currentUser._id %>" data-nav-link><%= currentUser.username %>'s favorites</a>
+        <a class="site-nav__link" href="/logout">Logout</a>
+        <% } %>
       </nav>
-    </div>
+    </header>
 
-    <div class="container flash-stack">
-      <% if(error && error.length){ %>
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <h4><%= error %></h4>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <% } %> 
-      <% if(success && success.length){ %>
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <h4><%= success %></h4>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+    <main id="main" tabindex="-1">
+      <%
+        // A route can pass `error` itself (register does, as a string), so
+        // either shape becomes a list of messages here.
+        const flashes = [
+          ...[].concat(locals.error || []).map((text) => ({type: 'error', text})),
+          ...[].concat(locals.success || []).map((text) => ({type: 'success', text})),
+        ]
+      %>
+      <% if (flashes.length) { %>
+      <div class="flash-stack" data-flash-stack>
+        <% for (const flash of flashes) { %>
+        <div class="flash flash--<%= flash.type %>" role="<%= flash.type === 'error' ? 'alert' : 'status' %>">
+          <p class="flash__text"><%= flash.text %></p>
+          <button class="flash__close" type="button" aria-label="Dismiss message" data-flash-dismiss>&times;</button>
+        </div>
+        <% } %>
       </div>
       <% } %>
-    </div>
-  </body>
-</html>

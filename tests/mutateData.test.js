@@ -25,84 +25,56 @@ test('a facility without coordinates is left out of both lists', () => {
 	)
 })
 
-test(
-	'photo is the primary image',
-	{todo: 'mutateData does not add photo yet'},
-	() => {
-		const primary = source('233115').MEDIA.find((media) => media.IsPrimary)
-		// The fixture's primary image is not its first, so this tells them apart.
-		assert.notStrictEqual(primary, source('233115').MEDIA[0])
-		assert.strictEqual(facility('233115').photo, primary.URL)
-	},
-)
+test('photo is the primary image', () => {
+	const primary = source('233115').MEDIA.find((media) => media.IsPrimary)
+	// The fixture's primary image is not its first, so this tells them apart.
+	assert.notStrictEqual(primary, source('233115').MEDIA[0])
+	assert.strictEqual(facility('233115').photo, primary.URL)
+})
 
-test(
-	'with no primary image, photo is the first image, not a video',
-	{todo: 'mutateData does not add photo yet'},
-	() => {
-		const media = source('900002').MEDIA
-		assert.strictEqual(media[0].MediaType, 'Video')
-		assert.strictEqual(facility('900002').photo, media[1].URL)
-	},
-)
+test('with no primary image, photo is the first image, not a video', () => {
+	const media = source('900002').MEDIA
+	assert.strictEqual(media[0].MediaType, 'Video')
+	assert.strictEqual(facility('900002').photo, media[1].URL)
+})
 
-test(
-	'photo is null when the facility has no images',
-	{todo: 'mutateData does not add photo yet'},
-	() => {
-		assert.strictEqual(facility('900001').photo, null)
-	},
-)
+test('photo is null when the facility has no images', () => {
+	assert.strictEqual(facility('900001').photo, null)
+})
 
-test(
-	'state is the first address state code, and null with no address',
-	{todo: 'mutateData does not add state yet'},
-	() => {
-		assert.strictEqual(facility('233115').state, 'OR')
-		assert.strictEqual(facility('900002').state, 'WA')
-		assert.strictEqual(facility('900001').state, null)
-	},
-)
+test('state is the first address state code, and null with no address', () => {
+	assert.strictEqual(facility('233115').state, 'OR')
+	assert.strictEqual(facility('900002').state, 'WA')
+	assert.strictEqual(facility('900001').state, null)
+})
 
-test(
-	'recAreaName is the parent rec area name, and null with none',
-	{todo: 'mutateData does not add recAreaName yet'},
-	() => {
-		assert.strictEqual(
-			facility('233115').recAreaName,
-			'Wallowa Whitman National Forest',
-		)
-		assert.strictEqual(facility('900001').recAreaName, null)
-	},
-)
+test('recAreaName is the parent rec area name, and null with none', () => {
+	assert.strictEqual(
+		facility('233115').recAreaName,
+		'Wallowa Whitman National Forest',
+	)
+	assert.strictEqual(facility('900001').recAreaName, null)
+})
 
 // GEOJSON.COORDINATES is [lng, lat], the GeoJSON order.
-test(
-	'lat and lng come from GEOJSON, which lists longitude first',
-	{todo: 'mutateData does not add lat and lng yet'},
-	() => {
-		assert.strictEqual(facility('233115').lat, 44.4149)
-		assert.strictEqual(facility('233115').lng, -118.0107)
-	},
-)
+test('lat and lng come from GEOJSON, which lists longitude first', () => {
+	assert.strictEqual(facility('233115').lat, 44.4149)
+	assert.strictEqual(facility('233115').lng, -118.0107)
+})
 
 // A record from a request without full: true has none of the nested lists.
-test(
-	'a record without MEDIA, FACILITYADDRESS or RECAREA gets nulls, not an error',
-	{todo: 'mutateData does not add photo, state or recAreaName yet'},
-	() => {
-		const bare = {
-			FacilityID: '1',
-			FacilityName: 'Bare',
-			FacilityDescription: '',
-			GEOJSON: {COORDINATES: [-100, 40], TYPE: 'Point'},
-		}
-		const [item] = mutateData([bare]).recData
-		assert.strictEqual(item.photo, null)
-		assert.strictEqual(item.state, null)
-		assert.strictEqual(item.recAreaName, null)
-	},
-)
+test('a record without MEDIA, FACILITYADDRESS or RECAREA gets nulls, not an error', () => {
+	const bare = {
+		FacilityID: '1',
+		FacilityName: 'Bare',
+		FacilityDescription: '',
+		GEOJSON: {COORDINATES: [-100, 40], TYPE: 'Point'},
+	}
+	const [item] = mutateData([bare]).recData
+	assert.strictEqual(item.photo, null)
+	assert.strictEqual(item.state, null)
+	assert.strictEqual(item.recAreaName, null)
+})
 
 // public/js/map.js reads exactly these from each feature.
 test('each map feature keeps the shape map.js reads', () => {

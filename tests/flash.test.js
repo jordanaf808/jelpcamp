@@ -7,15 +7,21 @@
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
+const nock = require('nock')
 const setup = require('./setup')
+const list = require('./fixtures/ridb-facilities-list-full.json')
 
 let app
 
 test.before(async () => {
 	;({app} = await setup.start())
+	nock.disableNetConnect()
+	nock.enableNetConnect('127.0.0.1')
 })
 
 test.after(async () => {
+	nock.cleanAll()
+	nock.enableNetConnect()
 	await setup.stop()
 })
 
@@ -49,8 +55,26 @@ test('a rejected registration shows its validation message on the next page', as
 		.send({username: 'flash-check', password: 'x'})
 	assert.strictEqual(res.status, 302)
 
-	const next = await agent.get(res.headers.location)
+	// With no Referer, "back" is /, which redirects to /campsites. app.js reads
+	// the messages on every request, so the message has to survive that hop.
+	assert.strictEqual(res.headers.location, '/')
+	const hop = await agent.get('/')
+	assert.strictEqual(hop.headers.location, '/campsites')
+
+	nock('https://ridb.recreation.gov')
+		.get('/api/v1/facilities')
+		.query(true)
+		.reply(200, list)
+	const next = await agent.get('/campsites')
+	assert.strictEqual(next.status, 200)
 	assert.match(next.text, /length must be at least 3 characters long/)
+})
+
+// A visitor with no messages passes through / without a session write.
+test('/ sends a visitor to /campsites with no session cookie', async () => {
+	const res = await request(app).get('/')
+	assert.strictEqual(res.headers.location, '/campsites')
+	assert.strictEqual(res.headers['set-cookie'], undefined)
 })
 
 // Reading the flash messages must not write to the session. express-session
