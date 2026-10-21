@@ -3,10 +3,11 @@
 // those side effects out means a test can `require('./app')` without starting a
 // server or binding a port, which was impossible before 2026-09-08.
 //
-// Note that `sessionStore` below is constructed at module load from
-// process.env.MONGO_URI, so any caller (a test, in particular) must set its
-// environment BEFORE requiring this file. dotenv does not overwrite variables
-// that are already set, so an explicit value always wins.
+// Note that `sessionStore` below is constructed at module load from mongoUri()
+// (MONGO_URI, or PREVIEW_MONGO_URI on a Render preview), so any caller (a test,
+// in particular) must set its environment BEFORE requiring this file. dotenv
+// does not overwrite variables that are already set, so an explicit value
+// always wins.
 //
 // Also note dotenv resolves `.env` relative to the CURRENT WORKING DIRECTORY,
 // not to this file. Requiring this module from elsewhere without setting the
@@ -23,6 +24,7 @@ const session = require('express-session')
 const {MongoStore} = require('connect-mongo')
 const sanitizeRequest = require('./middleware/sanitize')
 const flash = require('./middleware/flash')
+const mongoUri = require('./utils/mongoUri')
 const helmet = require('helmet')
 
 // Models
@@ -139,7 +141,7 @@ app.use(
 // secret mixed-case with digits and symbols anyway: it costs nothing and
 // survives the pin being loosened again.
 const sessionStore = new MongoStore({
-	mongoUrl: process.env.MONGO_URI,
+	mongoUrl: mongoUri(),
 	touchAfter: 24 * 60 * 60,
 	crypto: {
 		secret: process.env.SESSION_STORE_SECRET,
