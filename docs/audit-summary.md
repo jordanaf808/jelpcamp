@@ -120,7 +120,7 @@ is, how to run it, or which environment variables it needs.
 - Write the README first.
 
 **Since:** the README exists (#64). Bugs are GitHub issues, #68 to #71, not lines in a
-doc. #71 was fixed in #78, #69 in #79 and #70 in #80.
+doc. All four are fixed: #71 in #78, #69 in #79, #70 in #80 and #68 in #88.
 
 **6. Known problems are still in the repo.** `views/campgrounds/` and
 `views/campsites/campsites.ejs` are rendered by nothing. `connect-flash` was last
@@ -174,8 +174,8 @@ reading the code a change was about to touch, and each has a test now.
 | Any logged-in user could open another user's profile page | #74 |
 | The campsite page made four RIDB requests where one was enough. One of the four had never been needed | #65 |
 
-Four more were filed as issues: #68, #69, #70 and #71. #71 was fixed in #78, #69 in #79
-and #70 in #80. #68 is open.
+Four more were filed as issues: #68, #69, #70 and #71. All four are fixed: #71 in #78,
+#69 in #79, #70 in #80 and #68 in #88.
 
 ## Habits and systems
 
@@ -218,8 +218,6 @@ list, with what was and was not checked, is under
   by the owner, 2026-10-15: "defer until further notice".
 - A development Maps key and a browser smoke script (critique 1). Until they exist,
   every map change is verified on the live site.
-- Bugs filed as issues: #68. #69, #70 and #71 were fixed in #79, #80 and #78, and #1,
-  from 2021, was closed as a duplicate of #71.
 - No test for: search and the index page when RIDB answers, comment edit,
   register error paths, the CSP beyond `script-src`, cookie flags, any browser code.
 - The narrow `script-src` from #82 has not been tried in a browser against a script that
@@ -247,3 +245,8 @@ used (#85).
 Closed from 2026-10-10 to 2026-10-15: the favorite routes answering a missing campsite
 with a 500 (#79), and a comment left behind when it could not be linked to its campsite
 (#80). The three live checks from Express 5 passed (owner, 2026-10-15).
+
+Closed on 2026-10-15: a database that cannot be reached at startup now ends the process
+with one clear line, instead of an unhandled rejection after the server was already
+listening (#88). The landing page without Modernizr and `RateLimit-Remaining` on the
+live `/login` were checked live and are fine.

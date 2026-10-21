@@ -69,7 +69,7 @@ Methodology and command reference: `Dev/Notes/Security/node-dependency-audit-pla
 >
 > **Part 3 is done.** The app split (PR #17), the test harness (PR #18) and CI (PR #22)
 > have all landed. Every pull request and every push to `main` now runs `npm ci`, a
-> format check, ESLint, **59 tests** and `npm audit --audit-level=high`, and a ruleset
+> format check, ESLint, **60 tests** and `npm audit --audit-level=high`, and a ruleset
 > makes the `test` check required before anything merges into `main`. Dependabot alerts, grouped version
 > updates (PR #24) and security updates are all on. **CI does not gate deploys.**
 > Render's auto-deploy has been off since 2026-09-14. Every deploy is started by hand
@@ -678,7 +678,7 @@ still not be in effect. `saveUninitialized: false` was set the whole time. And
 one user's data needs answered.
 
 Four further bugs from the same reading are not security findings and are filed as
-GitHub issues #68 to #71. #69, #70 and #71 are fixed (#79, #80, #78). #68 is open.
+GitHub issues #68 to #71. All four are fixed: #71 (#78), #69 (#79), #70 (#80) and #68 (#88).
 
 ### 🟡 The error page echoed the URL, and the CSP allowed two whole CDNs (found and fixed 2026-10-07 to 2026-10-10)
 
@@ -1448,6 +1448,10 @@ Since 2026-10-05:
 
 - **Per-app session secrets and Atlas users are deferred** (owner, 2026-10-15: "defer
   until further notice"). See "Secret reuse across projects" in Part 2.
+- **`server.js` connects to the database before it requires `app.js`** (#88). `app.js`
+  builds the session store as it loads, and connect-mongo leaves a failed connection
+  unhandled. Requiring `app.js` first would bring back the raw crash on a bad
+  `MONGO_URI`.
 - **A failed campsite write deletes the new comment. There is no transaction** (#80).
   MongoDB runs transactions only on a replica set, and the test database is a
   standalone `mongod`.
@@ -1570,8 +1574,9 @@ and dotenv fills any variable that is not already set — so forgetting to set
 | `favorites.test.js`: adding or removing a campsite that does not exist is a 404 | #79 — two tests; `orFail` used to throw a `const` declared below it |
 | `comments.test.js`: a comment for a campsite with no record is refused, and nothing is saved | #80 — counts the comments, not only the status |
 | `comments.test.js`: a comment is not left behind when the campsite write fails | #80 — a `comments` field stored as one id makes MongoDB refuse the `$push` |
+| `startup.test.js`: `server.js` exits with one clear line, without listening, when the database is unreachable | #88 — runs `server.js` in a child process, against a loopback port nothing listens on |
 
-59 tests as of #80.
+60 tests as of #88.
 
 **Not covered:** editing a comment; `checkCommentOwnership` rejecting a
 user who does not own the comment; search and the index page when RIDB answers; register
@@ -1598,12 +1603,8 @@ Since 2026-10-05:
   Nobody has tried to load an unlisted script from the browser console.
 - **Whether the error page before #81 could run a script.** CI showed the markup came
   back as `text/html`. It was not tried in a browser.
-- **The landing page without Modernizr.** A search of the repo found nothing that uses
-  it. A look at the deployed page is not recorded.
 - **What RIDB answers for an id it does not know.** Either way this app answers with a
   500, not a 404.
-- **`RateLimit-Remaining` on the live `/login` after #77**, which bumped `proxy-addr`,
-  the package that works out `req.ip`.
 - **The other hosts in `script-src`** are whole hosts and were not reviewed:
   `code.jquery.com`, `stackpath.bootstrapcdn.com`, `api.mapbox.com`,
   `maps.googleapis.com` and the two Flickr hosts.
