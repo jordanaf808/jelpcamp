@@ -7,6 +7,7 @@ const assert = require('node:assert')
 const request = require('supertest')
 const nock = require('nock')
 const setup = require('./setup')
+const Campsite = require('../models/campsite')
 const User = require('../models/user')
 const facility = require('./fixtures/ridb-facility-233115-full.json')
 
@@ -204,3 +205,47 @@ test("IS_PULL_REQUEST 'false' is not a preview: the page uses MAPS_API_KEY", asy
 	assert.strictEqual(res.status, 200)
 	assert.strictEqual(mapsKeyOn(res), 'production-maps-key')
 })
+
+// The favorites page lists each saved campsite's state and rec area, and reads
+// them from the Campsite document, not from RIDB.
+test(
+	'a first visit stores the campsite with its state and rec area',
+	{todo: 'the Campsite schema has no state or recAreaName yet'},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/8')
+			.query({full: 'true'})
+			.reply(200, {...facility, FacilityID: '8'})
+
+		const res = await request(app).get('/campsites/show/8')
+		assert.strictEqual(res.status, 200)
+
+		const stored = await Campsite.findOne({id: 8}).lean()
+		assert.strictEqual(stored.state, 'OR')
+		assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
+	},
+)
+
+// Campsites saved before the redesign have neither field.
+test(
+	'a visit fills in state and rec area on a campsite stored without them',
+	{todo: 'the show route does not set state or recAreaName yet'},
+	async () => {
+		await Campsite.create({
+			name: facility.FacilityName,
+			id: 9,
+			geometry: facility.GEOJSON,
+		})
+		nock(RIDB)
+			.get('/api/v1/facilities/9')
+			.query({full: 'true'})
+			.reply(200, {...facility, FacilityID: '9'})
+
+		const res = await request(app).get('/campsites/show/9')
+		assert.strictEqual(res.status, 200)
+
+		const stored = await Campsite.findOne({id: 9}).lean()
+		assert.strictEqual(stored.state, 'OR')
+		assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
+	},
+)

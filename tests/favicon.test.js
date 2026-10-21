@@ -1,20 +1,28 @@
 // Regression test: the favicon is served, and every page family links it.
 //
-// There are three separate <head> blocks: landing.ejs has its own, and every
-// other view includes partials/header.ejs or partials/headerBack.ejs. A page
-// without the link makes the browser ask for /favicon.ico, which does not
-// exist, so that page logs a 404 on every load.
+// Every view includes partials/header.ejs or partials/headerBack.ejs, and
+// headerBack.ejs includes header.ejs. A page without the link makes the browser
+// ask for /favicon.ico, which does not exist, so that page logs a 404 on every
+// load.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
+const nock = require('nock')
 const setup = require('./setup')
 const Campsite = require('../models/campsite')
+const list = require('./fixtures/ridb-facilities-list-full.json')
 
 let agent
 
 test.before(async () => {
 	const {app} = await setup.start()
 	agent = request.agent(app)
+	nock.disableNetConnect()
+	nock.enableNetConnect('127.0.0.1')
+	nock('https://ridb.recreation.gov')
+		.get('/api/v1/facilities')
+		.query(true)
+		.reply(200, list)
 
 	// Every view that uses headerBack.ejs sits behind a login or the RIDB API.
 	// The new-comment form needs a logged-in session and a campsite document.
@@ -35,6 +43,8 @@ test.before(async () => {
 })
 
 test.after(async () => {
+	nock.cleanAll()
+	nock.enableNetConnect()
 	await setup.stop()
 })
 
@@ -48,7 +58,7 @@ const FAVICON_LINK =
 	/<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml" \/>/
 
 const pages = {
-	'/': 'landing.ejs',
+	'/campsites': 'partials/header.ejs',
 	'/login': 'partials/header.ejs',
 	'/campsites/1/comments/new': 'partials/headerBack.ejs',
 }
