@@ -395,7 +395,7 @@ textarea.input {
 	color: var(--text);
 }
 
-.site-nav__link[aria-current='page'] {
+.site-nav__link:is([aria-current='page'], [aria-current='true']) {
 	border-bottom-color: var(--accent);
 	color: var(--text);
 }
@@ -457,7 +457,7 @@ textarea.input {
 		border-bottom: 1px solid var(--line);
 	}
 
-	.site-nav.is-open .site-nav__link[aria-current='page'] {
+	.site-nav.is-open .site-nav__link:is([aria-current='page'], [aria-current='true']) {
 		border-bottom-color: var(--line);
 		box-shadow: inset 3px 0 0 var(--accent);
 		padding-left: 12px;

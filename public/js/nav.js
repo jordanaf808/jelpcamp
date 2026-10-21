@@ -10,11 +10,15 @@
 	const menu = document.getElementById(toggle.getAttribute('aria-controls'))
 
 	// The views get no request path, so the current section is found here.
+	// "page" is the link's own page; "true" is a page inside its section, such
+	// as a campsite under Campsites.
 	const path = window.location.pathname
 	for (const link of menu.querySelectorAll('[data-nav-link]')) {
 		const href = link.getAttribute('href')
-		if (path === href || path.startsWith(href + '/')) {
+		if (path === href) {
 			link.setAttribute('aria-current', 'page')
+		} else if (path.startsWith(href + '/')) {
+			link.setAttribute('aria-current', 'true')
 		}
 	}
 
@@ -31,6 +35,14 @@
 		setOpen(false)
 		toggle.focus()
 	})
+
+	// Above the breakpoint the links show inline and the button is hidden. A menu
+	// left open there would still be open, unasked, when the window narrows.
+	window
+		.matchMedia('(min-width: 900px)')
+		.addEventListener('change', (event) => {
+			if (event.matches && isOpen()) setOpen(false)
+		})
 
 	nav.classList.add('is-enhanced')
 })()
