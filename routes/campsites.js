@@ -127,13 +127,19 @@ router.get('/show/:id', async (req, res) => {
 			})
 		}
 	} else {
-		// Campsites saved before state and recAreaName existed lack them.
-		const missing = Object.entries(place).filter(
-			([field, value]) => value && !foundCampsite[field],
+		// Campsites saved before state and recAreaName existed lack them. An
+		// update of just those fields, not save(): save() validates the whole
+		// document, so an old campsite that fails today's schema would turn a
+		// page that renders into a 500.
+		const missing = Object.fromEntries(
+			Object.entries(place).filter(
+				([field, value]) => value && !foundCampsite[field],
+			),
 		)
-		if (missing.length) {
-			foundCampsite.set(Object.fromEntries(missing))
-			await foundCampsite.save()
+		if (Object.keys(missing).length) {
+			await Campsite.updateOne({_id: foundCampsite._id}, {$set: missing})
+			// So this render sees them too.
+			foundCampsite.set(missing)
 		}
 		if (req.isAuthenticated()) {
 			const user = req.user
