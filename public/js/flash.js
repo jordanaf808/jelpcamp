@@ -2,12 +2,12 @@
 //
 // The buttons have no data-dismiss="alert", so Bootstrap's alert plugin, still
 // loaded by the footer, ignores them. The CSS shows the buttons only once this
-// script marks the stack as enhanced.
+// script marks the list as enhanced.
 ;(() => {
-	const stack = document.querySelector('[data-flash-stack]')
-	if (!stack) return
+	const list = document.querySelector('[data-flash-list]')
+	if (!list) return
 
-	stack.addEventListener('click', (event) => {
+	list.addEventListener('click', (event) => {
 		const button = event.target.closest('[data-flash-dismiss]')
 		if (!button) return
 		const flash = button.closest('.flash')
@@ -17,10 +17,10 @@
 		if (next) {
 			next.querySelector('[data-flash-dismiss]').focus()
 		} else {
-			stack.remove()
+			list.remove()
 			document.getElementById('main').focus()
 		}
 	})
 
-	stack.classList.add('is-enhanced')
+	list.classList.add('is-enhanced')
 })()

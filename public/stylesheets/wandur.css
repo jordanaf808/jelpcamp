@@ -477,7 +477,7 @@ textarea.input {
 
 /* Flash messages */
 
-.flash-stack {
+.flash-list {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -526,7 +526,7 @@ textarea.input {
 	color: var(--text);
 }
 
-.flash-stack.is-enhanced .flash__close {
+.flash-list.is-enhanced .flash__close {
 	display: inline-flex;
 }
 
@@ -565,7 +565,7 @@ textarea.input {
 
 /* Legacy: pages not yet redesigned put Bootstrap's white cards on this dark
    page, and those cards take their text colour from <body>. This keeps their
-   text dark. Remove with Bootstrap in the cleanup PR. */
+   text, headings and links dark. Remove with Bootstrap in the cleanup PR. */
 
 .card,
 .search-description,
@@ -573,6 +573,11 @@ textarea.input {
 	color: #212529;
 }
 
-.card a:not(.btn) {
+/* Beats the base h1-h3 colour above, which is light. */
+:is(.card, .search-description, .favorites-list) :is(h1, h2, h3, h4) {
+	color: inherit;
+}
+
+:is(.card, .search-description, .favorites-list) a:not(.btn) {
 	color: #0056b3;
 }
