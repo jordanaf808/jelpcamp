@@ -108,65 +108,53 @@ test('server.js exits with one clear line, without listening, when the database 
 	assert.doesNotMatch(server.stdout, /listening/)
 })
 
-test(
-	'a preview without PREVIEW_MONGO_URI exits before touching MONGO_URI',
-	{todo: 'falls back to MONGO_URI, the production database, and listens'},
-	async (t) => {
-		const server = await runServer({
-			IS_PULL_REQUEST: 'true',
-			MONGO_URI: mongod.getUri('unset_production'),
-			PREVIEW_MONGO_URI: '',
-		})
-		t.after(server.stop)
+test('a preview without PREVIEW_MONGO_URI exits before touching MONGO_URI', async (t) => {
+	const server = await runServer({
+		IS_PULL_REQUEST: 'true',
+		MONGO_URI: mongod.getUri('unset_production'),
+		PREVIEW_MONGO_URI: '',
+	})
+	t.after(server.stop)
 
-		assert.strictEqual(server.code, 1, 'server.js started instead of exiting')
-		assert.match(
-			server.stderr,
-			/^Could not connect to MongoDB: PREVIEW_MONGO_URI is not set/m,
-		)
-		assert.deepStrictEqual(await collectionsIn('unset_production'), [])
-	},
-)
+	assert.strictEqual(server.code, 1, 'server.js started instead of exiting')
+	assert.match(
+		server.stderr,
+		/^Could not connect to MongoDB: PREVIEW_MONGO_URI is not set/m,
+	)
+	assert.deepStrictEqual(await collectionsIn('unset_production'), [])
+})
 
-test(
-	'a preview connects mongoose and the session store to PREVIEW_MONGO_URI',
-	{todo: 'both connect to MONGO_URI, the production database'},
-	async (t) => {
-		const server = await runServer({
-			IS_PULL_REQUEST: 'true',
-			MONGO_URI: mongod.getUri('preview_production'),
-			PREVIEW_MONGO_URI: mongod.getUri('preview_preview'),
-		})
-		t.after(server.stop)
+test('a preview connects mongoose and the session store to PREVIEW_MONGO_URI', async (t) => {
+	const server = await runServer({
+		IS_PULL_REQUEST: 'true',
+		MONGO_URI: mongod.getUri('preview_production'),
+		PREVIEW_MONGO_URI: mongod.getUri('preview_preview'),
+	})
+	t.after(server.stop)
 
-		assert.ok(server.listening, `server.js did not start.\n${server.stderr}`)
-		assert.ok(
-			await sessionStoreReached('preview_preview'),
-			'the session store never reached the preview database',
-		)
-		assert.deepStrictEqual(await collectionsIn('preview_production'), [])
-		assert.match(server.stdout, /^database connected: preview_preview$/m)
-	},
-)
+	assert.ok(server.listening, `server.js did not start.\n${server.stderr}`)
+	assert.ok(
+		await sessionStoreReached('preview_preview'),
+		'the session store never reached the preview database',
+	)
+	assert.deepStrictEqual(await collectionsIn('preview_production'), [])
+	assert.match(server.stdout, /^database connected: preview_preview$/m)
+})
 
 // Render sets the STRING 'false' outside previews, and 'false' is truthy.
-test(
-	"IS_PULL_REQUEST 'false' is not a preview: both connect to MONGO_URI",
-	{todo: 'logs "database connected" without the database name'},
-	async (t) => {
-		const server = await runServer({
-			IS_PULL_REQUEST: 'false',
-			MONGO_URI: mongod.getUri('live_production'),
-			PREVIEW_MONGO_URI: mongod.getUri('live_preview'),
-		})
-		t.after(server.stop)
+test("IS_PULL_REQUEST 'false' is not a preview: both connect to MONGO_URI", async (t) => {
+	const server = await runServer({
+		IS_PULL_REQUEST: 'false',
+		MONGO_URI: mongod.getUri('live_production'),
+		PREVIEW_MONGO_URI: mongod.getUri('live_preview'),
+	})
+	t.after(server.stop)
 
-		assert.ok(server.listening, `server.js did not start.\n${server.stderr}`)
-		assert.ok(
-			await sessionStoreReached('live_production'),
-			'the session store never reached MONGO_URI',
-		)
-		assert.deepStrictEqual(await collectionsIn('live_preview'), [])
-		assert.match(server.stdout, /^database connected: live_production$/m)
-	},
-)
+	assert.ok(server.listening, `server.js did not start.\n${server.stderr}`)
+	assert.ok(
+		await sessionStoreReached('live_production'),
+		'the session store never reached MONGO_URI',
+	)
+	assert.deepStrictEqual(await collectionsIn('live_preview'), [])
+	assert.match(server.stdout, /^database connected: live_production$/m)
+})
