@@ -7,6 +7,7 @@ const assert = require('node:assert')
 const request = require('supertest')
 const nock = require('nock')
 const setup = require('./setup')
+const User = require('../models/user')
 const facility = require('./fixtures/ridb-facility-233115-full.json')
 
 const RIDB = 'https://ridb.recreation.gov'
@@ -134,4 +135,76 @@ test('the campsite page loads jQuery and Bootstrap once each', async () => {
 			`${library} is loaded ${found.length} times: ${found.join(', ')}`,
 		)
 	}
+})
+
+// A Render PR preview copies production's MAPS_API_KEY, which the preview's
+// hostname is not allowed to use. The route reads the key on each request, so
+// these tests set the environment without reloading the app.
+const withEnv = (t, vars) => {
+	const saved = Object.fromEntries(
+		Object.keys(vars).map((name) => [name, process.env[name]]),
+	)
+	Object.assign(process.env, vars)
+	t.after(() => {
+		for (const [name, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[name]
+			else process.env[name] = value
+		}
+	})
+}
+
+const KEYS = {
+	MAPS_API_KEY: 'production-maps-key',
+	PREVIEW_MAPS_API_KEY: 'preview-maps-key',
+}
+
+const mapsKeyOn = (res) => res.text.match(/\bdata-maps-key="([^"]*)"/)?.[1]
+
+// The route renders the page from three places: a first visit, a repeat visit,
+// and a repeat visit by a user whose favorites include the campsite.
+test(
+	'on a preview, every render of the campsite page uses PREVIEW_MAPS_API_KEY',
+	{todo: 'uses MAPS_API_KEY, which a preview hostname cannot use'},
+	async (t) => {
+		withEnv(t, {IS_PULL_REQUEST: 'true', ...KEYS})
+		nock(RIDB)
+			.get('/api/v1/facilities/6')
+			.query({full: 'true'})
+			.times(3)
+			.reply(200, {...facility, FacilityID: '6'})
+
+		const firstVisit = await request(app).get('/campsites/show/6')
+		const repeatVisit = await request(app).get('/campsites/show/6')
+
+		const agent = request.agent(app)
+		const registered = await agent
+			.post('/register')
+			.type('form')
+			.send({username: 'maps', password: 'maps-pw'})
+		assert.strictEqual(registered.headers.location, '/campsites')
+		const {_id} = await User.findOne({username: 'maps'})
+		await agent.post(`/user/${_id}/6`)
+		const {favorites} = await User.findById(_id)
+		assert.strictEqual(favorites.length, 1, 'the favorite was not saved')
+		const favoriteVisit = await agent.get('/campsites/show/6')
+
+		const visits = {firstVisit, repeatVisit, favoriteVisit}
+		for (const [visit, res] of Object.entries(visits)) {
+			assert.strictEqual(res.status, 200, visit)
+			assert.strictEqual(mapsKeyOn(res), 'preview-maps-key', visit)
+		}
+	},
+)
+
+// Render sets the STRING 'false' outside previews, and 'false' is truthy.
+test("IS_PULL_REQUEST 'false' is not a preview: the page uses MAPS_API_KEY", async (t) => {
+	withEnv(t, {IS_PULL_REQUEST: 'false', ...KEYS})
+	nock(RIDB)
+		.get('/api/v1/facilities/7')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '7'})
+
+	const res = await request(app).get('/campsites/show/7')
+	assert.strictEqual(res.status, 200)
+	assert.strictEqual(mapsKeyOn(res), 'production-maps-key')
 })
