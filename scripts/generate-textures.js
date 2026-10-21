@@ -7,8 +7,10 @@
 // in the browser; this does the same math once, at build time, and writes PNGs
 // with node:zlib instead of a canvas encoder. No dependencies.
 //
-// Run from the repo root: node scripts/generate-textures.js
-// Output is deterministic, so re-running should leave git with no diff.
+// Run: node scripts/generate-textures.js
+// Output is deterministic on the pinned Node version (.nvmrc), so re-running
+// there should leave git with no diff. zlib's output bytes can change between
+// Node releases.
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -105,52 +107,14 @@ const chunk = (type, data) => {
 	return out
 }
 
-const paeth = (a, b, c) => {
-	const p = a + b - c
-	const pa = Math.abs(p - a)
-	const pb = Math.abs(p - b)
-	const pc = Math.abs(p - c)
-	return pa <= pb && pa <= pc ? a : pb <= pc ? b : c
-}
-
-// Tries all five PNG row filters and keeps the one with the smallest sum of
-// absolute (signed) residuals, the usual heuristic for what deflate likes.
-const filterRow = (row, prev, bpp) => {
-	let best = null
-	let bestScore = Infinity
-	for (let type = 0; type < 5; type++) {
-		const out = Buffer.alloc(row.length + 1)
-		out[0] = type
-		let score = 0
-		for (let i = 0; i < row.length; i++) {
-			const left = i >= bpp ? row[i - bpp] : 0
-			const up = prev ? prev[i] : 0
-			const upLeft = prev && i >= bpp ? prev[i - bpp] : 0
-			let pred = 0
-			if (type === 1) pred = left
-			else if (type === 2) pred = up
-			else if (type === 3) pred = (left + up) >> 1
-			else if (type === 4) pred = paeth(left, up, upLeft)
-			const res = (row[i] - pred) & 255
-			out[i + 1] = res
-			score += res < 128 ? res : 256 - res
-		}
-		if (score < bestScore) {
-			bestScore = score
-			best = out
-		}
-	}
-	return best
-}
-
 const encodePng = ({pixels, channels}) => {
 	const stride = W * channels
 	const raw = Buffer.alloc((stride + 1) * H)
-	let prev = null
 	for (let y = 0; y < H; y++) {
-		const row = pixels.subarray(y * stride, (y + 1) * stride)
-		filterRow(row, prev, channels).copy(raw, y * (stride + 1))
-		prev = row
+		const at = y * (stride + 1)
+		// Filter type 0 (None). Every PNG row filter made these files larger.
+		raw[at] = 0
+		raw.set(pixels.subarray(y * stride, (y + 1) * stride), at + 1)
 	}
 	const ihdr = Buffer.alloc(13)
 	ihdr.writeUInt32BE(W, 0)
@@ -173,4 +137,4 @@ const write = (name, image) => {
 }
 
 write('camo-contour.png', smooth(mk(11), 7, 140, edge, true))
-write('topo.png', smooth(mk(203), 16, 300, [201, 212, 160], false))
+write('topo.png', smooth(mk(203), 16, 300, hex('#c9d4a0'), false))
