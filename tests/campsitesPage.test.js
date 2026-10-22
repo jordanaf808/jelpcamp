@@ -97,73 +97,57 @@ test('each list page renders every mapped facility with its name and link', () =
 	}
 })
 
-test(
-	'each facility has its own card, with its name in a heading',
-	{todo: 'the cards are Bootstrap cards, not <article>s'},
-	() => {
-		for (const [path, html] of listPages()) {
-			for (const [id, name] of Object.entries(FACILITIES)) {
-				assert.match(
-					cardOf(html, id),
-					new RegExp(`<h3\\b[^>]*>[\\s\\S]*${name}[\\s\\S]*</h3>`),
-					`${path}: ${id}`,
-				)
-			}
+test('each facility has its own card, with its name in a heading', () => {
+	for (const [path, html] of listPages()) {
+		for (const [id, name] of Object.entries(FACILITIES)) {
+			assert.match(
+				cardOf(html, id),
+				new RegExp(`<h3\\b[^>]*>[\\s\\S]*${name}[\\s\\S]*</h3>`),
+				`${path}: ${id}`,
+			)
 		}
-	},
-)
+	}
+})
 
-test(
-	'a facility with no photo gets the placeholder, and one with a photo gets a lazy <img>',
-	{todo: 'the cards have no photos yet'},
-	() => {
-		for (const [path, html] of listPages()) {
-			const empty = cardOf(html, '900001')
-			assert.match(empty, /FACILITY PHOTO/, `${path}: 900001's placeholder`)
-			assert.doesNotMatch(empty, /<img\b/, `${path}: 900001 has no <img>`)
-			// No state and no rec area: both are left out, not printed as null.
-			assert.doesNotMatch(empty, /null/, `${path}: 900001 prints no null`)
+test('a facility with no photo gets the placeholder, and one with a photo gets a lazy <img>', () => {
+	for (const [path, html] of listPages()) {
+		const empty = cardOf(html, '900001')
+		assert.match(empty, /FACILITY PHOTO/, `${path}: 900001's placeholder`)
+		assert.doesNotMatch(empty, /<img\b/, `${path}: 900001 has no <img>`)
+		// No state and no rec area: both are left out, not printed as null.
+		assert.doesNotMatch(empty, /null/, `${path}: 900001 prints no null`)
 
-			const photo = list.RECDATA[0].MEDIA.find((m) => m.IsPrimary).URL
-			const img = cardOf(html, '233115').match(/<img\b[^>]*>/)
-			assert.ok(img, `${path}: 233115 has an <img>`)
-			assert.ok(img[0].includes(`src="${photo}"`), `${path}: its photo`)
-			assert.match(img[0], /\bloading="lazy"/, `${path}: lazy`)
-			assert.match(img[0], /\balt="/, `${path}: alt`)
+		const photo = list.RECDATA[0].MEDIA.find((m) => m.IsPrimary).URL
+		const img = cardOf(html, '233115').match(/<img\b[^>]*>/)
+		assert.ok(img, `${path}: 233115 has an <img>`)
+		assert.ok(img[0].includes(`src="${photo}"`), `${path}: its photo`)
+		assert.match(img[0], /\bloading="lazy"/, `${path}: lazy`)
+		assert.match(img[0], /\balt="/, `${path}: alt`)
+	}
+})
+
+test('each list page has one <h1>', () => {
+	for (const [path, html] of listPages()) {
+		assert.strictEqual((html.match(/<h1\b/g) ?? []).length, 1, path)
+	}
+})
+
+test('every field in the search form has a <label>', () => {
+	for (const [path, html] of listPages()) {
+		const form = formOf(html)
+		const controls = [...form.matchAll(/<(input|select)\b[^>]*>/g)]
+		assert.strictEqual(controls.length, 4, `${path}: four fields`)
+		for (const [control] of controls) {
+			const id = control.match(/\bid="([^"]+)"/)?.[1]
+			assert.ok(id, `${path}: ${control} needs an id`)
+			assert.match(
+				form,
+				new RegExp(`<label\\b[^>]*\\bfor="${id}"`),
+				`${path}: #${id} needs a <label for>`,
+			)
 		}
-	},
-)
-
-test(
-	'each list page has one <h1>',
-	{todo: 'both pages render three <h1>s, counting one in an HTML comment'},
-	() => {
-		for (const [path, html] of listPages()) {
-			assert.strictEqual((html.match(/<h1\b/g) ?? []).length, 1, path)
-		}
-	},
-)
-
-test(
-	'every field in the search form has a <label>',
-	{todo: 'the fields have aria-label, not <label>'},
-	() => {
-		for (const [path, html] of listPages()) {
-			const form = formOf(html)
-			const controls = [...form.matchAll(/<(input|select)\b[^>]*>/g)]
-			assert.strictEqual(controls.length, 4, `${path}: four fields`)
-			for (const [control] of controls) {
-				const id = control.match(/\bid="([^"]+)"/)?.[1]
-				assert.ok(id, `${path}: ${control} needs an id`)
-				assert.match(
-					form,
-					new RegExp(`<label\\b[^>]*\\bfor="${id}"`),
-					`${path}: #${id} needs a <label for>`,
-				)
-			}
-		}
-	},
-)
+	}
+})
 
 test('the search form keeps its action, method and field names', () => {
 	for (const [path, html] of listPages()) {
@@ -174,65 +158,53 @@ test('the search form keeps its action, method and field names', () => {
 	}
 })
 
-test(
-	'a search comes back with its choices selected among the existing options',
-	{todo: 'the results page adds an extra option labelled with the raw value'},
-	() => {
-		const form = formOf(pages.prefilled.text)
-		assert.match(form, /<input\b[^>]*name="search"[^>]*value="lake"/)
+test('a search comes back with its choices selected among the existing options', () => {
+	const form = formOf(pages.prefilled.text)
+	assert.match(form, /<input\b[^>]*name="search"[^>]*value="lake"/)
 
-		const chosen = {activities: '100047', state: 'OR', limit: '10'}
-		const labels = {activities: 'ARCHERY', state: 'Oregon', limit: '10'}
-		for (const [name, value] of Object.entries(chosen)) {
-			const select = selectOf(form, name)
-			const options = [...select.matchAll(/<option\b[^>]*>[^<]*<\/option>/g)]
-			const matching = options.filter(([o]) => o.includes(`value="${value}"`))
-			assert.strictEqual(matching.length, 1, `${name}: one ${value} option`)
-			assert.match(matching[0][0], /\bselected\b/, `${name}: it is selected`)
-			assert.ok(matching[0][0].includes(labels[name]), `${name}: its label`)
-			const selected = options.filter(([o]) => /\bselected\b/.test(o))
-			assert.strictEqual(selected.length, 1, `${name}: one selected option`)
-		}
-		// The same select on the index, without a search, has the same options.
-		for (const name of Object.keys(chosen)) {
-			const count = (html) =>
-				(selectOf(formOf(html), name).match(/<option\b/g) ?? []).length
-			assert.strictEqual(
-				count(pages.prefilled.text),
-				count(pages.index.text),
-				`${name}: no extra option`,
-			)
-		}
-	},
-)
+	const chosen = {activities: '100047', state: 'OR', limit: '10'}
+	const labels = {activities: 'ARCHERY', state: 'Oregon', limit: '10'}
+	for (const [name, value] of Object.entries(chosen)) {
+		const select = selectOf(form, name)
+		const options = [...select.matchAll(/<option\b[^>]*>[^<]*<\/option>/g)]
+		const matching = options.filter(([o]) => o.includes(`value="${value}"`))
+		assert.strictEqual(matching.length, 1, `${name}: one ${value} option`)
+		assert.match(matching[0][0], /\bselected\b/, `${name}: it is selected`)
+		assert.ok(matching[0][0].includes(labels[name]), `${name}: its label`)
+		const selected = options.filter(([o]) => /\bselected\b/.test(o))
+		assert.strictEqual(selected.length, 1, `${name}: one selected option`)
+	}
+	// The same select on the index, without a search, has the same options.
+	for (const name of Object.keys(chosen)) {
+		const count = (html) =>
+			(selectOf(formOf(html), name).match(/<option\b/g) ?? []).length
+		assert.strictEqual(
+			count(pages.prefilled.text),
+			count(pages.index.text),
+			`${name}: no extra option`,
+		)
+	}
+})
 
-test(
-	'the map panel counts the facilities it plots',
-	{todo: 'the map has no overlays yet'},
-	() => {
-		for (const [path, html] of listPages()) {
-			assert.ok(mainOf(html).includes('MAP · 3 FACILITIES'), path)
-		}
-	},
-)
+test('the map panel counts the facilities it plots', () => {
+	for (const [path, html] of listPages()) {
+		assert.ok(mainOf(html).includes('MAP · 3 FACILITIES'), path)
+	}
+})
 
 // mapContract.test.js allows both plain or both deferred. Deferred keeps
 // mapbox-gl.js (about 1.85 MB raw) from blocking the landing page's first paint.
-test(
-	'mapbox-gl.js and map.js are both deferred',
-	{todo: 'mapbox-gl.js and map.js are both plain'},
-	() => {
-		for (const [path, html] of listPages()) {
-			for (const file of ['mapbox-gl\\.js', '/js/map\\.js']) {
-				const tag = html.match(
-					new RegExp(`<script\\b[^>]*src="[^"]*${file}"[^>]*>`),
-				)
-				assert.ok(tag, `${path}: ${file}`)
-				assert.match(tag[0], /\sdefer\b/, `${path}: ${file} is deferred`)
-			}
+test('mapbox-gl.js and map.js are both deferred', () => {
+	for (const [path, html] of listPages()) {
+		for (const file of ['mapbox-gl\\.js', '/js/map\\.js']) {
+			const tag = html.match(
+				new RegExp(`<script\\b[^>]*src="[^"]*${file}"[^>]*>`),
+			)
+			assert.ok(tag, `${path}: ${file}`)
+			assert.match(tag[0], /\sdefer\b/, `${path}: ${file} is deferred`)
 		}
-	},
-)
+	}
+})
 
 // Bootstrap 4 and Font Awesome go in the cleanup PR, which must not need to
 // touch these views. The flash list in <main> comes from the layout and uses
@@ -272,17 +244,13 @@ const BOOTSTRAP_OR_FA = new RegExp(
 		')$',
 )
 
-test(
-	'no Bootstrap or Font Awesome class is left in <main>',
-	{todo: 'the list pages still use Bootstrap'},
-	() => {
-		for (const [path, html] of listPages()) {
-			const classes = [...mainOf(html).matchAll(/\bclass="([^"]*)"/g)]
-				.flatMap(([, value]) => value.split(/\s+/))
-				.filter(Boolean)
-			assert.ok(classes.length > 0, `${path}: some classes`)
-			const found = classes.filter((name) => BOOTSTRAP_OR_FA.test(name))
-			assert.deepStrictEqual(found, [], path)
-		}
-	},
-)
+test('no Bootstrap or Font Awesome class is left in <main>', () => {
+	for (const [path, html] of listPages()) {
+		const classes = [...mainOf(html).matchAll(/\bclass="([^"]*)"/g)]
+			.flatMap(([, value]) => value.split(/\s+/))
+			.filter(Boolean)
+		assert.ok(classes.length > 0, `${path}: some classes`)
+		const found = classes.filter((name) => BOOTSTRAP_OR_FA.test(name))
+		assert.deepStrictEqual(found, [], path)
+	}
+})

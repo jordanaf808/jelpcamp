@@ -1,0 +1,144 @@
+<%#
+  The search bar on /campsites and /campsites/search.
+  Locals: searchParams (search only) = {query, activity, state, limit}, from
+  the field names search, activities, state and limit. A search marks its
+  choice among the existing options, so a select never gains an option.
+%>
+<%
+  const params = locals.searchParams || {}
+  const activities = [
+    ['', 'Select Activity'],
+    ['100047', 'ARCHERY'],
+    ['100036', 'BACKPACKING'],
+    ['4', 'AUTO TOURING'],
+    ['5', 'BIKING'],
+    ['6', 'BOATING'],
+    ['9', 'CAMPING'],
+    ['100008', 'CANOEING'],
+    ['7', 'CLIMBING'],
+    ['100049', 'ACCESSIBLE SWIMMING'],
+    ['11', 'FISHING'],
+    ['14', 'HIKING'],
+    ['8', 'HISTORIC & CULTURAL SITE'],
+    ['100048', 'HISTORIC SITES'],
+    ['15', 'HORSEBACK RIDING'],
+    ['109', 'HORSE CAMPING'],
+    ['16', 'HUNTING'],
+    ['100080', 'CAVING'],
+    ['100012', 'CLAM DIGGING'],
+    ['100043', 'AMPHITHEATER'],
+    ['100021', 'ANTIQUING'],
+    ['100064', 'BADMINTON'],
+    ['100010', 'BEACH CAMPING'],
+    ['100011', 'BEACHCOMBING'],
+    ['100009', 'BERRY PICKING'],
+    ['100017', 'BIRDING'],
+    ['100061', 'BIRD WATCHING'],
+    ['100077', 'BOAT RENTAL'],
+    ['100013', 'CRABBING'],
+    ['100060', 'CRAWFISHING'],
+    ['100020', 'CROSS COUNTRY SKIING'],
+    ['100025', 'CULTURAL ACTIVITIES'],
+    ['32', 'DAY USE AREA'],
+    ['100024', 'DISC GOLF'],
+    ['107', 'DIVING'],
+    ['100054', 'DOWNHILL SKIING'],
+    ['100044', 'EDUCATIONAL PROGRAMS'],
+    ['103', 'ENVIRONMENTAL EDUCATION'],
+    ['100026', 'EVENING PROGRAMS'],
+    ['30', 'FIRE LOOKOUTS/CABINS OVERNIGHT'],
+    ['100031', 'GOLD PANNING'],
+    ['100079', 'GOLF'],
+    ['100078', 'GONDOLA RIDES'],
+    ['100027', 'GUIDED INTERPRETIVE WALKS'],
+  ]
+  const states = [
+    ['', 'Select State'],
+    ['AL', 'Alabama'],
+    ['AK', 'Alaska'],
+    ['AZ', 'Arizona'],
+    ['AR', 'Arkansas'],
+    ['CA', 'California'],
+    ['CO', 'Colorado'],
+    ['CT', 'Connecticut'],
+    ['DE', 'Delaware'],
+    ['DC', 'District Of Columbia'],
+    ['FL', 'Florida'],
+    ['GA', 'Georgia'],
+    ['HI', 'Hawaii'],
+    ['ID', 'Idaho'],
+    ['IL', 'Illinois'],
+    ['IN', 'Indiana'],
+    ['IA', 'Iowa'],
+    ['KS', 'Kansas'],
+    ['KY', 'Kentucky'],
+    ['LA', 'Louisiana'],
+    ['ME', 'Maine'],
+    ['MD', 'Maryland'],
+    ['MA', 'Massachusetts'],
+    ['MI', 'Michigan'],
+    ['MN', 'Minnesota'],
+    ['MS', 'Mississippi'],
+    ['MO', 'Missouri'],
+    ['MT', 'Montana'],
+    ['NE', 'Nebraska'],
+    ['NV', 'Nevada'],
+    ['NH', 'New Hampshire'],
+    ['NJ', 'New Jersey'],
+    ['NM', 'New Mexico'],
+    ['NY', 'New York'],
+    ['NC', 'North Carolina'],
+    ['ND', 'North Dakota'],
+    ['OH', 'Ohio'],
+    ['OK', 'Oklahoma'],
+    ['OR', 'Oregon'],
+    ['PA', 'Pennsylvania'],
+    ['RI', 'Rhode Island'],
+    ['SC', 'South Carolina'],
+    ['SD', 'South Dakota'],
+    ['TN', 'Tennessee'],
+    ['TX', 'Texas'],
+    ['UT', 'Utah'],
+    ['VT', 'Vermont'],
+    ['VA', 'Virginia'],
+    ['WA', 'Washington'],
+    ['WV', 'West Virginia'],
+    ['WI', 'Wisconsin'],
+    ['WY', 'Wyoming'],
+  ]
+  const limits = [
+    ['', 'Limit results'],
+    ['10', '10 results'],
+    ['25', '25 results'],
+    ['50', '50 results'],
+  ]
+  const fields = [
+    {id: 'search-activities', name: 'activities', label: 'Activity', options: activities, chosen: params.activity},
+    {id: 'stateSelect', name: 'state', label: 'State', options: states, chosen: params.state},
+    {id: 'limit-results', name: 'limit', label: 'Limit', options: limits, chosen: params.limit},
+  ]
+%>
+<form class="search-bar" action="/campsites/search" method="GET" id="searchForm">
+  <label class="search-bar__field" for="search">
+    <span class="search-bar__label">Keyword</span>
+    <input
+      class="search-bar__control"
+      type="text"
+      name="search"
+      id="search"
+      placeholder="Keyword Search"
+      value="<%= params.query || '' %>"
+    />
+  </label>
+  <% for (const field of fields) { %>
+  <label class="search-bar__field" for="<%= field.id %>">
+    <span class="search-bar__label"><%= field.label %></span>
+    <select class="search-bar__control" name="<%= field.name %>" id="<%= field.id %>">
+      <%_ for (const [value, text] of field.options) { _%>
+      <option value="<%= value %>"<%= value !== '' && value === field.chosen ? ' selected' : '' %>><%= text %></option>
+      <%_ } _%>
+    </select>
+  </label>
+  <% } %>
+  <button class="search-bar__submit" type="submit">Search Recreation.gov →</button>
+</form>

@@ -14,6 +14,11 @@ const map = new mapboxgl.Map({
 	zoom: 2, // starting zoom
 })
 
+map.addControl(
+	new mapboxgl.NavigationControl({showCompass: false}),
+	'top-right',
+)
+
 map.on('load', function () {
 	// Add a new source from our GeoJSON data and
 	// set the 'cluster' option to true. GL-JS will
@@ -34,23 +39,22 @@ map.on('load', function () {
 		source: 'campsites',
 		filter: ['has', 'point_count'],
 		paint: {
-			// Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
-			// with three steps to implement three types of circles:
-			//   * Yellow, 15px circles when point count is less than 5 greater than 2
-			//   * Green, 18px circles when point count is between 5 and 15
-			//   * Pink, 22px circles when point count is greater than or equal to 15
+			// Step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step),
+			// as the legend in views/partials/campsiteMap.ejs shows them:
+			//   * 2 to 9 facilities: olive, radius 18
+			//   * 10 or more: orange, radius 23
 			'circle-color': [
 				'step',
 				['get', 'point_count'],
-				'#51bbd6',
+				'#c9d4a0',
 				2,
-				'#f1f075',
-				5,
-				'#76e07f',
+				'#8a9a4b',
 				10,
-				'#f28cb1',
+				'#e8792b',
 			],
-			'circle-radius': ['step', ['get', 'point_count'], 15, 5, 18, 15, 22],
+			'circle-radius': ['step', ['get', 'point_count'], 18, 10, 23],
+			'circle-stroke-width': 1,
+			'circle-stroke-color': 'rgba(201, 212, 160, 0.4)',
 		},
 	})
 
@@ -64,6 +68,9 @@ map.on('load', function () {
 			'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
 			'text-size': 12,
 		},
+		paint: {
+			'text-color': '#0c0f08',
+		},
 	})
 
 	map.addLayer({
@@ -72,10 +79,10 @@ map.on('load', function () {
 		source: 'campsites',
 		filter: ['!', ['has', 'point_count']],
 		paint: {
-			'circle-color': '#11b4da',
-			'circle-radius': 6,
-			'circle-stroke-width': 1,
-			'circle-stroke-color': '#fff',
+			'circle-color': '#c9d4a0',
+			'circle-radius': 7,
+			'circle-stroke-width': 2,
+			'circle-stroke-color': '#0c0f08',
 		},
 	})
 
@@ -119,32 +126,33 @@ map.on('load', function () {
 			coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
 		}
 
+		// Styled in public/stylesheets/campsites.css. data-campsites is lower
+		// case, so the CSS sets the name and type in capitals.
 		const content = document.createElement('div')
 
-		const title = document.createElement('b')
-		title.style.textTransform = 'capitalize'
+		const title = document.createElement('p')
+		title.className = 'map-popup__name'
 		title.textContent = name
-		content.append(title, document.createElement('hr'))
 
-		const loc = document.createElement('div')
-		loc.textContent =
-			'located at longitude: ' +
-			geo[0].toFixed(2) +
-			'°, latitude: ' +
-			geo[1].toFixed(2) +
-			'°'
-		const kind = document.createElement('div')
-		kind.textContent = 'Type: ' + type
-		content.append(loc, kind, document.createElement('hr'))
+		// e.g. "campground · 48.80°N 113.67°W"
+		const meta = document.createElement('p')
+		meta.className = 'map-popup__meta'
+		meta.textContent =
+			type +
+			' · ' +
+			Math.abs(geo[1]).toFixed(2) +
+			(geo[1] < 0 ? '°S ' : '°N ') +
+			Math.abs(geo[0]).toFixed(2) +
+			(geo[0] < 0 ? '°W' : '°E')
 
 		const link = document.createElement('a')
 		// encodeURIComponent keeps a FacilityID from breaking out of the path.
 		link.href = '/campsites/show/' + encodeURIComponent(id)
-		link.className = 'btn btn-outline-primary btn-sm show-btn mapbox-btn'
-		link.textContent = 'More Information.'
-		content.append(link)
+		link.className = 'map-popup__link'
+		link.textContent = 'More information →'
+		content.append(title, meta, link)
 
-		new mapboxgl.Popup()
+		new mapboxgl.Popup({className: 'map-popup', maxWidth: '260px'})
 			.setLngLat(coordinates)
 			.setDOMContent(content)
 			.addTo(map)
