@@ -72,114 +72,79 @@ const rows = (html) =>
 			.trim(),
 	)
 
-test(
-	'the favorites page shows each favorite with its state and rec area',
-	{todo: 'redesign not built yet'},
-	async () => {
-		await favorite(11)
-		const res = await agent.get(`/user/${user._id}`)
-		assert.strictEqual(res.status, 200)
-		const [row] = rows(res.text)
-		assert.match(row, /^1 Full Record Camp Siuslaw National Forest OR/)
-	},
-)
+test('the favorites page shows each favorite with its state and rec area', async () => {
+	await favorite(11)
+	const res = await agent.get(`/user/${user._id}`)
+	assert.strictEqual(res.status, 200)
+	const [row] = rows(res.text)
+	assert.match(row, /^1 Full Record Camp Siuslaw National Forest OR/)
+})
 
-test(
-	'the favorites page shows a dash for a missing state or rec area',
-	{todo: 'redesign not built yet'},
-	async () => {
-		await favorite(12)
-		const res = await agent.get(`/user/${user._id}`)
-		assert.match(rows(res.text)[0], /^1 Old Record Camp — —/)
-	},
-)
+test('the favorites page shows a dash for a missing state or rec area', async () => {
+	await favorite(12)
+	const res = await agent.get(`/user/${user._id}`)
+	assert.match(rows(res.text)[0], /^1 Old Record Camp — —/)
+})
 
-test(
-	'the favorites page numbers rows from 1 and keeps the remove form',
-	{todo: 'redesign not built yet'},
-	async () => {
-		await favorite(11, 12)
-		const res = await agent.get(`/user/${user._id}`)
-		const found = rows(res.text)
-		assert.strictEqual(found.length, 2)
-		assert.match(found[1], /^2 /)
-		assert.match(
-			res.text,
-			new RegExp(`action="/user/${user._id}/12\\?_method=DELETE"`),
-		)
-		assert.match(res.text, /href="\/campsites\/show\/11"/)
-	},
-)
+test('the favorites page numbers rows from 1 and keeps the remove form', async () => {
+	await favorite(11, 12)
+	const res = await agent.get(`/user/${user._id}`)
+	const found = rows(res.text)
+	assert.strictEqual(found.length, 2)
+	assert.match(found[1], /^2 /)
+	assert.match(
+		res.text,
+		new RegExp(`action="/user/${user._id}/12\\?_method=DELETE"`),
+	)
+	assert.match(res.text, /href="\/campsites\/show\/11"/)
+})
 
-test(
-	'the favorites page shows the favorites count and the comment count',
-	{todo: 'redesign not built yet'},
-	async () => {
-		await favorite(11, 12)
-		const res = await agent.get(`/user/${user._id}`)
-		assert.strictEqual(stat(res.text, 'Favorites'), '2')
-		assert.strictEqual(stat(res.text, 'Comments'), '2')
-	},
-)
+test('the favorites page shows the favorites count and the comment count', async () => {
+	await favorite(11, 12)
+	const res = await agent.get(`/user/${user._id}`)
+	assert.strictEqual(stat(res.text, 'Favorites'), '2')
+	assert.strictEqual(stat(res.text, 'Comments'), '2')
+})
 
-test(
-	'the favorites page shows an empty state with no favorites',
-	{todo: 'redesign not built yet'},
-	async () => {
-		await favorite()
-		const res = await agent.get(`/user/${user._id}`)
-		assert.deepStrictEqual(rows(res.text), [])
-		assert.match(res.text, /class="account-empty"/)
-		assert.strictEqual(stat(res.text, 'Favorites'), '0')
-	},
-)
+test('the favorites page shows an empty state with no favorites', async () => {
+	await favorite()
+	const res = await agent.get(`/user/${user._id}`)
+	assert.deepStrictEqual(rows(res.text), [])
+	assert.match(res.text, /class="account-empty"/)
+	assert.strictEqual(stat(res.text, 'Favorites'), '0')
+})
 
 // Every field needs a <label>. This finds each input's id and looks for a
 // label that names it.
 for (const path of ['/login', '/register']) {
-	test(
-		`${path} ties a label to each field`,
-		{todo: 'redesign not built yet'},
-		async () => {
-			const res = await request(app).get(path)
-			const inputs = [...res.text.matchAll(/<input\b[^>]*>/g)]
-				.map((m) => m[0])
-				.filter((tag) => !/type="submit"/.test(tag))
-			assert.strictEqual(inputs.length, 2)
-			for (const tag of inputs) {
-				const id = tag.match(/\bid="([^"]+)"/)?.[1]
-				assert.ok(id, `${tag} needs an id`)
-				assert.match(res.text, new RegExp(`<label\\b[^>]*for="${id}"`), id)
-			}
-		},
-	)
+	test(`${path} ties a label to each field`, async () => {
+		const res = await request(app).get(path)
+		const inputs = [...res.text.matchAll(/<input\b[^>]*>/g)]
+			.map((m) => m[0])
+			.filter((tag) => !/type="submit"/.test(tag))
+		assert.strictEqual(inputs.length, 2)
+		for (const tag of inputs) {
+			const id = tag.match(/\bid="([^"]+)"/)?.[1]
+			assert.ok(id, `${tag} needs an id`)
+			assert.match(res.text, new RegExp(`<label\\b[^>]*for="${id}"`), id)
+		}
+	})
 }
 
-test(
-	'the new-comment page uses a labelled textarea',
-	{todo: 'redesign not built yet'},
-	async () => {
-		const res = await agent.get('/campsites/13/comments/new')
-		assert.match(res.text, /<textarea\b[^>]*name="comment\[text\]"/)
-		assert.match(res.text, /<label\b[^>]*for="comment-text"/)
-	},
-)
+test('the new-comment page uses a labelled textarea', async () => {
+	const res = await agent.get('/campsites/13/comments/new')
+	assert.match(res.text, /<textarea\b[^>]*name="comment\[text\]"/)
+	assert.match(res.text, /<label\b[^>]*for="comment-text"/)
+})
 
-test(
-	'the edit-comment page validates, has no back link, and links to the campsite',
-	{todo: 'redesign not built yet'},
-	async () => {
-		const res = await agent.get(`/campsites/13/comments/${comment._id}/edit`)
-		assert.strictEqual(res.status, 200)
-		assert.match(res.text, /<form\b[^>]*class="[^"]*validated-form/)
-		assert.match(res.text, /<script src="\/js\/validateForms\.js"><\/script>/)
-		assert.match(
-			res.text,
-			/<textarea\b[^>]*name="comment\[text\]"[^>]*required/,
-		)
-		assert.match(res.text, /<label\b[^>]*for="comment-text"/)
-		assert.match(res.text, /_method=PUT/)
-		assert.doesNotMatch(res.text, /data-back/)
-		assert.match(res.text, /href="\/campsites\/show\/13"/)
-	},
-)
+test('the edit-comment page validates, has no back link, and links to the campsite', async () => {
+	const res = await agent.get(`/campsites/13/comments/${comment._id}/edit`)
+	assert.strictEqual(res.status, 200)
+	assert.match(res.text, /<form\b[^>]*class="[^"]*validated-form/)
+	assert.match(res.text, /<script src="\/js\/validateForms\.js"><\/script>/)
+	assert.match(res.text, /<textarea\b[^>]*name="comment\[text\]"[^>]*required/)
+	assert.match(res.text, /<label\b[^>]*for="comment-text"/)
+	assert.match(res.text, /_method=PUT/)
+	assert.doesNotMatch(res.text, /data-back/)
+	assert.match(res.text, /href="\/campsites\/show\/13"/)
+})

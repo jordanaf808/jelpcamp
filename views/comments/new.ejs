@@ -1,33 +1,21 @@
-<%- include("../partials/headerBack") %>
+<%- include("../partials/header", {stylesheets: ['/stylesheets/account.css']}) %>
 
-<div class="container-fluid text-center height-fix main-body">
-  <div class="col-12 m-3">
-    <!-- <div class="container">
-	<div class="row"> -->
+<div class="account-page">
+  <div class="account-card account-card--wide">
+    <span class="eyebrow">New comment</span>
+    <h1 class="account-card__title">Add a comment to <%= campsite.name %></h1>
 
-    <h1 class="text-white">Add A New Comment to <%= campsite.name %></h1>
-    <!--Put an input form in a div with css style to group them together  -->
-    <div style="width: 30%; margin: 50px auto">
-      <form action="/campsites/<%= campsite.id %>/comments/" method="POST" class="validated-form" novalidate>
-        <!-- Put each input in a div.formgroup to give a little spacing between them	 -->
-        <div class="form-group">
-          <input
-            class="form-control"
-            type="text"
-            name="comment[text]"
-            placeholder="Comment"
-            required
-          />
-        </div>
-        <div class="form-group">
-          <button class="btn btn-md btn-primary btn-block">
-            Submit Comment!
-          </button>
-        </div>
-      </form>
-      <!-- Keep this link in the div to group this with the input -->
-      <!-- <a href="/campsites">Go Back To campsites.</a> -->
-    </div>
+    <form class="account-form validated-form" action="/campsites/<%= campsite.id %>/comments/" method="POST" novalidate>
+      <div class="field">
+        <label class="field__label" for="comment-text">Comment</label>
+        <textarea class="input" id="comment-text" name="comment[text]" rows="5" minlength="10" maxlength="300" required></textarea>
+        <span class="field__error">Write 10 to 300 characters.</span>
+      </div>
+      <div class="account-form__actions">
+        <button class="button" type="submit">Submit comment</button>
+        <a class="account-form__cancel" href="/campsites/show/<%= campsite.id %>">Cancel</a>
+      </div>
+    </form>
   </div>
 </div>
 <script src="/js/validateForms.js"></script>
