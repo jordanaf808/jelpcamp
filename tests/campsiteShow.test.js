@@ -4,9 +4,11 @@
 // GET /facilities/233115?full=true, captured 2026-10-02.
 const test = require('node:test')
 const assert = require('node:assert')
+const mongoose = require('mongoose')
 const request = require('supertest')
 const nock = require('nock')
 const setup = require('./setup')
+const Campsite = require('../models/campsite')
 const User = require('../models/user')
 const facility = require('./fixtures/ridb-facility-233115-full.json')
 
@@ -203,4 +205,105 @@ test("IS_PULL_REQUEST 'false' is not a preview: the page uses MAPS_API_KEY", asy
 	const res = await request(app).get('/campsites/show/7')
 	assert.strictEqual(res.status, 200)
 	assert.strictEqual(mapsKeyOn(res), 'production-maps-key')
+})
+
+// The favorites page lists each saved campsite's state and rec area, and reads
+// them from the Campsite document, not from RIDB.
+test('a first visit stores the campsite with its state and rec area', async () => {
+	nock(RIDB)
+		.get('/api/v1/facilities/8')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '8'})
+
+	const res = await request(app).get('/campsites/show/8')
+	assert.strictEqual(res.status, 200)
+
+	const stored = await Campsite.findOne({id: 8}).lean()
+	assert.strictEqual(stored.state, 'OR')
+	assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
+})
+
+// Every write mongoose sends to the campsites collection while fn runs.
+const campsiteWritesDuring = async (fn) => {
+	const writes = []
+	mongoose.set('debug', (collection, method) => {
+		if (
+			collection === 'campsites' &&
+			/^(insert|update|replace|findOneAnd|bulkWrite|delete)/.test(method)
+		) {
+			writes.push(method)
+		}
+	})
+	try {
+		await fn()
+	} finally {
+		mongoose.set('debug', false)
+	}
+	return writes
+}
+
+// Campsites saved before the redesign have neither field.
+test('a visit fills in state and rec area on a campsite stored without them', async () => {
+	await Campsite.create({
+		name: facility.FacilityName,
+		id: 9,
+		geometry: facility.GEOJSON,
+	})
+	nock(RIDB)
+		.get('/api/v1/facilities/9')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '9'})
+
+	const writes = await campsiteWritesDuring(async () => {
+		const res = await request(app).get('/campsites/show/9')
+		assert.strictEqual(res.status, 200)
+	})
+	// One update of the two fields. This also shows the spy sees writes.
+	assert.deepStrictEqual(writes, ['updateOne'])
+
+	const stored = await Campsite.findOne({id: 9}).lean()
+	assert.strictEqual(stored.state, 'OR')
+	assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
+})
+
+test('a visit writes nothing to a campsite that already has state and rec area', async () => {
+	await Campsite.create({
+		name: facility.FacilityName,
+		id: 10,
+		geometry: facility.GEOJSON,
+		state: 'XX',
+		recAreaName: 'Stored Area',
+	})
+	nock(RIDB)
+		.get('/api/v1/facilities/10')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '10'})
+
+	const writes = await campsiteWritesDuring(async () => {
+		const res = await request(app).get('/campsites/show/10')
+		assert.strictEqual(res.status, 200)
+	})
+	assert.deepStrictEqual(writes, [])
+
+	const stored = await Campsite.findOne({id: 10}).lean()
+	assert.strictEqual(stored.state, 'XX')
+	assert.strictEqual(stored.recAreaName, 'Stored Area')
+})
+
+// The fill-in writes only its two fields. save() validates the whole document,
+// so an old one that fails today's schema would turn the page into a 500. This
+// one has no geometry, which the schema requires.
+test("a campsite that fails today's schema still gets its page and its fields", async () => {
+	await Campsite.collection.insertOne({name: facility.FacilityName, id: 11})
+	nock(RIDB)
+		.get('/api/v1/facilities/11')
+		.query({full: 'true'})
+		.reply(200, {...facility, FacilityID: '11'})
+
+	const res = await request(app).get('/campsites/show/11')
+	assert.strictEqual(res.status, 200)
+
+	const stored = await Campsite.findOne({id: 11}).lean()
+	assert.strictEqual(stored.state, 'OR')
+	assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
 })

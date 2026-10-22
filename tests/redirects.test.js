@@ -57,10 +57,10 @@ test('a rejected comment returns to the referring page on this site', async () =
 	assert.strictEqual(res.headers.location, '/campsites/1/comments/new')
 })
 
-test('a rejected comment sent from another site goes to /, not back to that site', async () => {
+test('a rejected comment sent from another site goes to /campsites, not back to that site', async () => {
 	const res = await postInvalidComment('https://evil.example/phish')
 	assert.strictEqual(res.status, 302)
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
 
 test('pages send Referrer-Policy: same-origin, so browsers include a same-site Referer', async () => {
@@ -102,5 +102,5 @@ test('logging in after a rejected POST lands on a page, not on the POST url', as
 test('a comment post with no form body is rejected, not a 500', async () => {
 	const res = await agent.post('/campsites/1/comments').set('Host', HOST)
 	assert.strictEqual(res.status, 302)
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })

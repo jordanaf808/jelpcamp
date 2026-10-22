@@ -2,17 +2,14 @@ const express = require('express')
 const passport = require('passport')
 const {errors: plmErrors} = require('passport-local-mongoose')
 const User = require('../models/user')
-const Campground = require('../models/campground')
 // const mapboxgl = require('mapbox-gl/dist/mapbox-gl.js');
 const router = express.Router()
 const {storeReturnTo, validateUser} = require('../middleware')
 const {loginLimiter, registerLimiter} = require('../middleware/rateLimiters')
 
-router.get('/', async (req, res) => {
-	// 	get all campgrounds from DB for background photos.
-	const allCampgrounds = await Campground.find()
-	// console.dir(allCampgrounds);
-	res.render('landing', {campgrounds: allCampgrounds})
+// The campsites list is the landing page.
+router.get('/', (req, res) => {
+	res.redirect('/campsites')
 })
 
 // ========================

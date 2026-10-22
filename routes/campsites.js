@@ -8,6 +8,7 @@ const User = require('../models/user')
 
 const mapsKey = require('../utils/mapsKey')
 const mutateData = require('../utils/mutateData')
+const {placeOf} = mutateData
 const sanitizeDescription = require('../utils/sanitizeDescription')
 
 // import Axios Cache Interceptor
@@ -34,7 +35,8 @@ axios.defaults.headers = {
 // *** Try to use campsite data in mongoDB to populate the homepage map and maybe cards... maybe need description data not in mongoDB.
 
 router.get('/', async (req, res) => {
-	const params = {query: 'hiking', limit: 25, full: 'false', sort: 'Date'} // state: "CA"
+	// full: true adds each facility's photos, address and parent rec area.
+	const params = {query: 'hiking', limit: 25, full: true, sort: 'Date'} // state: "CA"
 	const response = await axios.get('/facilities', {
 		params,
 		cache: {ttl: 1800000},
@@ -59,7 +61,9 @@ router.get('/search', async (req, res) => {
 		limit,
 		sort: 'Date',
 	}
-	const response = await axios.get('/facilities', {params: searchParams})
+	const response = await axios.get('/facilities', {
+		params: {...searchParams, full: true},
+	})
 	console.log('search response status: ', response.status)
 	const data = response.data.RECDATA
 	const {recData, mapData} = mutateData(data)
@@ -97,10 +101,12 @@ router.get('/show/:id', async (req, res) => {
 		// and link. A facility can also stand alone, with no parent.
 		parentRecArea: recData.RECAREA[0] ?? {},
 	}
+	const place = placeOf(recData)
 	const newCampsite = {
 		name: recData.FacilityName,
 		id: id,
 		geometry: recData.GEOJSON,
+		...place,
 	}
 	// Campground.findbyid if no create, if yes populate
 	const foundCampsite = await Campsite.findOne({id: id})
@@ -121,6 +127,20 @@ router.get('/show/:id', async (req, res) => {
 			})
 		}
 	} else {
+		// Campsites saved before state and recAreaName existed lack them. An
+		// update of just those fields, not save(): save() validates the whole
+		// document, so an old campsite that fails today's schema would turn a
+		// page that renders into a 500.
+		const missing = Object.fromEntries(
+			Object.entries(place).filter(
+				([field, value]) => value && !foundCampsite[field],
+			),
+		)
+		if (Object.keys(missing).length) {
+			await Campsite.updateOne({_id: foundCampsite._id}, {$set: missing})
+			// So this render sees them too.
+			foundCampsite.set(missing)
+		}
 		if (req.isAuthenticated()) {
 			const user = req.user
 			const foundUser = await User.findById(user._id)

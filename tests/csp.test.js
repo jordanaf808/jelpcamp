@@ -13,6 +13,7 @@ const request = require('supertest')
 const nock = require('nock')
 const setup = require('./setup')
 const facility = require('./fixtures/ridb-facility-233115-full.json')
+const list = require('./fixtures/ridb-facilities-list-full.json')
 
 const RIDB = 'https://ridb.recreation.gov'
 const PUBLIC_CDNS = ['https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com']
@@ -74,13 +75,16 @@ test('script-src allows no public CDN as a whole host', async () => {
 	)
 })
 
-// One page per set of script tags: landing.ejs has its own, /login gets the
-// footer's, and the campsite page adds headerBack's and its own.
-for (const path of ['/', '/login']) {
-	test(`every external script on ${path} is allowed by script-src`, async () => {
-		assertScriptsAllowed(await request(app).get(path))
-	})
-}
+// One page per set of script tags: /login gets the layout's, /campsites adds
+// Mapbox, and the campsite page adds the Google map's and the Flickr embed.
+test('every external script on /login is allowed by script-src', async () => {
+	assertScriptsAllowed(await request(app).get('/login'))
+})
+
+test('every external script on /campsites is allowed by script-src', async () => {
+	nock(RIDB).get('/api/v1/facilities').query(true).reply(200, list)
+	assertScriptsAllowed(await request(app).get('/campsites'))
+})
 
 test('every external script on a campsite page is allowed by script-src', async () => {
 	nock(RIDB)

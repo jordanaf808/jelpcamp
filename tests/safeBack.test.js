@@ -25,29 +25,29 @@ test('returns to the referring page on this site, query string included', async 
 	assert.strictEqual(res.headers.location, '/campsites/show/1?tab=comments')
 })
 
-test('falls back to / when there is no referrer', async () => {
+test('falls back to /campsites when there is no referrer', async () => {
 	const res = await back()
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
 
-test('falls back to / when the referrer is another site', async () => {
+test('falls back to /campsites when the referrer is another site', async () => {
 	const res = await back('https://evil.example/login')
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
 
-test('falls back to / for a same-site referrer with a protocol-relative path', async () => {
+test('falls back to /campsites for a same-site referrer with a protocol-relative path', async () => {
 	const res = await back(`http://${HOST}//evil.example`)
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
 
-test('falls back to / when the referrer is not a URL', async () => {
+test('falls back to /campsites when the referrer is not a URL', async () => {
 	const res = await back('not a url')
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
 
 // Browsers keep the original Referer when they follow a redirect, so a GET
 // answered with its own url would arrive again unchanged, forever.
-test('falls back to / when a GET is referred by the page it is already on', async () => {
+test('falls back to /campsites when a GET is referred by the page it is already on', async () => {
 	const res = await back(`http://${HOST}/back`)
-	assert.strictEqual(res.headers.location, '/')
+	assert.strictEqual(res.headers.location, '/campsites')
 })
