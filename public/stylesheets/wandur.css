@@ -24,8 +24,10 @@
 	--body: #d6d4c4;
 	--body-2: #c4c2b1;
 	--muted: #a3a58c;
-	/* Fails AA as text on --panel (3.39:1). The design's photo placeholder label. */
-	--faint: #6f735c;
+	/* The quietest text, below --muted: the photo placeholder's label. The
+	   design's #6f735c was 3.39:1 on --panel. This keeps its hue and saturation
+	   and is 5.02:1 on --panel, 4.50:1 on the placeholder's stripes. */
+	--faint: #8b9074;
 	--sage: #c9d4a0;
 	--olive: #8a9a4b;
 	--accent: #e8792b;
