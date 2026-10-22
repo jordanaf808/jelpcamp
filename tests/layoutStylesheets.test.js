@@ -22,29 +22,21 @@ test('without stylesheets, the head links only the shared ones', async () => {
 	assert.strictEqual(links.at(-1), '/stylesheets/wandur.css')
 })
 
-test(
-	'each stylesheet a view passes is linked in <head>, in order, after wandur.css',
-	{todo: 'the layout does not read `stylesheets` yet'},
-	async () => {
-		const links = stylesheets(
-			await render({
-				stylesheets: ['/stylesheets/one.css', '/stylesheets/two.css'],
-			}),
-		)
-		assert.deepStrictEqual(links.slice(-3), [
-			'/stylesheets/wandur.css',
-			'/stylesheets/one.css',
-			'/stylesheets/two.css',
-		])
-	},
-)
+test('each stylesheet a view passes is linked in <head>, in order, after wandur.css', async () => {
+	const links = stylesheets(
+		await render({
+			stylesheets: ['/stylesheets/one.css', '/stylesheets/two.css'],
+		}),
+	)
+	assert.deepStrictEqual(links.slice(-3), [
+		'/stylesheets/wandur.css',
+		'/stylesheets/one.css',
+		'/stylesheets/two.css',
+	])
+})
 
-test(
-	'a stylesheet href is escaped',
-	{todo: 'the layout does not read `stylesheets` yet'},
-	async () => {
-		const html = await render({stylesheets: ['/x.css"><script>']})
-		assert.ok(!html.includes('/x.css"><script>'))
-		assert.ok(head(html).includes('href="/x.css&#34;&gt;&lt;script&gt;"'))
-	},
-)
+test('a stylesheet href is escaped', async () => {
+	const html = await render({stylesheets: ['/x.css"><script>']})
+	assert.ok(!html.includes('/x.css"><script>'))
+	assert.ok(head(html).includes('href="/x.css&#34;&gt;&lt;script&gt;"'))
+})
