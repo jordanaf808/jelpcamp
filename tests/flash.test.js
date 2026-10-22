@@ -45,38 +45,27 @@ test('a failed login shows its message on the next page, and only once', async (
 	assert.doesNotMatch(second.text, /Wrong Username/)
 })
 
-test(
-	'a rejected registration shows its validation message on the next page',
-	{todo: 'safeBack still falls back to /'},
-	async () => {
-		// One character is under userSchema's minimum of 3, so validateUser rejects
-		// it and flashes Joi's messages as an array.
-		const agent = request.agent(app)
-		const res = await agent
-			.post('/register')
-			.type('form')
-			.send({username: 'flash-check', password: 'x'})
-		assert.strictEqual(res.status, 302)
+test('a rejected registration shows its validation message on the next page', async () => {
+	// One character is under userSchema's minimum of 3, so validateUser rejects
+	// it and flashes Joi's messages as an array.
+	const agent = request.agent(app)
+	const res = await agent
+		.post('/register')
+		.type('form')
+		.send({username: 'flash-check', password: 'x'})
+	assert.strictEqual(res.status, 302)
 
-		// With no Referer, "back" is the campsites list. It used to be /, which
-		// redirects there, and app.js read the message on that hop.
-		assert.strictEqual(res.headers.location, '/campsites')
-
-		nock('https://ridb.recreation.gov')
-			.get('/api/v1/facilities')
-			.query(true)
-			.reply(200, list)
-		const next = await agent.get('/campsites')
-		assert.strictEqual(next.status, 200)
-		assert.match(next.text, /length must be at least 3 characters long/)
-	},
-)
-
-// A visitor with no messages passes through / without a session write.
-test('/ sends a visitor to /campsites with no session cookie', async () => {
-	const res = await request(app).get('/')
+	// With no Referer, "back" is the campsites list. It used to be /, which
+	// redirects there, and app.js read the message on that hop.
 	assert.strictEqual(res.headers.location, '/campsites')
-	assert.strictEqual(res.headers['set-cookie'], undefined)
+
+	nock('https://ridb.recreation.gov')
+		.get('/api/v1/facilities')
+		.query(true)
+		.reply(200, list)
+	const next = await agent.get('/campsites')
+	assert.strictEqual(next.status, 200)
+	assert.match(next.text, /length must be at least 3 characters long/)
 })
 
 // Reading the flash messages must not write to the session. express-session

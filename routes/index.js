@@ -8,14 +8,7 @@ const {storeReturnTo, validateUser} = require('../middleware')
 const {loginLimiter, registerLimiter} = require('../middleware/rateLimiters')
 
 // The campsites list is the landing page.
-//
-// safeBack() falls back to /, so messages often arrive here. app.js has
-// already read them out of the session for this request, so they are queued
-// again for /campsites, or this hop would drop them.
 router.get('/', (req, res) => {
-	for (const type of ['error', 'success']) {
-		for (const message of res.locals[type]) req.flash(type, message)
-	}
 	res.redirect('/campsites')
 })
 

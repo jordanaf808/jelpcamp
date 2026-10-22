@@ -57,15 +57,11 @@ test('a rejected comment returns to the referring page on this site', async () =
 	assert.strictEqual(res.headers.location, '/campsites/1/comments/new')
 })
 
-test(
-	'a rejected comment sent from another site goes to /campsites, not back to that site',
-	{todo: 'safeBack still falls back to /'},
-	async () => {
-		const res = await postInvalidComment('https://evil.example/phish')
-		assert.strictEqual(res.status, 302)
-		assert.strictEqual(res.headers.location, '/campsites')
-	},
-)
+test('a rejected comment sent from another site goes to /campsites, not back to that site', async () => {
+	const res = await postInvalidComment('https://evil.example/phish')
+	assert.strictEqual(res.status, 302)
+	assert.strictEqual(res.headers.location, '/campsites')
+})
 
 test('pages send Referrer-Policy: same-origin, so browsers include a same-site Referer', async () => {
 	const res = await agent.get('/login')
@@ -103,12 +99,8 @@ test('logging in after a rejected POST lands on a page, not on the POST url', as
 
 // Nothing parses a body for this request, so req.body is {} on Express 4 and
 // undefined on Express 5. validateComment has to reject it either way.
-test(
-	'a comment post with no form body is rejected, not a 500',
-	{todo: 'safeBack still falls back to /'},
-	async () => {
-		const res = await agent.post('/campsites/1/comments').set('Host', HOST)
-		assert.strictEqual(res.status, 302)
-		assert.strictEqual(res.headers.location, '/campsites')
-	},
-)
+test('a comment post with no form body is rejected, not a 500', async () => {
+	const res = await agent.post('/campsites/1/comments').set('Host', HOST)
+	assert.strictEqual(res.status, 302)
+	assert.strictEqual(res.headers.location, '/campsites')
+})
