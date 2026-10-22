@@ -36,6 +36,10 @@
     <% } %>
     <link rel="stylesheet" href="/stylesheets/main.css" />
     <link rel="stylesheet" href="/stylesheets/wandur.css" />
+    <%# A view adds its own: include("../partials/header", {stylesheets: [...]}) %>
+    <% for (const href of locals.stylesheets || []) { %>
+    <link rel="stylesheet" href="<%= href %>" />
+    <% } %>
     <%# back.js serves the "Go Back." link on the edit-comment page. %>
     <script src="/js/back.js" defer></script>
     <script src="/js/nav.js" defer></script>
