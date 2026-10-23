@@ -25,7 +25,9 @@
 <section class="account-body" aria-labelledby="favorites-heading">
   <div class="account-body__head">
     <h2 class="account-body__title" id="favorites-heading">My favorite campgrounds</h2>
+    <% if (user.favorites.length > 0) { %>
     <a class="account-body__more" href="/campsites">Find more campsites →</a>
+    <% } %>
   </div>
 
   <% if (user.favorites.length === 0) { %>
@@ -38,16 +40,16 @@
     <thead>
       <tr>
         <th scope="col" class="account-table__no">No.</th>
-        <th scope="col">Facility name</th>
-        <th scope="col">Located in</th>
-        <th scope="col">State</th>
+        <th scope="col" class="account-table__name">Facility name</th>
+        <th scope="col" class="account-table__area">Located in</th>
+        <th scope="col" class="account-table__state">State</th>
         <th scope="col" class="account-table__actions"><span class="account-visually-hidden">Actions</span></th>
       </tr>
     </thead>
     <tbody>
       <% user.favorites.forEach((favorite, index) => { %>
       <tr class="account-row">
-        <td class="account-row__no" data-label="No."><%= index + 1 %></td>
+        <td class="account-row__no"><%= index + 1 %></td>
         <th scope="row" class="account-row__name"><%= favorite.name %></th>
         <td class="account-row__area"><%= favorite.recAreaName || '—' %></td>
         <td class="account-row__state"><%= favorite.state || '—' %></td>
