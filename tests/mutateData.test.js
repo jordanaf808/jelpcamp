@@ -100,3 +100,61 @@ test('descriptions are still sanitized', () => {
 	]).recData
 	assert.strictEqual(item.FacilityDescription, '<p>ok</p>')
 })
+
+// The cards show summary, a plain-text version of the description. The
+// sanitized HTML keeps RIDB's links, which the card's 3-line clamp would hide
+// while Tab still reached them.
+const summaryOf = (html) =>
+	mutateData([{...source('233115'), FacilityDescription: html}]).recData[0]
+		.summary
+
+test('summary is the description as plain text, with no tags', () => {
+	assert.strictEqual(
+		facility('900001').summary,
+		'A trailhead with no photos and no parent area.',
+	)
+	const summary = facility('233115').summary
+	assert.strictEqual(typeof summary, 'string')
+	assert.doesNotMatch(summary, /<\/?[a-z][^>]*>/i)
+	assert.match(summary, /^One of Eastern Oregon’s largest/)
+})
+
+test('summary drops links, keeping their text', () => {
+	assert.strictEqual(
+		summaryOf('<p>See <a href="https://example.com">this site</a>.</p>'),
+		'See this site.',
+	)
+})
+
+test('summary puts a space between blocks and drops the headings', () => {
+	assert.strictEqual(
+		summaryOf(
+			'<h2>Overview</h2><p>One.</p><p>Two<br>lines.</p><ul><li>a</li><li>b</li></ul>',
+		),
+		'One. Two lines. a b',
+	)
+})
+
+// The view escapes summary with <%= %>, so an entity left in it would show
+// as text, e.g. "&amp;amp;".
+test('summary decodes entities, so the view escapes them only once', () => {
+	assert.strictEqual(
+		summaryOf(
+			'<p>Fish &amp; hike &lt;2 miles&gt; &quot;Union&quot; caf&eacute;</p>',
+		),
+		'Fish & hike <2 miles> "Union" café',
+	)
+})
+
+test('summary is empty with no description', () => {
+	assert.strictEqual(summaryOf(undefined), '')
+	assert.strictEqual(summaryOf(''), '')
+})
+
+test('FacilityDescription stays the sanitized HTML', () => {
+	const sanitizeDescription = require('../utils/sanitizeDescription')
+	assert.strictEqual(
+		facility('233115').FacilityDescription,
+		sanitizeDescription(source('233115').FacilityDescription),
+	)
+})

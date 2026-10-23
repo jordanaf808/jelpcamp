@@ -1,14 +1,25 @@
-<%- include("./partials/header") %>
+<%- include("./partials/header", {stylesheets: ['/stylesheets/account.css']}) %>
 
-<div class="container-fluid m-0 text-center height-fix py-5">
-  <div class="col-12 m-3">
-    <h1>Login.</h1>
+<div class="account-page">
+  <div class="account-card">
+    <span class="eyebrow">Welcome back</span>
+    <h1 class="account-card__title">Login</h1>
 
-    <form action="/login" method="POST" class='validated-form' novalidate>
-      <input type="text" id="username" name="username" placeholder="username" required/>
-      <input type="password" id="password" name="password" placeholder="password" required/>
-      <input type="submit" value="Login!" />
+    <form class="account-form validated-form" action="/login" method="POST" novalidate>
+      <div class="field">
+        <label class="field__label" for="username">Username</label>
+        <input class="input" type="text" id="username" name="username" autocomplete="username" required />
+        <span class="field__error">Enter your username.</span>
+      </div>
+      <div class="field">
+        <label class="field__label" for="password">Password</label>
+        <input class="input" type="password" id="password" name="password" autocomplete="current-password" required />
+        <span class="field__error">Enter your password.</span>
+      </div>
+      <button class="button" type="submit">Login</button>
     </form>
+
+    <p class="account-card__alt">New here? <a href="/register">Create an account</a></p>
   </div>
 </div>
 <script src="/js/validateForms.js"></script>

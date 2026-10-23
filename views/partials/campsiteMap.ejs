@@ -1,0 +1,18 @@
+<%#
+  Local: mapData, the features map.js plots. map.js reads #map's data attributes as soon as it runs, so #map comes
+  first. It is deferred, like mapbox-gl.js in the layout's <head>, so it still
+  runs after mapbox-gl.js (tests/mapContract.test.js).
+  The count and the legend are HTML laid over the map, not part of its style.
+%>
+<section class="map-panel" aria-label="Map of facilities">
+  <div id="map"
+  data-token="<%= process.env.MAPBOX_API_KEY %>"
+  data-campsites='<%= JSON.stringify({features: mapData}).toLowerCase() %>'></div>
+  <p class="map-panel__count">MAP · <%= mapData.length %> <%= mapData.length === 1 ? 'FACILITY' : 'FACILITIES' %></p>
+  <ul class="map-panel__legend">
+    <li class="map-panel__key"><span class="map-panel__swatch map-panel__swatch--single"></span>FACILITY</li>
+    <li class="map-panel__key"><span class="map-panel__swatch map-panel__swatch--few"></span>2–9</li>
+    <li class="map-panel__key"><span class="map-panel__swatch map-panel__swatch--many"></span>10+</li>
+  </ul>
+</section>
+<script src="/js/map.js" defer></script>

@@ -1,0 +1,587 @@
+/*
+ * Loaded after Bootstrap 4, main.css and wandur.css. None of the class names
+ * here is styled by Bootstrap 4 or main.css. Where those style the elements
+ * themselves (h1-h3, p, ul, label, button:focus, #map), the rules below set
+ * the property again. Sizes are in px: main.css changes the root font size.
+ */
+
+/* Hero */
+
+.landing-hero {
+	border-bottom: 1px solid var(--line);
+}
+
+.landing-hero__text {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 88px var(--gutter) 40px;
+}
+
+.landing-hero .eyebrow,
+.landing-hero__intro {
+	margin: 0;
+}
+
+.landing-hero__title {
+	max-width: 900px;
+	margin: 0;
+	font-size: var(--fs-display);
+	line-height: 0.9;
+}
+
+.landing-hero__intro {
+	max-width: 600px;
+	font: 400 var(--fs-lead) / 1.55 var(--font-body);
+	color: var(--body);
+	text-wrap: pretty;
+}
+
+@media (max-width: 899px) {
+	.landing-hero__text {
+		padding-top: 48px;
+	}
+
+	/* camo-contour.png is 1400x900 and doesn't tile. At phone width the hero
+	   and its stacked form can pass 900px, so the image grows with the
+	   height instead of ending in a hard edge. Below 900px tall, this is the
+	   design's size. */
+	.landing-hero {
+		background-size: auto max(900px, 100%);
+	}
+}
+
+/* Search bar. It hangs 40px below the hero, as in the design. */
+
+.search-bar {
+	display: grid;
+	grid-template-columns: 1.6fr 1.2fr 1.1fr 0.8fr auto;
+	margin: 16px var(--gutter) 0;
+	border: 1px solid var(--line-2);
+	background: var(--surface-2);
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+	transform: translateY(40px);
+}
+
+.search-bar__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+	margin: 0;
+	padding: 14px 20px;
+	border-right: 1px solid var(--line);
+	cursor: pointer;
+}
+
+.search-bar__label {
+	font: 500 var(--fs-mono-xs) / 1.2 var(--font-mono);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.search-bar__control {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background-color: transparent;
+	color: var(--text);
+	font: 500 var(--fs-body) / 1.3 var(--font-body);
+	text-overflow: ellipsis;
+}
+
+.search-bar__control::placeholder {
+	color: var(--muted);
+	opacity: 1;
+}
+
+.search-bar__control:focus-visible {
+	outline-offset: 4px;
+}
+
+select.search-bar__control {
+	appearance: none;
+	padding-right: 20px;
+	/* Some browsers draw the open list in the select's own colours. */
+	background-color: var(--surface-2);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23a3a58c' stroke-width='1.5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right center;
+	cursor: pointer;
+}
+
+.search-bar__control option {
+	background-color: var(--surface-2);
+	color: var(--text);
+}
+
+/* :focus too, because main.css greys every focused button. */
+.search-bar__submit,
+.search-bar__submit:focus {
+	padding: 0 32px;
+	border: 0;
+	border-radius: 0;
+	background-color: var(--accent);
+	color: var(--on-accent);
+	font: 700 var(--fs-body) / 1.1 var(--font-display);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.search-bar__submit:hover {
+	background-color: var(--accent-hover);
+}
+
+/* Five columns don't fit between 900px and 1100px: the fields share a row
+   and the button takes the next. */
+@media (max-width: 1099px) {
+	.search-bar {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.search-bar__field:nth-child(4) {
+		border-right: 0;
+	}
+
+	.search-bar__submit,
+	.search-bar__submit:focus {
+		grid-column: 1 / -1;
+		padding: 16px 32px;
+	}
+}
+
+@media (max-width: 899px) {
+	.search-bar {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.search-bar__field {
+		border-right: 0;
+		border-bottom: 1px solid var(--line);
+	}
+}
+
+/* The test login and the data source */
+
+.landing-notes {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px 24px;
+	padding: 72px var(--gutter) 0;
+	font: 400 var(--fs-mono) / 1.4 var(--font-mono);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.landing-notes p {
+	margin: 0;
+}
+
+/* The login is case-sensitive, so it keeps its own case. */
+.landing-notes__value {
+	text-transform: none;
+	color: var(--text);
+}
+
+/* Map panel */
+
+.map-panel {
+	position: relative;
+	height: 460px;
+	margin: 20px var(--gutter) 0;
+	border: 1px solid var(--line-2);
+	background: var(--deep);
+	overflow: hidden;
+	/* Keeps Mapbox's own z-indexes, and the overlays', inside the panel. */
+	isolation: isolate;
+}
+
+/* Beats main.css's #map, which adds a min-height and a margin. */
+.map-panel #map {
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	margin: 0;
+}
+
+/* The overlays let clicks through to the map. */
+.map-panel__count,
+.map-panel__legend {
+	position: absolute;
+	left: 16px;
+	z-index: 3;
+	margin: 0;
+	border: 1px solid var(--line-2);
+	background: var(--surface-2);
+	font-family: var(--font-mono);
+	pointer-events: none;
+}
+
+.map-panel__count {
+	top: 16px;
+	padding: 7px 10px;
+	font-size: var(--fs-mono-sm);
+	font-weight: 500;
+	line-height: 1.2;
+	letter-spacing: 0.06em;
+	color: var(--text);
+}
+
+/* Above the Mapbox logo, which sits in the bottom-left corner and must stay
+   visible. */
+.map-panel__legend {
+	bottom: 44px;
+	display: flex;
+	gap: 16px;
+	padding: 8px 12px;
+	list-style: none;
+	font-size: var(--fs-mono-sm);
+	line-height: 1.2;
+	color: var(--muted);
+}
+
+.map-panel__key {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.map-panel__swatch {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+/* The same colours as the layers in map.js. */
+.map-panel__swatch--single {
+	background: var(--sage);
+}
+
+.map-panel__swatch--few {
+	background: var(--olive);
+}
+
+.map-panel__swatch--many {
+	background: var(--accent);
+}
+
+/* Mapbox's zoom buttons */
+
+.map-panel .mapboxgl-ctrl-top-right .mapboxgl-ctrl {
+	margin: 16px 16px 0 0;
+}
+
+.map-panel .mapboxgl-ctrl-group {
+	border: 1px solid var(--line-2);
+	border-radius: 0;
+	background: var(--surface-2);
+}
+
+.map-panel .mapboxgl-ctrl-group:not(:empty) {
+	box-shadow: none;
+}
+
+.map-panel .mapboxgl-ctrl-group button {
+	width: 34px;
+	height: 34px;
+	border-radius: 0;
+}
+
+.map-panel .mapboxgl-ctrl-group button + button {
+	border-top: 1px solid var(--line-2);
+}
+
+/* One focus ring, wandur.css's orange :focus-visible outline. Mapbox adds a
+   blue box-shadow, and main.css's button:focus a grey background that stays
+   after a click. */
+.map-panel .mapboxgl-ctrl-group button:focus {
+	box-shadow: none;
+	background-color: transparent;
+}
+
+.map-panel .mapboxgl-ctrl-group button:not(:disabled):hover {
+	background-color: rgba(201, 212, 160, 0.08);
+}
+
+/* Mapbox draws the icons in #333. Inverted, that's #ccc. */
+.map-panel .mapboxgl-ctrl-icon {
+	filter: invert(1);
+	opacity: 1;
+}
+
+/* Popups, built by map.js */
+
+/* Above the overlays, inside the panel's isolated stacking context. */
+.map-panel .mapboxgl-popup {
+	z-index: 4;
+}
+
+.map-popup .mapboxgl-popup-content {
+	padding: 14px 32px 14px 16px;
+	border: 1px solid rgba(201, 212, 160, 0.28);
+	border-radius: 0;
+	background: var(--surface-2);
+	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+	color: var(--text);
+}
+
+.map-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+.map-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+.map-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+	border-bottom-color: var(--surface-2);
+}
+
+.map-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+.map-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+.map-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+	border-top-color: var(--surface-2);
+}
+
+.map-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+	border-right-color: var(--surface-2);
+}
+
+.map-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+	border-left-color: var(--surface-2);
+}
+
+.map-popup .mapboxgl-popup-close-button,
+.map-popup .mapboxgl-popup-close-button:focus {
+	width: 28px;
+	height: 28px;
+	background-color: transparent;
+	color: var(--muted);
+	font: 400 18px/1 var(--font-body);
+}
+
+.map-popup .mapboxgl-popup-close-button:hover {
+	background-color: transparent;
+	color: var(--text);
+}
+
+/* map.js's own <div>, which setDOMContent puts inside the content box. */
+.map-popup__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.map-popup__name,
+.map-popup__meta {
+	margin: 0;
+}
+
+.map-popup__name {
+	font: 600 18px/1.1 var(--font-display);
+	text-transform: uppercase;
+	color: var(--text);
+}
+
+.map-popup__meta {
+	font: 400 var(--fs-mono-sm) / 1.4 var(--font-mono);
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.map-popup__link {
+	font: 600 13px/1.4 var(--font-body);
+}
+
+@media (max-width: 899px) {
+	.map-panel {
+		height: 360px;
+	}
+}
+
+/* Facility list */
+
+.facility-list__head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 8px 24px;
+	margin: 0 var(--gutter);
+	padding: 64px 0 24px;
+	border-bottom: 1px solid var(--line);
+}
+
+.facility-list__title {
+	margin: 0;
+	font-size: var(--fs-h2);
+	line-height: 1;
+}
+
+.facility-list__meta {
+	margin: 0;
+	font: 400 var(--fs-mono) / 1.4 var(--font-mono);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.facility-list__empty {
+	margin: 0;
+	padding: 28px var(--gutter) 64px;
+	font: 400 var(--fs-body) / 1.5 var(--font-body);
+	color: var(--body);
+}
+
+.facility-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 24px;
+	padding: 28px var(--gutter) 64px;
+}
+
+@media (max-width: 899px) {
+	.facility-list__head {
+		flex-direction: column;
+		align-items: flex-start;
+		padding-top: 48px;
+	}
+
+	.facility-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Facility card. The name's link stretches over the whole card with
+   ::after, so the card works as one link whose name is the facility's. */
+
+.facility-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	background: var(--surface);
+	color: var(--text);
+	transition:
+		border-color 0.25s,
+		transform 0.25s;
+}
+
+.facility-card:hover {
+	border-color: var(--accent);
+	transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.facility-card,
+	.facility-card:hover {
+		transition: none;
+		transform: none;
+	}
+}
+
+.facility-card__media {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	border-bottom: 1px solid var(--line);
+	background: var(--panel)
+		repeating-linear-gradient(
+			135deg,
+			rgba(201, 212, 160, 0.05) 0 1px,
+			transparent 1px 12px
+		);
+}
+
+.facility-card__photo {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.facility-card__placeholder {
+	font: 400 var(--fs-mono-sm) / 1.2 var(--font-mono);
+	letter-spacing: 0.1em;
+	color: var(--faint);
+}
+
+.facility-card__type,
+.facility-card__state {
+	position: absolute;
+	top: 12px;
+}
+
+.facility-card__type {
+	left: 12px;
+}
+
+.facility-card__state {
+	right: 12px;
+}
+
+.facility-card__body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 10px;
+	padding: 18px 20px 20px;
+}
+
+.facility-card__area {
+	margin: 0;
+	font: 400 var(--fs-mono-sm) / 1.4 var(--font-mono);
+	letter-spacing: 0.04em;
+	color: var(--muted);
+}
+
+.facility-card__name {
+	margin: 0;
+	font-size: var(--fs-h3);
+	line-height: 1.02;
+}
+
+.facility-card__link,
+.facility-card__link:hover {
+	color: var(--text);
+}
+
+.facility-card__link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+}
+
+/* The focus ring goes round the card, which is what the link covers. */
+.facility-card__link:focus-visible {
+	outline: none;
+}
+
+.facility-card__link:focus-visible::after {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.facility-card__desc {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	overflow: hidden;
+	margin: 0;
+	font: 400 var(--fs-body-sm) / 1.5 var(--font-body);
+	color: var(--body-2);
+}
+
+.facility-card__more {
+	margin-top: auto;
+	padding-top: 8px;
+	font: 600 var(--fs-ui) / 1.4 var(--font-body);
+	color: var(--accent);
+}

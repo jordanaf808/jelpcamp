@@ -1,17 +1,25 @@
-<%- include("./partials/header") %>
+<%- include("./partials/header", {stylesheets: ['/stylesheets/account.css']}) %>
 
-<div class="container-fluid m-0 text-center height-fix py-5">
-  <div class="col-12 m-3">
-    <h1>Sign Up!</h1>
+<div class="account-page">
+  <div class="account-card">
+    <span class="eyebrow">Join WANDUR</span>
+    <h1 class="account-card__title">Sign up</h1>
 
-    <form action="/register" method="POST" class='validated-form' novalidate>
-      <input type="text" id="username" name="username" placeholder="username" required/>
-      <input type="password" id="password" name="password" placeholder="password" required/>
-      <input type="submit" value="Register!" />
-      <!-- <button>
-				Register Here!
-			</button> -->
+    <form class="account-form validated-form" action="/register" method="POST" novalidate>
+      <div class="field">
+        <label class="field__label" for="username">Username</label>
+        <input class="input" type="text" id="username" name="username" maxlength="20" autocomplete="username" required />
+        <span class="field__error">Choose a username, 20 characters at most.</span>
+      </div>
+      <div class="field">
+        <label class="field__label" for="password">Password</label>
+        <input class="input" type="password" id="password" name="password" minlength="3" maxlength="20" autocomplete="new-password" required />
+        <span class="field__error">Choose a password of 3 to 20 characters.</span>
+      </div>
+      <button class="button" type="submit">Register</button>
     </form>
+
+    <p class="account-card__alt">Already have an account? <a href="/login">Login</a></p>
   </div>
 </div>
 <script src="/js/validateForms.js"></script>
