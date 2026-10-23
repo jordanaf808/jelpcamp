@@ -181,6 +181,34 @@ test('a video is a link, never an image', async () => {
 	assert.ok(hrefs(html).includes(video.URL), 'the video has no link')
 })
 
+// Escaping keeps markup out of an href, but not a javascript: URL, and a
+// scheme-less //host link would follow the page's scheme to any host. The page
+// links only http(s) URLs from RIDB.
+test('only http(s) links and videos from RIDB become links', async () => {
+	const bad = ['javascript:alert(1)', '//evil.example']
+	const video = {...facility.MEDIA[2], MediaType: 'Video', IsPrimary: false}
+	const html = await page(318, {
+		LINK: [
+			...bad.map((URL) => ({...facility.LINK[0], Title: `Bad ${URL}`, URL})),
+			facility.LINK[0],
+		],
+		MEDIA: [
+			...bad.map((URL) => ({...video, Title: `Bad ${URL}`, URL})),
+			...facility.MEDIA,
+		],
+	})
+	for (const url of bad) {
+		assert.ok(
+			!hrefs(html).some((href) => href.includes(url)),
+			`${url} is in an href`,
+		)
+	}
+	assert.ok(
+		hrefs(html).includes(facility.LINK[0].URL),
+		'the valid link is gone',
+	)
+})
+
 test('"Comments (n)" jumps to the comments', async () => {
 	const author = new User({username: 'counted'})
 	const comments = await Comment.create([
@@ -231,6 +259,30 @@ test('a comment stored without createdAt is dated from its id', async () => {
 	)
 })
 
+// A comment can also hold createdAt: null, which mongoose loads as null and
+// not as its default.
+test(
+	'a comment stored with createdAt null is dated from its id',
+	{todo: 'madeAt falls back to the id unless createdAt is a valid date'},
+	async () => {
+		const _id = mongoose.Types.ObjectId.createFromTime(
+			Date.parse('2022-02-14T09:00:00Z') / 1000,
+		)
+		await Comment.collection.insertOne({
+			_id,
+			text: 'A comment with a null date.',
+			createdAt: null,
+			author: {username: 'null-date'},
+		})
+		await campsiteWithComments(319, [{_id}])
+		const html = await page(319)
+		assert.match(
+			html,
+			/<time\b[^>]*\bdatetime="2022-02-14T09:00:00\.000Z"[^>]*>\s*Feb 14, 2022\s*<\/time>/,
+		)
+	},
+)
+
 test('logged out, the page links to the login instead of showing the comment form', async () => {
 	const html = await page(314)
 	assert.doesNotMatch(html, /name="comment\[text\]"/)
@@ -252,6 +304,9 @@ test('logged in, the page has the comment form', async () => {
 	assert.ok(textarea, 'no textarea')
 	assert.strictEqual(attr(textarea, 'name'), 'comment[text]')
 	assert.match(textarea, /\srequired\b/)
+	// The server's Joi rule: 10 to 300 characters.
+	assert.strictEqual(attr(textarea, 'minlength'), '10')
+	assert.strictEqual(attr(textarea, 'maxlength'), '300')
 	const id = attr(textarea, 'id')
 	assert.ok(id, 'the textarea needs an id for its label')
 	assert.match(html, new RegExp(`<label\\b[^>]*\\bfor="${id}"`))
@@ -281,6 +336,12 @@ test('only the author sees EDIT and DELETE on a comment', async () => {
 	assert.strictEqual(loggedOut.status, 200)
 	assert.ok(!hrefs(loggedOut.text).includes(edit))
 	assert.ok(!deleteForm(loggedOut.text))
+
+	const {agent: bystander} = await logIn('bystander')
+	const asOther = await bystander.get('/campsites/show/316')
+	assert.strictEqual(asOther.status, 200)
+	assert.ok(!hrefs(asOther.text).includes(edit), 'another user can edit')
+	assert.ok(!deleteForm(asOther.text), 'another user can delete')
 })
 
 test('the favorite form shows until the campsite is a favorite', async () => {

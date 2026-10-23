@@ -2,9 +2,10 @@
 //
 // script-src has no 'unsafe-inline', so the browser refuses inline script with
 // no visible error — the page renders, the code never runs, and only the
-// DevTools console says so. That is how form validation on these three pages sat
-// dead from PR #5 (2026-09-04) until 2026-09-13. This checks the rendered HTML,
-// which is what the browser's CSP check actually sees.
+// DevTools console says so. That is how form validation on the login, register
+// and new-comment pages sat dead from PR #5 (2026-09-04) until 2026-09-13. This
+// checks the rendered HTML of every page with a validated form, which is what
+// the browser's CSP check actually sees.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
