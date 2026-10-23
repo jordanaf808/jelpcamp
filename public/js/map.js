@@ -1,5 +1,3 @@
-console.log('map.js says hi!')
-
 // Values are passed via data-attributes on #map so this file stays a static
 // asset — the CSP allows script-src 'self' with no inline scripts.
 const mapEl = document.getElementById('map')

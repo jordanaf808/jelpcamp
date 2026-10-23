@@ -1,6 +1,5 @@
 // Pins the shared layout every page renders inside: views/partials/header.ejs
 // opens the document and <main>, and footer.ejs closes them.
-// headerBack.ejs is the same layout, kept so no view's include line changes.
 //
 // Before the redesign each partial was a whole document, so every page had a
 // stray </body></html> in the middle, and the Google-map campsite page loaded
@@ -119,13 +118,13 @@ test('every page loads the WANDUR fonts, stylesheet and scripts', () => {
 			assert.ok(fonts[1].includes(family), `${path}: ${family}`)
 		}
 
-		// After main.css, so its rules win where both style an element.
-		const main = text.indexOf('href="/stylesheets/main.css"')
-		const wandur = text.indexOf('href="/stylesheets/wandur.css"')
-		assert.notStrictEqual(wandur, -1, `${path}: wandur.css`)
-		assert.ok(main < wandur, `${path}: wandur.css after main.css`)
+		assert.match(
+			text,
+			/<link rel="stylesheet" href="\/stylesheets\/wandur\.css" \/>/,
+			`${path}: wandur.css`,
+		)
 
-		for (const script of ['nav', 'flash', 'back']) {
+		for (const script of ['nav', 'flash']) {
 			assert.match(
 				text,
 				new RegExp(`<script src="/js/${script}\\.js" defer></script>`),
@@ -185,8 +184,7 @@ test("the nav shows Campsites, the user's favorites and Logout to a user", () =>
 	}
 })
 
-// The redesign drops the nav's "Go Back." link. back.js stays, for the link on
-// the edit-comment page.
+// The redesign drops the nav's "Go Back." link.
 test('the nav has no back link', () => {
 	for (const [path, {text}] of Object.entries(pages)) {
 		assert.doesNotMatch(mainNav(text), /data-back|Go Back/, path)
@@ -202,10 +200,9 @@ test('the nav has a menu button that controls the links', () => {
 	assert.match(text, new RegExp(`<nav\\b[^>]*id="${button[1]}"`))
 })
 
-// Bootstrap's alert plugin, still loaded by the footer, handles any click on
-// [data-dismiss="alert"]. flash.js handles these buttons instead, so only one
-// of them may claim the click.
-test('a flash message has a dismiss button for flash.js, not for Bootstrap', async () => {
+// flash.js handles the dismiss button. It has no data-dismiss: that was the
+// hook for Bootstrap's alert plugin, and Bootstrap is gone.
+test('a flash message has a dismiss button for flash.js', async () => {
 	const visitor = request.agent(app)
 	setup.resetRateLimiters()
 	await visitor

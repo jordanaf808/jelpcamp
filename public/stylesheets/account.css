@@ -1,9 +1,7 @@
 /*
  * Favorites, login, register and comment pages. Loaded after wandur.css, from
  * the views, so these rules win at equal specificity. Every class starts with
- * "account-", which neither Bootstrap 4 nor main.css styles. Bootstrap and
- * main.css still set bare elements (h1, h2, p, label, table, th), so each
- * element used here gets its own margins and sizes.
+ * "account-", and each element used here gets its own margins and sizes.
  */
 
 /* Visually hidden text for screen readers. */
@@ -254,11 +252,6 @@
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	margin: 0;
-}
-
-/* Bootstrap gives label a bottom margin. */
-.account-form label {
 	margin: 0;
 }
 

@@ -7,19 +7,6 @@
     <title>WANDUR · Public Lands Finder</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
-    <%# Bootstrap, Font Awesome and main.css style the pages not yet redesigned. The cleanup PR removes them. %>
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
-      integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
-      crossorigin="anonymous"
-    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -34,14 +21,11 @@
       crossorigin="anonymous"
     />
     <% } %>
-    <link rel="stylesheet" href="/stylesheets/main.css" />
     <link rel="stylesheet" href="/stylesheets/wandur.css" />
     <%# A view adds its own: include("../partials/header", {stylesheets: [...]}) %>
     <% for (const href of locals.stylesheets || []) { %>
     <link rel="stylesheet" href="<%= href %>" />
     <% } %>
-    <%# back.js serves the "Go Back." link on the edit-comment page. %>
-    <script src="/js/back.js" defer></script>
     <script src="/js/nav.js" defer></script>
     <script src="/js/flash.js" defer></script>
   </head>

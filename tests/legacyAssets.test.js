@@ -91,15 +91,11 @@ const PATHS = [
 ]
 
 for (const path of PATHS) {
-	test(
-		`${path} loads none of the old assets`,
-		{todo: 'the cleanup PR removes them from the layout'},
-		() => {
-			const html = pages[path].text.toLowerCase()
-			assert.deepStrictEqual(
-				OLD_ASSETS.filter((asset) => html.includes(asset)),
-				[],
-			)
-		},
-	)
+	test(`${path} loads none of the old assets`, () => {
+		const html = pages[path].text.toLowerCase()
+		assert.deepStrictEqual(
+			OLD_ASSETS.filter((asset) => html.includes(asset)),
+			[],
+		)
+	})
 }

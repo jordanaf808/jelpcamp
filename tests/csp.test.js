@@ -75,10 +75,13 @@ test('script-src allows no public CDN as a whole host', async () => {
 	)
 })
 
-// One page per set of script tags: /login gets the layout's, /campsites adds
-// Mapbox, and the campsite page adds the Google map's and the Flickr embed.
-test('every external script on /login is allowed by script-src', async () => {
-	assertScriptsAllowed(await request(app).get('/login'))
+// One page per set of script tags. The layout's own are all on this site, so
+// /login has none from elsewhere. /campsites adds Mapbox, and the campsite page
+// adds the Google map's and the Flickr embed.
+test('/login, with only the layout, loads no external script', async () => {
+	const res = await request(app).get('/login')
+	assert.strictEqual(res.status, 200)
+	assert.deepStrictEqual(externalScripts(res.text), [])
 })
 
 test('every external script on /campsites is allowed by script-src', async () => {
@@ -121,21 +124,15 @@ const REMOVED_HOSTS = [
 	'cdnjs.cloudflare.com',
 ]
 
-test(
-	'the CSP names none of the old CDN hosts, in any directive',
-	{todo: 'the cleanup PR removes them from app.js'},
-	async () => {
-		const res = await request(app).get('/login')
-		const named = res.headers['content-security-policy']
-			.split(';')
-			.flatMap((directive) => {
-				const [name, ...sources] = directive.trim().split(/\s+/)
-				return sources
-					.filter((source) =>
-						REMOVED_HOSTS.some((host) => source.includes(host)),
-					)
-					.map((source) => `${name} ${source}`)
-			})
-		assert.deepStrictEqual(named, [])
-	},
-)
+test('the CSP names none of the old CDN hosts, in any directive', async () => {
+	const res = await request(app).get('/login')
+	const named = res.headers['content-security-policy']
+		.split(';')
+		.flatMap((directive) => {
+			const [name, ...sources] = directive.trim().split(/\s+/)
+			return sources
+				.filter((source) => REMOVED_HOSTS.some((host) => source.includes(host)))
+				.map((source) => `${name} ${source}`)
+		})
+	assert.deepStrictEqual(named, [])
+})

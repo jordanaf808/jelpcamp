@@ -53,24 +53,16 @@ app.use(sanitizeRequest)
 // belong in public/js/, loaded with a src; tests/inlineScripts.test.js enforces
 // that for the pages with forms.
 const scriptSrcUrls = [
+	// Never list jsDelivr or cdnjs as a whole host: they serve any npm package
+	// and a large library set, so that would allow every script on them. Name
+	// the file's full URL instead. tests/csp.test.js fails if a page loads a
+	// script that is not listed here.
 	'https://api.mapbox.com',
-	'https://code.jquery.com',
-	// jsDelivr serves any npm package and cdnjs a large library set, so allowing
-	// either host would allow every script on it. A source with a full path
-	// allows that one file. tests/csp.test.js fails if a page loads a script
-	// that is not listed here.
-	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
-	'https://stackpath.bootstrapcdn.com',
 	'https://maps.googleapis.com',
 	'https://embedr.flickr.com',
 	'https://widgets.flickr.com', // embedr chain-loads its client code from here
 ]
-const styleSrcUrls = [
-	'https://stackpath.bootstrapcdn.com',
-	'https://cdnjs.cloudflare.com',
-	'https://fonts.googleapis.com',
-	'https://api.mapbox.com',
-]
+const styleSrcUrls = ['https://fonts.googleapis.com', 'https://api.mapbox.com']
 const connectSrcUrls = [
 	'https://api.mapbox.com',
 	'https://events.mapbox.com',
@@ -82,17 +74,8 @@ const connectSrcUrls = [
 	'https://*.googleapis.com',
 	'https://*.gstatic.com',
 	'https://*.google.com',
-	// DevTools fetches .js.map / .css.map from these over connect-src. Only
-	// affects debugging, never end users; already trusted for script/style.
-	'https://cdn.jsdelivr.net',
-	'https://stackpath.bootstrapcdn.com',
-	'https://code.jquery.com',
-	'https://cdnjs.cloudflare.com',
 ]
-const fontSrcUrls = [
-	'https://fonts.gstatic.com',
-	'https://cdnjs.cloudflare.com',
-]
+const fontSrcUrls = ['https://fonts.gstatic.com']
 
 app.use(
 	helmet({
@@ -104,8 +87,9 @@ app.use(
 				// covers WebAssembly.instantiate(); unlike 'unsafe-eval' it does not
 				// enable JS eval()/Function()/string setTimeout.
 				scriptSrc: ["'self'", "'wasm-unsafe-eval'", ...scriptSrcUrls],
-				// 'unsafe-inline' is still required here: 10 views use inline
-				// style="..." attributes, which cannot carry a nonce.
+				// 'unsafe-inline' stays for the map libraries, which add inline
+				// styles at runtime. No view has a style="..." attribute any more.
+				// Dropping it is a separate change, checked on both maps.
 				styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
 				// data: is needed because the Google Maps label worker fetch()es
 				// base64 marker images. It reads bytes already in the page and
