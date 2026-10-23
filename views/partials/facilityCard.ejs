@@ -1,0 +1,31 @@
+<%#
+  Local: facility, a recData item from utils/mutateData.js. photo, state and
+  recAreaName may each be null. summary is plain text, escaped here.
+  The heading's link covers the whole card (see campsites.css), so the
+  link's name is the facility's name, not the whole card's text.
+%>
+<article class="facility-card">
+  <div class="facility-card__media">
+    <% if (facility.photo) { %>
+    <img class="facility-card__photo" src="<%= facility.photo %>" alt="" loading="lazy" decoding="async" />
+    <% } else { %>
+    <span class="facility-card__placeholder">FACILITY PHOTO</span>
+    <% } %>
+    <% if (facility.FacilityTypeDescription) { %>
+    <span class="tag facility-card__type"><%= facility.FacilityTypeDescription %></span>
+    <% } %>
+    <% if (facility.state) { %>
+    <span class="tag tag--plain facility-card__state"><%= facility.state %></span>
+    <% } %>
+  </div>
+  <div class="facility-card__body">
+    <% if (facility.recAreaName) { %>
+    <p class="facility-card__area"><%= facility.recAreaName %></p>
+    <% } %>
+    <h3 class="facility-card__name">
+      <a class="facility-card__link" href="/campsites/show/<%= facility.FacilityID %>"><%= facility.FacilityName %></a>
+    </h3>
+    <p class="facility-card__desc"><%= facility.summary %></p>
+    <span class="facility-card__more" aria-hidden="true">More information →</span>
+  </div>
+</article>
