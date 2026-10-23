@@ -1,0 +1,657 @@
+/*
+ * The campsite page, /campsites/show/:id (design 1d).
+ *
+ * Loaded after Bootstrap, main.css and wandur.css. Bootstrap's reboot still
+ * gives headings, p, ul, dl and figure margins in rem, and main.css sets rem
+ * to 20px on wide screens, so every element here sets its own margins. Class
+ * names start with detail-, which neither Bootstrap 4 nor main.css uses.
+ */
+
+/* Header */
+
+.detail-hero {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+	padding: 28px var(--gutter) 40px;
+	border-bottom: 1px solid var(--line);
+}
+
+.detail-hero__back,
+.detail-hero__back:hover {
+	align-self: flex-start;
+	font: 500 var(--fs-mono) / 1.2 var(--font-mono);
+	letter-spacing: 0.1em;
+	color: var(--sage);
+}
+
+.detail-hero__back:hover {
+	color: var(--text);
+}
+
+.detail-hero__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 40px;
+}
+
+.detail-hero__title {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-width: 0;
+}
+
+.detail-hero__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+/* Beats main.css's h1, which sets Paytone One at 2rem in white. */
+.detail-hero__name {
+	margin: 0;
+	font: 700 var(--fs-h1) / 0.92 var(--font-display);
+	overflow-wrap: anywhere;
+}
+
+.detail-hero__place {
+	margin: 0;
+	font: 400 var(--fs-body) / 1.4 var(--font-body);
+	color: var(--body);
+}
+
+.detail-hero__place strong {
+	font-weight: 600;
+	color: var(--text);
+}
+
+.detail-hero__actions {
+	display: flex;
+	flex: none;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.detail-hero__favorite {
+	margin: 0;
+}
+
+/* Gallery: one large photo and two small ones. --1, --2 and --3 say how many
+   photos there are, up to 3. */
+
+.detail-gallery {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	grid-template-rows: 200px 200px;
+	gap: 12px;
+	padding: 32px var(--gutter) 0;
+}
+
+.detail-gallery__main {
+	position: relative;
+	grid-row: span 2;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	background: var(--panel);
+}
+
+.detail-gallery--1 .detail-gallery__main {
+	grid-column: 1 / -1;
+}
+
+.detail-gallery__figure {
+	height: 100%;
+	margin: 0;
+}
+
+.detail-gallery__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* The bar along the bottom of the large photo: its title, and the controls on
+   top of it at the right. The title keeps to one line so the bar's height
+   stays put as the photos change. With more than one photo the bar always
+   shows, as the controls' background. */
+.detail-gallery__caption {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 52px;
+	padding: 0 230px 0 20px;
+	overflow: hidden;
+	background: rgba(12, 15, 8, 0.8);
+	color: var(--text);
+	font: 500 var(--fs-body-sm) / 52px var(--font-body);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.detail-gallery--1 .detail-gallery__caption {
+	padding-right: 20px;
+}
+
+.detail-gallery--1 .detail-gallery__caption:empty {
+	display: none;
+}
+
+.detail-gallery__controls {
+	position: absolute;
+	right: 12px;
+	bottom: 0;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 52px;
+	font: 500 var(--fs-mono) / 1 var(--font-mono);
+	color: var(--text);
+}
+
+/* Each names :focus too, because main.css greys every focused button. Both
+   use --text, not the design's muted PREV: over a white photo, muted on the
+   bar is 4.23:1. */
+.detail-gallery__step,
+.detail-gallery__step:focus {
+	padding: 10px 8px;
+	border: 0;
+	background: none;
+	color: var(--text);
+	font: inherit;
+	cursor: pointer;
+}
+
+.detail-gallery__step:hover {
+	color: var(--sage);
+}
+
+.detail-gallery__counter {
+	font-variant-numeric: tabular-nums;
+}
+
+.detail-gallery__thumb,
+.detail-gallery__thumb:focus {
+	position: relative;
+	display: block;
+	min-width: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	background: var(--panel);
+	cursor: pointer;
+}
+
+/* Two photos: the one small photo takes the column's full height. */
+.detail-gallery--2 .detail-gallery__thumb {
+	grid-row: span 2;
+}
+
+.detail-gallery__thumb:focus-visible {
+	outline-offset: -2px;
+}
+
+/* 0.75, not the design's 0.6: over a white photo, 0.6 leaves the label at
+   4.0:1. */
+.detail-gallery__more {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(12, 15, 8, 0.75);
+	color: var(--text);
+	font: 600 var(--fs-body-sm) / 1.2 var(--font-body);
+}
+
+/* Sections, comments and the aside. The aside comes between the sections and
+   the comments in the markup, so on a phone the map follows the description.
+   On wider screens it takes the right column, next to both. */
+
+.detail-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 400px;
+	grid-template-rows: auto 1fr;
+	grid-template-areas:
+		'sections aside'
+		'comments aside';
+	column-gap: 56px;
+	row-gap: 40px;
+	align-items: start;
+	padding: 48px var(--gutter) 72px;
+}
+
+.detail-sections {
+	grid-area: sections;
+	display: flex;
+	flex-direction: column;
+	gap: 40px;
+}
+
+.detail-section {
+	display: grid;
+	grid-template-columns: 160px minmax(0, 1fr);
+	gap: 24px;
+	padding-top: 20px;
+	border-top: 1px solid var(--line);
+}
+
+.detail-section__label {
+	margin: 0;
+	padding-top: 4px;
+}
+
+/* RIDB's own markup, sanitized in the route: p, h1-h4, ul, ol, li, strong, b,
+   em, i, a and br. */
+.detail-prose {
+	min-width: 0;
+	font: 400 var(--fs-body) / 1.65 var(--font-body);
+	color: var(--body);
+	overflow-wrap: break-word;
+}
+
+.detail-prose > :first-child {
+	margin-top: 0;
+}
+
+.detail-prose > :last-child {
+	margin-bottom: 0;
+}
+
+.detail-prose p {
+	margin: 0 0 1em;
+}
+
+.detail-prose :is(h1, h2, h3, h4) {
+	margin: 1.6em 0 0.5em;
+	font: 700 22px/1.1 var(--font-display);
+	letter-spacing: 0.04em;
+	color: var(--text);
+}
+
+.detail-prose :is(ul, ol) {
+	margin: 0 0 1em;
+	padding-left: 1.2em;
+}
+
+/* main.css removes the bullets from every ul. */
+.detail-prose ul {
+	list-style: disc;
+}
+
+.detail-prose li {
+	margin-bottom: 0.3em;
+}
+
+.detail-prose :is(strong, b) {
+	font-weight: 600;
+	color: var(--text);
+}
+
+/* Underlined, so a link in running text doesn't rely on colour alone. */
+.detail-prose a {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.detail-videos {
+	margin: 0;
+	padding: 0;
+	font: 600 var(--fs-body-sm) / 1.5 var(--font-body);
+}
+
+.detail-videos li + li {
+	margin-top: 8px;
+}
+
+/* Comments */
+
+.detail-comments {
+	grid-area: comments;
+	padding-top: 20px;
+	border-top: 1px solid var(--line);
+	scroll-margin-top: calc(var(--nav-height) + 16px);
+}
+
+.detail-comments__head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.detail-comments__heading {
+	margin: 0;
+	font: 700 var(--fs-h2-sm) / 1 var(--font-display);
+}
+
+.detail-comments__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.detail-comment {
+	display: grid;
+	grid-template-columns: 44px minmax(0, 1fr);
+	gap: 16px;
+	padding: 18px 0;
+	border-bottom: 1px solid rgba(201, 212, 160, 0.1);
+}
+
+.detail-comment__initial {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border: 1px solid rgba(201, 212, 160, 0.2);
+	background: #232b19;
+	font: 700 18px/1 var(--font-display);
+	text-transform: uppercase;
+}
+
+.detail-comment__body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.detail-comment__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 4px 16px;
+}
+
+.detail-comment__user {
+	font: 600 var(--fs-body-sm) / 1.3 var(--font-body);
+}
+
+.detail-comment__date {
+	font: 400 var(--fs-mono-sm) / 1.3 var(--font-mono);
+	color: var(--muted);
+}
+
+.detail-comment__text {
+	margin: 0;
+	font: 400 16px/1.55 var(--font-body);
+	color: var(--body);
+	overflow-wrap: break-word;
+}
+
+.detail-comment__actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-top: 4px;
+	font: 500 var(--fs-mono) / 1.2 var(--font-mono);
+	letter-spacing: 0.06em;
+}
+
+.detail-comment__edit,
+.detail-comment__edit:hover {
+	color: var(--sage);
+}
+
+.detail-comment__edit:hover {
+	color: var(--text);
+}
+
+.detail-comment__delete-form {
+	margin: 0;
+}
+
+.detail-comment__delete,
+.detail-comment__delete:focus {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--danger);
+	font: inherit;
+	letter-spacing: inherit;
+	cursor: pointer;
+}
+
+.detail-comment__delete:hover {
+	text-decoration: underline;
+}
+
+.detail-comment-form {
+	display: flex;
+	flex-direction: column;
+	margin-top: 24px;
+	border: 1px solid rgba(201, 212, 160, 0.18);
+	background: var(--surface);
+}
+
+/* validateForms.js adds .was-validated on submit. The textarea has no border
+   of its own, so the box shows the error. */
+.detail-comment-form.was-validated:has(.input:invalid) {
+	border-color: var(--danger);
+}
+
+.detail-comment-form .detail-comment-form__input {
+	min-height: 88px;
+	padding: 16px 18px;
+	border: 0;
+	background: transparent;
+	font: 400 16px/1.5 var(--font-body);
+}
+
+.detail-comment-form__error {
+	padding: 0 18px 10px;
+}
+
+.detail-comment-form__bar {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 10px 10px 18px;
+	border-top: 1px solid rgba(201, 212, 160, 0.12);
+}
+
+.detail-comment-form__who {
+	font: 400 var(--fs-mono-sm) / 1.3 var(--font-mono);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.detail-comment-form__submit,
+.detail-comment-form__submit:focus {
+	padding: 10px 18px;
+	font-size: var(--fs-ui);
+}
+
+.detail-comments__login {
+	margin: 24px 0 0;
+	font: 600 var(--fs-ui) / 1.4 var(--font-body);
+}
+
+.detail-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Aside. Sticky below the nav. A long list of links can make it taller than
+   the window, so it scrolls on its own rather than hiding its end. */
+
+.detail-aside {
+	grid-area: aside;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	position: sticky;
+	top: calc(var(--nav-height) + 24px);
+	max-height: calc(100vh - var(--nav-height) - 48px);
+	overflow-y: auto;
+}
+
+.detail-card {
+	flex: none;
+	border: 1px solid rgba(201, 212, 160, 0.18);
+	background: var(--surface);
+}
+
+.detail-card__label {
+	margin: 0;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line);
+}
+
+/* main.css gives #map a 400px minimum height and a margin. isolation keeps
+   Google's z-indexes inside the map, under the sticky nav. */
+#map {
+	isolation: isolate;
+	height: 280px;
+	min-height: 0;
+	margin: 0;
+	border-bottom: 1px solid var(--line);
+	background: var(--deep);
+}
+
+.detail-coords {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin: 0;
+	padding: 16px 18px;
+}
+
+.detail-coords div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.detail-coords dt {
+	font: 500 var(--fs-mono-xs) / 1.2 var(--font-mono);
+	letter-spacing: 0.1em;
+	color: var(--muted);
+}
+
+.detail-coords dd {
+	margin: 0;
+	font: 500 var(--fs-body-sm) / 1.2 var(--font-mono);
+	color: var(--text);
+}
+
+.detail-card__action {
+	display: block;
+	padding: 14px 18px;
+	border-top: 1px solid var(--line);
+	font: 600 var(--fs-ui) / 1.3 var(--font-body);
+}
+
+/* The aside scrolls, so an outline outside these would be clipped. */
+:is(.detail-card__action, .detail-links__link):focus-visible {
+	outline-offset: -2px;
+}
+
+.detail-links {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 18px;
+}
+
+.detail-links .section-label {
+	margin: 0;
+}
+
+.detail-links__list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+}
+
+.detail-links__link {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(201, 212, 160, 0.1);
+}
+
+.detail-links__title {
+	font: 600 var(--fs-body-sm) / 1.35 var(--font-body);
+	overflow-wrap: anywhere;
+}
+
+.detail-links__description {
+	font: 400 13px/1.45 var(--font-body);
+	color: var(--muted);
+}
+
+/* One column below 900px. */
+
+@media (max-width: 899px) {
+	.detail-hero__row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 24px;
+	}
+
+	.detail-gallery {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 240px 110px;
+		gap: 8px;
+		padding-top: 24px;
+	}
+
+	.detail-gallery__main {
+		grid-row: auto;
+		grid-column: 1 / -1;
+	}
+
+	.detail-gallery--1 {
+		grid-template-rows: 240px;
+	}
+
+	.detail-gallery--2 .detail-gallery__thumb {
+		grid-row: auto;
+		grid-column: 1 / -1;
+	}
+
+	.detail-layout {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: none;
+		grid-template-areas:
+			'sections'
+			'aside'
+			'comments';
+		row-gap: 40px;
+		padding-top: 32px;
+		padding-bottom: 48px;
+	}
+
+	.detail-section {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 12px;
+	}
+
+	.detail-aside {
+		position: static;
+		max-height: none;
+		overflow: visible;
+	}
+}

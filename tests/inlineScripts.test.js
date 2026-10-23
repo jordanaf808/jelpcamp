@@ -79,7 +79,6 @@ const PAGES = [
 	{
 		name: '/campsites/show/2',
 		path: () => '/campsites/show/2',
-		todo: 'the campsite page gets the comment form',
 	},
 ]
 

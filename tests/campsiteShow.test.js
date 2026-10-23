@@ -314,7 +314,7 @@ test("a campsite that fails today's schema still gets its page and its fields", 
 // sanitizes FacilityDescription.
 test(
 	'the directions render as markup, not as escaped tags',
-	{timeout: 10000, todo: 'the page shows directions, sanitized in the route'},
+	{timeout: 10000},
 	async () => {
 		nock(RIDB)
 			.get('/api/v1/facilities/12')
@@ -336,7 +336,7 @@ test(
 
 test(
 	'a script in the directions or the fees is stripped',
-	{timeout: 10000, todo: 'the route sanitizes directions and fees'},
+	{timeout: 10000},
 	async () => {
 		nock(RIDB)
 			.get('/api/v1/facilities/13')

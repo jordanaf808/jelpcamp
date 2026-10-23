@@ -5,6 +5,7 @@
 // every test asks for its own facility id.
 const test = require('node:test')
 const assert = require('node:assert')
+const mongoose = require('mongoose')
 const request = require('supertest')
 const nock = require('nock')
 const setup = require('./setup')
@@ -79,118 +80,86 @@ const campsiteWithComments = async (id, comments) =>
 		comments: comments.map((comment) => comment._id),
 	})
 
-test(
-	'the header links back to /campsites',
-	{todo: 'the redesigned header'},
-	async () => {
-		const html = await page(301)
-		assert.match(
-			html,
-			/<a\b[^>]*\bhref="\/campsites"[^>]*>\s*← BACK TO CAMPSITES\s*<\/a>/,
-		)
-	},
-)
+test('the header links back to /campsites', async () => {
+	const html = await page(301)
+	assert.match(
+		html,
+		/<a\b[^>]*\bhref="\/campsites"[^>]*>\s*← BACK TO CAMPSITES\s*<\/a>/,
+	)
+})
 
-test(
-	'the header shows the type, the state and the rec area',
-	{todo: 'the redesigned header'},
-	async () => {
-		const html = await page(302)
-		assert.match(html, />\s*Campground\s*</)
-		assert.match(html, />\s*OR\s*</)
-		assert.match(
-			html,
-			/Located in\s*<[^>]+>\s*Wallowa Whitman National Forest\s*</,
-		)
-	},
-)
+test('the header shows the type, the state and the rec area', async () => {
+	const html = await page(302)
+	assert.match(html, />\s*Campground\s*</)
+	assert.match(html, />\s*OR\s*</)
+	assert.match(
+		html,
+		/Located in\s*<[^>]+>\s*Wallowa Whitman National Forest\s*</,
+	)
+})
 
-test(
-	'with no parent rec area, the header leaves out "Located in"',
-	{todo: 'the redesigned header'},
-	async () => {
-		const html = await page(303, {ParentRecAreaID: '', RECAREA: []})
-		assert.ok(!html.includes('Located in'))
-	},
-)
+test('with no parent rec area, the header leaves out "Located in"', async () => {
+	const html = await page(303, {ParentRecAreaID: '', RECAREA: []})
+	assert.ok(!html.includes('Located in'))
+})
 
-test(
-	'"Open directions" links to Google Maps at the facility',
-	{todo: 'the map card'},
-	async () => {
-		const html = await page(304)
-		const [lng, lat] = facility.GEOJSON.COORDINATES
-		assert.ok(
-			hrefs(html).includes(
-				`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-			),
-			'no directions link with the facility coordinates',
-		)
-		assert.match(html, /Open directions →/)
-	},
-)
+test('"Open directions" links to Google Maps at the facility', async () => {
+	const html = await page(304)
+	const [lng, lat] = facility.GEOJSON.COORDINATES
+	assert.ok(
+		hrefs(html).includes(
+			`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+		),
+		'no directions link with the facility coordinates',
+	)
+	assert.match(html, /Open directions →/)
+})
 
-test(
-	'the overview, directions and fees each get a labelled section',
-	{todo: 'the redesigned sections'},
-	async () => {
-		const html = await page(305)
-		for (const label of ['OVERVIEW', 'DIRECTIONS', 'FEES']) {
-			assert.match(html, new RegExp(`>\\s*${label}\\s*<`), label)
-		}
-	},
-)
+test('the overview, directions and fees each get a labelled section', async () => {
+	const html = await page(305)
+	for (const label of ['OVERVIEW', 'DIRECTIONS', 'FEES']) {
+		assert.match(html, new RegExp(`>\\s*${label}\\s*<`), label)
+	}
+})
 
-test(
-	'an empty directions or fees field gets no section',
-	{todo: 'the redesigned sections'},
-	async () => {
-		const html = await page(306, {
-			FacilityDirections: '',
-			FacilityUseFeeDescription: '  ',
-		})
-		assert.match(html, />\s*OVERVIEW\s*</)
-		assert.doesNotMatch(html, />\s*DIRECTIONS\s*</)
-		assert.doesNotMatch(html, />\s*FEES\s*</)
-	},
-)
+test('an empty directions or fees field gets no section', async () => {
+	const html = await page(306, {
+		FacilityDirections: '',
+		FacilityUseFeeDescription: '  ',
+	})
+	assert.match(html, />\s*OVERVIEW\s*</)
+	assert.doesNotMatch(html, />\s*DIRECTIONS\s*</)
+	assert.doesNotMatch(html, />\s*FEES\s*</)
+})
 
-test(
-	'the page has no collapse, no carousel.js, and loads gallery.js',
-	{todo: 'the gallery replaces the carousel'},
-	async () => {
-		const html = await page(307)
-		assert.doesNotMatch(html, /data-toggle="collapse"/)
-		assert.doesNotMatch(html, /carousel\.js/)
-		assert.match(html, /<script src="\/js\/gallery\.js" defer><\/script>/)
-	},
-)
+test('the page has no collapse, no carousel.js, and loads gallery.js', async () => {
+	const html = await page(307)
+	assert.doesNotMatch(html, /data-toggle="collapse"/)
+	assert.doesNotMatch(html, /carousel\.js/)
+	assert.match(html, /<script src="\/js\/gallery\.js" defer><\/script>/)
+})
 
-test(
-	'the gallery keeps every photo in the markup, and lazy-loads the hidden ones',
-	{todo: 'the gallery'},
-	async () => {
-		const html = await page(308)
-		const images = facility.MEDIA.filter((m) => m.MediaType === 'Image')
-		// One large photo and two small ones show; the rest sit behind the tile.
-		assert.match(html, new RegExp(`\\+${images.length - 3} more`))
+test('the gallery keeps every photo in the markup, and lazy-loads the hidden ones', async () => {
+	const html = await page(308)
+	const images = facility.MEDIA.filter((m) => m.MediaType === 'Image')
+	// One large photo and two small ones show; the rest sit behind the tile.
+	assert.match(html, new RegExp(`\\+${images.length - 3} more`))
 
-		const slides = tags(html, 'img').filter((tag) =>
-			/\bdata-gallery-slide\b/.test(tag),
-		)
-		assert.strictEqual(slides.length, images.length)
-		assert.deepStrictEqual(
-			slides.map((tag) => attr(tag, 'src')).sort(),
-			images.map((m) => m.URL).sort(),
-		)
-		// The first slide is the primary photo, and the only one shown.
-		const primary = images.find((m) => m.IsPrimary)
-		assert.strictEqual(attr(slides[0], 'src'), primary.URL)
-		for (const slide of slides.slice(1)) {
-			assert.match(slide, /\sloading="lazy"/)
-		}
-	},
-)
+	const slides = tags(html, 'img').filter((tag) =>
+		/\bdata-gallery-slide\b/.test(tag),
+	)
+	assert.strictEqual(slides.length, images.length)
+	assert.deepStrictEqual(
+		slides.map((tag) => attr(tag, 'src')).sort(),
+		images.map((m) => m.URL).sort(),
+	)
+	// The first slide is the primary photo, and the only one shown.
+	const primary = images.find((m) => m.IsPrimary)
+	assert.strictEqual(attr(slides[0], 'src'), primary.URL)
+	for (const slide of slides.slice(1)) {
+		assert.match(slide, /\sloading="lazy"/)
+	}
+})
 
 test('a facility with no media gets no gallery', async () => {
 	const html = await page(309, {MEDIA: []})
@@ -198,128 +167,98 @@ test('a facility with no media gets no gallery', async () => {
 	assert.doesNotMatch(html, /gallery\.js/)
 })
 
-test(
-	'a video is a link, never an image',
-	{todo: 'the gallery leaves videos out'},
-	async () => {
-		const video = {
-			...facility.MEDIA[2],
-			MediaType: 'Video',
-			IsPrimary: false,
-			Title: 'Campground tour',
-			URL: 'https://www.youtube.com/watch?v=campground-tour',
-		}
-		const html = await page(310, {MEDIA: [video, ...facility.MEDIA]})
-		const sources = tags(html, 'img').map((tag) => attr(tag, 'src'))
-		assert.ok(!sources.includes(video.URL), 'the video is in an <img>')
-		assert.ok(hrefs(html).includes(video.URL), 'the video has no link')
-	},
-)
+test('a video is a link, never an image', async () => {
+	const video = {
+		...facility.MEDIA[2],
+		MediaType: 'Video',
+		IsPrimary: false,
+		Title: 'Campground tour',
+		URL: 'https://www.youtube.com/watch?v=campground-tour',
+	}
+	const html = await page(310, {MEDIA: [video, ...facility.MEDIA]})
+	const sources = tags(html, 'img').map((tag) => attr(tag, 'src'))
+	assert.ok(!sources.includes(video.URL), 'the video is in an <img>')
+	assert.ok(hrefs(html).includes(video.URL), 'the video has no link')
+})
 
-test(
-	'"Comments (n)" jumps to the comments',
-	{todo: 'the redesigned header'},
-	async () => {
-		const author = new User({username: 'counted'})
-		const comments = await Comment.create([
-			{text: 'First comment here.', author: {id: author._id, username: 'a'}},
-			{text: 'Second comment here.', author: {id: author._id, username: 'b'}},
-		])
-		await campsiteWithComments(311, comments)
-		const html = await page(311)
-		assert.match(html, /<a\b[^>]*\bhref="#comments"[^>]*>\s*Comments \(2\)\s*</)
-		assert.match(html, /\bid="comments"/)
-	},
-)
+test('"Comments (n)" jumps to the comments', async () => {
+	const author = new User({username: 'counted'})
+	const comments = await Comment.create([
+		{text: 'First comment here.', author: {id: author._id, username: 'a'}},
+		{text: 'Second comment here.', author: {id: author._id, username: 'b'}},
+	])
+	await campsiteWithComments(311, comments)
+	const html = await page(311)
+	assert.match(html, /<a\b[^>]*\bhref="#comments"[^>]*>\s*Comments \(2\)\s*</)
+	assert.match(html, /\bid="comments"/)
+})
 
-test(
-	'a comment shows the date it was made, from createdAt',
-	{todo: 'the comment date'},
-	async () => {
-		const author = new User({username: 'dated'})
-		const [comment] = await Comment.create([
-			{
-				text: 'Dated comment text.',
-				createdAt: new Date('2024-03-05T12:00:00Z'),
-				author: {id: author._id, username: 'dated'},
-			},
-		])
-		await campsiteWithComments(312, [comment])
-		const html = await page(312)
-		assert.match(
-			html,
-			/<time datetime="2024-03-05T12:00:00\.000Z">\s*Mar 5, 2024\s*<\/time>/,
-		)
-		assert.doesNotMatch(html, /10 days ago/)
-	},
-)
+test('a comment shows the date it was made, from createdAt', async () => {
+	const author = new User({username: 'dated'})
+	const [comment] = await Comment.create([
+		{
+			text: 'Dated comment text.',
+			createdAt: new Date('2024-03-05T12:00:00Z'),
+			author: {id: author._id, username: 'dated'},
+		},
+	])
+	await campsiteWithComments(312, [comment])
+	const html = await page(312)
+	assert.match(
+		html,
+		/<time\b[^>]*\bdatetime="2024-03-05T12:00:00\.000Z"[^>]*>\s*Mar 5, 2024\s*<\/time>/,
+	)
+	assert.doesNotMatch(html, /10 days ago/)
+})
 
 // Comments made before 2023-06-22 have no createdAt. Mongoose fills a missing
 // default in as it loads the document, so the page would date them today. Their
 // ObjectId holds the time they were made.
-test(
-	'a comment stored without createdAt is dated from its id',
-	{todo: 'the comment date'},
-	async () => {
-		const {insertedId} = await Comment.collection.insertOne({
-			text: 'An old comment.',
-			author: {username: 'old-timer'},
-		})
-		await campsiteWithComments(313, [{_id: insertedId}])
-		const html = await page(313)
-		const made = insertedId.getTimestamp()
-		const shown = new Intl.DateTimeFormat('en-US', {
-			dateStyle: 'medium',
-			timeZone: 'UTC',
-		}).format(made)
-		assert.match(
-			html,
-			new RegExp(
-				`<time datetime="${made.toISOString()}">\\s*${shown}\\s*</time>`,
-			),
-		)
-	},
-)
+test('a comment stored without createdAt is dated from its id', async () => {
+	const _id = mongoose.Types.ObjectId.createFromTime(
+		Date.parse('2021-07-04T18:30:00Z') / 1000,
+	)
+	await Comment.collection.insertOne({
+		_id,
+		text: 'An old comment.',
+		author: {username: 'old-timer'},
+	})
+	await campsiteWithComments(313, [{_id}])
+	const html = await page(313)
+	assert.match(
+		html,
+		/<time\b[^>]*\bdatetime="2021-07-04T18:30:00\.000Z"[^>]*>\s*Jul 4, 2021\s*<\/time>/,
+	)
+})
 
-test(
-	'logged out, the page links to the login instead of showing the comment form',
-	{todo: 'the inline comment form'},
-	async () => {
-		const html = await page(314)
-		assert.doesNotMatch(html, /name="comment\[text\]"/)
-		assert.match(
-			html,
-			/<a\b[^>]*\bhref="\/login"[^>]*>\s*Log in to comment\s*</,
-		)
-	},
-)
+test('logged out, the page links to the login instead of showing the comment form', async () => {
+	const html = await page(314)
+	assert.doesNotMatch(html, /name="comment\[text\]"/)
+	assert.match(html, /<a\b[^>]*\bhref="\/login"[^>]*>\s*Log in to comment\s*</)
+})
 
-test(
-	'logged in, the page has the comment form',
-	{todo: 'the inline comment form'},
-	async () => {
-		const {agent} = await logIn('commenter')
-		const html = await page(315, {}, agent)
+test('logged in, the page has the comment form', async () => {
+	const {agent} = await logIn('commenter')
+	const html = await page(315, {}, agent)
 
-		const form = tags(html, 'form').find(
-			(tag) => attr(tag, 'action') === '/campsites/315/comments',
-		)
-		assert.ok(form, 'no form posts to /campsites/315/comments')
-		assert.strictEqual(attr(form, 'method'), 'POST')
-		assert.match(attr(form, 'class'), /\bvalidated-form\b/)
+	const form = tags(html, 'form').find(
+		(tag) => attr(tag, 'action') === '/campsites/315/comments',
+	)
+	assert.ok(form, 'no form posts to /campsites/315/comments')
+	assert.strictEqual(attr(form, 'method'), 'POST')
+	assert.match(attr(form, 'class'), /\bvalidated-form\b/)
 
-		const [textarea] = tags(html, 'textarea')
-		assert.ok(textarea, 'no textarea')
-		assert.strictEqual(attr(textarea, 'name'), 'comment[text]')
-		assert.match(textarea, /\srequired\b/)
-		const id = attr(textarea, 'id')
-		assert.ok(id, 'the textarea needs an id for its label')
-		assert.match(html, new RegExp(`<label\\b[^>]*\\bfor="${id}"`))
+	const [textarea] = tags(html, 'textarea')
+	assert.ok(textarea, 'no textarea')
+	assert.strictEqual(attr(textarea, 'name'), 'comment[text]')
+	assert.match(textarea, /\srequired\b/)
+	const id = attr(textarea, 'id')
+	assert.ok(id, 'the textarea needs an id for its label')
+	assert.match(html, new RegExp(`<label\\b[^>]*\\bfor="${id}"`))
 
-		assert.match(html, /<script src="\/js\/validateForms\.js"><\/script>/)
-		assert.doesNotMatch(html, /Log in to comment/)
-	},
-)
+	assert.match(html, /<script src="\/js\/validateForms\.js"><\/script>/)
+	assert.doesNotMatch(html, /Log in to comment/)
+})
 
 test('only the author sees EDIT and DELETE on a comment', async () => {
 	const {agent, user} = await logIn('author')

@@ -5,6 +5,7 @@
 async function initMap() {
 	// Each call resolves once that part of the API is loaded and has filled in
 	// its classes under google.maps. The first call fetches the API itself.
+	const {ColorScheme} = await google.maps.importLibrary('core')
 	await google.maps.importLibrary('maps')
 	await google.maps.importLibrary('marker')
 
@@ -19,6 +20,10 @@ async function initMap() {
 		center: center,
 		scrollwheel: false,
 		mapId: mapEl.dataset.mapId,
+		// Set here or not at all: Google ignores a colorScheme set after the map
+		// is made. The Map ID's dark-mode style, set in Cloud Console under Map
+		// Management, is what draws it.
+		colorScheme: ColorScheme.DARK,
 	})
 
 	// Built as a DOM node rather than an HTML string so the facility name from
