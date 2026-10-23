@@ -111,3 +111,31 @@ test('the script check reads a src that has no scheme', async () => {
 		`the check found: ${externalScripts(res.text).join(', ')}`,
 	)
 })
+
+// The hosts that served Bootstrap, jQuery, Popper and Font Awesome. No page
+// loads from them any more, so no directive names them.
+const REMOVED_HOSTS = [
+	'code.jquery.com',
+	'cdn.jsdelivr.net',
+	'stackpath.bootstrapcdn.com',
+	'cdnjs.cloudflare.com',
+]
+
+test(
+	'the CSP names none of the old CDN hosts, in any directive',
+	{todo: 'the cleanup PR removes them from app.js'},
+	async () => {
+		const res = await request(app).get('/login')
+		const named = res.headers['content-security-policy']
+			.split(';')
+			.flatMap((directive) => {
+				const [name, ...sources] = directive.trim().split(/\s+/)
+				return sources
+					.filter((source) =>
+						REMOVED_HOSTS.some((host) => source.includes(host)),
+					)
+					.map((source) => `${name} ${source}`)
+			})
+		assert.deepStrictEqual(named, [])
+	},
+)
