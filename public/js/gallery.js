@@ -1,0 +1,45 @@
+// The campsite page's gallery (views/campsites/show.ejs). Every photo is in
+// the markup so none is lost without this script; it only switches which one
+// shows. The controls stay hidden until it runs, since they do nothing without
+// it.
+;(() => {
+	const gallery = document.querySelector('[data-gallery]')
+	if (!gallery) return
+
+	const figures = [...gallery.querySelectorAll('[data-gallery-figure]')]
+	const controls = gallery.querySelector('[data-gallery-controls]')
+	const counter = gallery.querySelector('[data-gallery-counter]')
+	if (figures.length < 2 || !controls || !counter) return
+
+	const pad = (n) => String(n).padStart(2, '0')
+	let current = 0
+
+	const show = (index) => {
+		current = (index + figures.length) % figures.length
+		figures.forEach((figure, i) => {
+			figure.hidden = i !== current
+		})
+		counter.textContent = `${pad(current + 1)} / ${pad(figures.length)}`
+	}
+
+	gallery
+		.querySelector('[data-gallery-prev]')
+		.addEventListener('click', () => show(current - 1))
+	gallery
+		.querySelector('[data-gallery-next]')
+		.addEventListener('click', () => show(current + 1))
+	for (const thumb of gallery.querySelectorAll('[data-gallery-goto]')) {
+		thumb.addEventListener('click', () =>
+			show(Number(thumb.dataset.galleryGoto)),
+		)
+	}
+
+	gallery.addEventListener('keydown', (event) => {
+		if (event.key === 'ArrowLeft') show(current - 1)
+		else if (event.key === 'ArrowRight') show(current + 1)
+		else return
+		event.preventDefault()
+	})
+
+	controls.hidden = false
+})()

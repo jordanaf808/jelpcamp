@@ -88,10 +88,16 @@ router.get('/show/:id', async (req, res) => {
 		cache: {ttl: 1800000},
 	})
 	// The show route fetches a single facility and never passes through
-	// mutateData, so it sanitizes at its own fetch boundary.
+	// mutateData, so it sanitizes at its own fetch boundary. The page renders
+	// all three as markup: RIDB sends HTML in directions too ("<p>From Baker
+	// City…").
 	const recData = {
 		...response.data,
 		FacilityDescription: sanitizeDescription(response.data.FacilityDescription),
+		FacilityDirections: sanitizeDescription(response.data.FacilityDirections),
+		FacilityUseFeeDescription: sanitizeDescription(
+			response.data.FacilityUseFeeDescription,
+		),
 	}
 	const data = {
 		recData,
