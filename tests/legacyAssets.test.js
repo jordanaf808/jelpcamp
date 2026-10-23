@@ -69,15 +69,20 @@ test.after(async () => {
 	await setup.stop()
 })
 
-const OLD_ASSETS = [
-	'bootstrapcdn',
-	'jquery',
-	'popper',
-	'font-awesome',
-	'/stylesheets/main.css',
-	'/js/back.js',
-	'/js/offcanvas.js',
-]
+// What the page loads: each <script src> and <link href>. Reading only these,
+// not the whole page, means RIDB text that mentions jQuery is no match, and a
+// library from any CDN is.
+const loadedUrls = (html) =>
+	[...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/gi)].map(
+		([, url]) => url,
+	)
+
+const OLD_LIBRARY = /bootstrap|jquery|popper|font-?awesome/i
+const OLD_FILES = ['/stylesheets/main.css', '/js/back.js', '/js/offcanvas.js']
+
+const isOld = (url) =>
+	OLD_LIBRARY.test(url) ||
+	OLD_FILES.includes(new URL(url, 'https://wandur.test').pathname)
 
 const PATHS = [
 	'/campsites',
@@ -92,10 +97,8 @@ const PATHS = [
 
 for (const path of PATHS) {
 	test(`${path} loads none of the old assets`, () => {
-		const html = pages[path].text.toLowerCase()
-		assert.deepStrictEqual(
-			OLD_ASSETS.filter((asset) => html.includes(asset)),
-			[],
-		)
+		const urls = loadedUrls(pages[path].text)
+		assert.ok(urls.length > 0, `${path}: the page should load something`)
+		assert.deepStrictEqual(urls.filter(isOld), [])
 	})
 }

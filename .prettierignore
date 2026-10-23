@@ -3,7 +3,7 @@
 # EJS templates: Prettier has no parser for them.
 views/
 
-# main.css and landing.css are compiled from the .scss files beside them.
+# The stylesheets: plain CSS, not formatted by Prettier.
 public/stylesheets/
 
 # npm writes these and keeps its own two-space indent.

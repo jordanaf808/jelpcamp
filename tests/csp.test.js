@@ -115,23 +115,27 @@ test('the script check reads a src that has no scheme', async () => {
 	)
 })
 
-// The hosts that served Bootstrap, jQuery, Popper and Font Awesome. No page
-// loads from them any more, so no directive names them.
-const REMOVED_HOSTS = [
-	'code.jquery.com',
-	'cdn.jsdelivr.net',
-	'stackpath.bootstrapcdn.com',
-	'cdnjs.cloudflare.com',
+// The sources this app listed for Bootstrap, jQuery, Popper and Font Awesome:
+// four whole hosts, in one directive or another, and Popper's one file on
+// jsDelivr. No page loads them any more, so no directive names them. Another
+// file on jsDelivr or cdnjs, listed by its full URL as app.js says, is not one
+// of these.
+const REMOVED_SOURCES = [
+	'https://code.jquery.com',
+	'https://stackpath.bootstrapcdn.com',
+	'https://cdnjs.cloudflare.com',
+	'https://cdn.jsdelivr.net',
+	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
 ]
 
-test('the CSP names none of the old CDN hosts, in any directive', async () => {
+test('the CSP names none of the removed CDN sources, in any directive', async () => {
 	const res = await request(app).get('/login')
 	const named = res.headers['content-security-policy']
 		.split(';')
 		.flatMap((directive) => {
 			const [name, ...sources] = directive.trim().split(/\s+/)
 			return sources
-				.filter((source) => REMOVED_HOSTS.some((host) => source.includes(host)))
+				.filter((source) => REMOVED_SOURCES.includes(source))
 				.map((source) => `${name} ${source}`)
 		})
 	assert.deepStrictEqual(named, [])

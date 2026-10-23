@@ -142,8 +142,9 @@ hr {
 }
 
 /* Reboot: the Google map's info window shows the facility's name in an <h5>
-   (gmap.js). 1.25rem. */
-h5 {
+   (gmap.js), which Google draws inside #map. 1.25rem. :where() keeps the
+   specificity at Reboot's bare h5, so any rule of Google's still wins. */
+:where(#map) h5 {
 	margin: 0 0 10px;
 	font-size: 25px;
 	font-weight: 500;
