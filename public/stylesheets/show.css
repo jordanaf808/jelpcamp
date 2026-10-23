@@ -17,8 +17,7 @@
 	border-bottom: 1px solid var(--line);
 }
 
-.detail-hero__back,
-.detail-hero__back:hover {
+.detail-hero__back {
 	align-self: flex-start;
 	font: 500 var(--fs-mono) / 1.2 var(--font-mono);
 	letter-spacing: 0.1em;
@@ -225,6 +224,12 @@
 	padding: 48px var(--gutter) 72px;
 }
 
+/* Without a sections row, its row gap would still push the comments down. */
+.detail-layout--no-sections {
+	grid-template-rows: auto;
+	grid-template-areas: 'comments aside';
+}
+
 .detail-sections {
 	grid-area: sections;
 	display: flex;
@@ -396,8 +401,7 @@
 	letter-spacing: 0.06em;
 }
 
-.detail-comment__edit,
-.detail-comment__edit:hover {
+.detail-comment__edit {
 	color: var(--sage);
 }
 
@@ -605,6 +609,21 @@
 /* One column below 900px. */
 
 @media (max-width: 899px) {
+	/* The title gets its own line above the controls, full width. */
+	.detail-gallery__caption {
+		height: auto;
+		padding: 8px 16px 44px;
+		line-height: 1.4;
+	}
+
+	.detail-gallery--1 .detail-gallery__caption {
+		padding: 8px 16px;
+	}
+
+	.detail-gallery__controls {
+		height: 44px;
+	}
+
 	.detail-hero__row {
 		flex-direction: column;
 		align-items: flex-start;
@@ -642,6 +661,12 @@
 		row-gap: 40px;
 		padding-top: 32px;
 		padding-bottom: 48px;
+	}
+
+	.detail-layout--no-sections {
+		grid-template-areas:
+			'aside'
+			'comments';
 	}
 
 	.detail-section {

@@ -1,9 +1,7 @@
-// The photo gallery on the campsite page (views/campsites/show.ejs).
-//
-// Every photo is in the markup, one per figure, and all but the first are
-// hidden. This shows one at a time: PREV and NEXT step through them (and wrap),
-// the arrow keys do the same while focus is in the gallery, and a thumbnail
-// jumps to its photo. The controls stay hidden until this script runs.
+// The campsite page's gallery (views/campsites/show.ejs). Every photo is in
+// the markup so none is lost without this script; it only switches which one
+// shows. The controls stay hidden until it runs, since they do nothing without
+// it.
 ;(() => {
 	const gallery = document.querySelector('[data-gallery]')
 	if (!gallery) return

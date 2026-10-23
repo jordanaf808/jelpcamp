@@ -261,27 +261,23 @@ test('a comment stored without createdAt is dated from its id', async () => {
 
 // A comment can also hold createdAt: null, which mongoose loads as null and
 // not as its default.
-test(
-	'a comment stored with createdAt null is dated from its id',
-	{todo: 'madeAt falls back to the id unless createdAt is a valid date'},
-	async () => {
-		const _id = mongoose.Types.ObjectId.createFromTime(
-			Date.parse('2022-02-14T09:00:00Z') / 1000,
-		)
-		await Comment.collection.insertOne({
-			_id,
-			text: 'A comment with a null date.',
-			createdAt: null,
-			author: {username: 'null-date'},
-		})
-		await campsiteWithComments(319, [{_id}])
-		const html = await page(319)
-		assert.match(
-			html,
-			/<time\b[^>]*\bdatetime="2022-02-14T09:00:00\.000Z"[^>]*>\s*Feb 14, 2022\s*<\/time>/,
-		)
-	},
-)
+test('a comment stored with createdAt null is dated from its id', async () => {
+	const _id = mongoose.Types.ObjectId.createFromTime(
+		Date.parse('2022-02-14T09:00:00Z') / 1000,
+	)
+	await Comment.collection.insertOne({
+		_id,
+		text: 'A comment with a null date.',
+		createdAt: null,
+		author: {username: 'null-date'},
+	})
+	await campsiteWithComments(319, [{_id}])
+	const html = await page(319)
+	assert.match(
+		html,
+		/<time\b[^>]*\bdatetime="2022-02-14T09:00:00\.000Z"[^>]*>\s*Feb 14, 2022\s*<\/time>/,
+	)
+})
 
 test('logged out, the page links to the login instead of showing the comment form', async () => {
 	const html = await page(314)

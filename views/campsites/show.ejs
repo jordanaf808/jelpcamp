@@ -29,8 +29,12 @@
   const dateFormat = new Intl.DateTimeFormat('en-US', {dateStyle: 'medium', timeZone: 'UTC'})
   // Comments from before 2023-06-22 have no createdAt, and mongoose fills in
   // today as it loads them. Their ObjectId holds when they were made.
-  const madeAt = (comment) =>
-    comment.$isDefault('createdAt') ? comment._id.getTimestamp() : comment.createdAt
+  // A null or broken createdAt gets the same fallback.
+  const madeAt = (comment) => {
+    const {createdAt} = comment
+    const valid = createdAt instanceof Date && !Number.isNaN(createdAt.getTime())
+    return valid && !comment.$isDefault('createdAt') ? createdAt : comment._id.getTimestamp()
+  }
 %>
 
 <header class="detail-hero camo">
@@ -89,9 +93,9 @@
     <% }) %>
     <% if (images.length > 1) { %>
     <div class="detail-gallery__controls" data-gallery-controls hidden>
-      <button class="detail-gallery__step" type="button" aria-label="Previous photo" data-gallery-prev>← PREV</button>
+      <button class="detail-gallery__step" type="button" data-gallery-prev><span aria-hidden="true">←</span> PREV</button>
       <span class="detail-gallery__counter" aria-live="polite" data-gallery-counter>01 / <%= String(images.length).padStart(2, '0') %></span>
-      <button class="detail-gallery__step" type="button" aria-label="Next photo" data-gallery-next>NEXT →</button>
+      <button class="detail-gallery__step" type="button" data-gallery-next>NEXT <span aria-hidden="true">→</span></button>
     </div>
     <% } %>
   </div>
@@ -100,7 +104,7 @@
   <button
     class="detail-gallery__thumb"
     type="button"
-    aria-label="Show photo <%= i + 2 %> of <%= images.length %><%= more ? `, and ${more} more` : '' %>"
+    aria-label="Show photo <%= i + 2 %> of <%= images.length %><%= more ? `, +${more} more` : '' %>"
     data-gallery-goto="<%= i + 1 %>"
   >
     <img class="detail-gallery__image" src="<%= image.URL %>" alt="" loading="lazy" />
@@ -112,7 +116,9 @@
 </section>
 <% } %>
 
-<div class="detail-layout">
+<% const hasSections = sections.length || videos.length %>
+<div class="detail-layout<%= hasSections ? '' : ' detail-layout--no-sections' %>">
+  <% if (hasSections) { %>
   <div class="detail-sections">
     <% for (const section of sections) { %>
     <section class="detail-section">
@@ -132,6 +138,7 @@
     </section>
     <% } %>
   </div>
+  <% } %>
 
   <aside class="detail-aside">
     <section class="detail-card" aria-labelledby="map-label">
