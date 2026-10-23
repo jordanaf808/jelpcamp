@@ -307,3 +307,55 @@ test("a campsite that fails today's schema still gets its page and its fields", 
 	assert.strictEqual(stored.state, 'OR')
 	assert.strictEqual(stored.recAreaName, 'Wallowa Whitman National Forest')
 })
+
+// RIDB sends FacilityDirections as HTML: the captured record's is
+// "<p>From Baker City…</p>". Escaped, the page would print the tags as text, so
+// the route sanitizes it, and FacilityUseFeeDescription with it, the way it
+// sanitizes FacilityDescription.
+test(
+	'the directions render as markup, not as escaped tags',
+	{timeout: 10000, todo: 'the page shows directions, sanitized in the route'},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/12')
+			.query({full: 'true'})
+			.reply(200, {...facility, FacilityID: '12'})
+
+		const res = await request(app).get('/campsites/show/12')
+		assert.strictEqual(res.status, 200)
+		assert.ok(res.text.includes('<p>From Baker City, Oregon'))
+		assert.ok(!res.text.includes('&lt;p&gt;From Baker City'))
+		// The fees are plain text, and show as they are.
+		assert.ok(
+			res.text.includes(
+				'Payment in full will be charged to your credit card upon completion of the reservation.',
+			),
+		)
+	},
+)
+
+test(
+	'a script in the directions or the fees is stripped',
+	{timeout: 10000, todo: 'the route sanitizes directions and fees'},
+	async () => {
+		nock(RIDB)
+			.get('/api/v1/facilities/13')
+			.query({full: 'true'})
+			.reply(200, {
+				...facility,
+				FacilityID: '13',
+				FacilityDirections:
+					'<p>Turn left at the lake.</p><script>alert("directions")</script>',
+				FacilityUseFeeDescription:
+					'Twenty dollars a night.<script>alert("fees")</script>',
+			})
+
+		const res = await request(app).get('/campsites/show/13')
+		assert.strictEqual(res.status, 200)
+		assert.ok(res.text.includes('<p>Turn left at the lake.</p>'))
+		assert.ok(res.text.includes('Twenty dollars a night.'))
+		assert.ok(!res.text.includes('alert("directions")'))
+		assert.ok(!res.text.includes('alert("fees")'))
+		assert.ok(!res.text.includes('alert(&#34;'))
+	},
+)
