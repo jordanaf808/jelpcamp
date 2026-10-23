@@ -1,5 +1,4 @@
 <%#
-  The search bar on /campsites and /campsites/search.
   Locals: searchParams (search only) = {query, activity, state, limit}, from
   the field names search, activities, state and limit. A search marks its
   choice among the existing options, so a select never gains an option.
@@ -114,11 +113,11 @@
   ]
   const fields = [
     {id: 'search-activities', name: 'activities', label: 'Activity', options: activities, chosen: params.activity},
-    {id: 'stateSelect', name: 'state', label: 'State', options: states, chosen: params.state},
+    {id: 'search-state', name: 'state', label: 'State', options: states, chosen: params.state},
     {id: 'limit-results', name: 'limit', label: 'Limit', options: limits, chosen: params.limit},
   ]
 %>
-<form class="search-bar" action="/campsites/search" method="GET" id="searchForm">
+<form class="search-bar" action="/campsites/search" method="GET">
   <label class="search-bar__field" for="search">
     <span class="search-bar__label">Keyword</span>
     <input

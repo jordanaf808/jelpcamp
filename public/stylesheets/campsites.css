@@ -1,9 +1,4 @@
 /*
- * /campsites and /campsites/search: design 1c, "Campsites landing".
- * Views: views/campsites/index.ejs and results.ejs, with the partials
- * searchForm.ejs, campsiteMap.ejs and facilityCard.ejs. Popups come from
- * public/js/map.js.
- *
  * Loaded after Bootstrap 4, main.css and wandur.css. None of the class names
  * here is styled by Bootstrap 4 or main.css. Where those style the elements
  * themselves (h1-h3, p, ul, label, button:focus, #map), the rules below set
@@ -304,6 +299,14 @@ select.search-bar__control {
 	border-top: 1px solid var(--line-2);
 }
 
+/* One focus ring, wandur.css's orange :focus-visible outline. Mapbox adds a
+   blue box-shadow, and main.css's button:focus a grey background that stays
+   after a click. */
+.map-panel .mapboxgl-ctrl-group button:focus {
+	box-shadow: none;
+	background-color: transparent;
+}
+
 .map-panel .mapboxgl-ctrl-group button:not(:disabled):hover {
 	background-color: rgba(201, 212, 160, 0.08);
 }
@@ -316,10 +319,12 @@ select.search-bar__control {
 
 /* Popups, built by map.js */
 
+/* Above the overlays, inside the panel's isolated stacking context. */
+.map-panel .mapboxgl-popup {
+	z-index: 4;
+}
+
 .map-popup .mapboxgl-popup-content {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
 	padding: 14px 32px 14px 16px;
 	border: 1px solid rgba(201, 212, 160, 0.28);
 	border-radius: 0;
@@ -360,6 +365,13 @@ select.search-bar__control {
 .map-popup .mapboxgl-popup-close-button:hover {
 	background-color: transparent;
 	color: var(--text);
+}
+
+/* map.js's own <div>, which setDOMContent puts inside the content box. */
+.map-popup__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .map-popup__name,
@@ -442,8 +454,7 @@ select.search-bar__control {
 }
 
 /* Facility card. The name's link stretches over the whole card with
-   ::after, so the card works as one link without wrapping the description,
-   which can hold links, in an <a>. */
+   ::after, so the card works as one link whose name is the facility's. */
 
 .facility-card {
 	position: relative;
@@ -557,29 +568,15 @@ select.search-bar__control {
 	outline-offset: 2px;
 }
 
-/* RIDB's sanitized HTML, clamped to three lines. Its headings ("Overview"
-   on most facilities) are hidden: in a card they'd take a line, and they'd
-   sit under this card's <h3> in the page outline. */
 .facility-card__desc {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 3;
 	line-clamp: 3;
 	overflow: hidden;
+	margin: 0;
 	font: 400 var(--fs-body-sm) / 1.5 var(--font-body);
 	color: var(--body-2);
-}
-
-.facility-card__desc > * {
-	margin: 0;
-}
-
-.facility-card__desc :is(h1, h2, h3, h4) {
-	display: none;
-}
-
-.facility-card__desc a {
-	color: inherit;
 }
 
 .facility-card__more {

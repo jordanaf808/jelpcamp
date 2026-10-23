@@ -1,4 +1,38 @@
+const sanitizeHtml = require('sanitize-html')
 const sanitizeDescription = require('./sanitizeDescription')
+
+const BLOCK_TAG = /<\/?(?:p|br|hr|h[1-6]|ul|ol|li|div|blockquote|tr|td|th)\b/gi
+const ENTITIES = {'&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"'}
+
+// The description as plain text, for the list cards, which clamp it to three
+// lines. A link in that HTML would be hidden by the clamp while Tab still
+// reached it. Headings ("Overview" on most facilities) are dropped with their
+// text. sanitize-html decodes entities, then escapes &, <, > and " again, so
+// those are decoded here: the view escapes summary once, with <%= %>.
+const summaryOf = (html) => {
+	if (typeof html !== 'string') return ''
+	const text = sanitizeHtml(html.replace(BLOCK_TAG, ' $&'), {
+		allowedTags: [],
+		allowedAttributes: {},
+		nonTextTags: [
+			'script',
+			'style',
+			'textarea',
+			'option',
+			'noscript',
+			'h1',
+			'h2',
+			'h3',
+			'h4',
+			'h5',
+			'h6',
+		],
+	})
+	return text
+		.replace(/&(?:amp|lt|gt|quot);/g, (entity) => ENTITIES[entity])
+		.replace(/\s+/g, ' ')
+		.trim()
+}
 
 // The primary image, else the first one. RIDB's MediaType is Image or Video,
 // and a video URL is no use in an <img>.
@@ -25,6 +59,7 @@ const mutateData = (data) => {
 		.map((item) => ({
 			...item,
 			FacilityDescription: sanitizeDescription(item.FacilityDescription),
+			summary: summaryOf(item.FacilityDescription),
 			photo: photoOf(item),
 			...placeOf(item),
 			// GeoJSON lists longitude first.

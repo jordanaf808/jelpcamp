@@ -111,23 +111,23 @@ test('each facility has its own card, with its name in a heading', () => {
 
 // The description is clamped to 3 lines. A link in it would be hidden while
 // Tab still reached it, so the card shows a plain-text summary.
-test(
-	"a card's only link is its name, and its summary is escaped once",
-	{todo: 'the card renders the description HTML, links included'},
-	() => {
-		for (const [path, html] of listPages()) {
-			const card = cardOf(html, '233115')
-			assert.strictEqual(
-				(card.match(/<a\b/g) ?? []).length,
-				1,
-				`${path}: one link`,
-			)
-			assert.doesNotMatch(card, /<(p|h2|ul|li)\b/, `${path}: no RIDB HTML`)
-			assert.doesNotMatch(card, /&amp;amp;/, `${path}: escaped once`)
-			assert.match(card, /One of Eastern Oregon’s largest/, path)
-		}
-	},
-)
+test("a card's only link is its name, and its summary is escaped once", () => {
+	for (const [path, html] of listPages()) {
+		const card = cardOf(html, '233115')
+		assert.strictEqual(
+			(card.match(/<a\b/g) ?? []).length,
+			1,
+			`${path}: one link`,
+		)
+		assert.match(
+			card,
+			/class="facility-card__desc">[^<]*<\/p>/,
+			`${path}: no RIDB HTML`,
+		)
+		assert.doesNotMatch(card, /&amp;amp;/, `${path}: escaped once`)
+		assert.match(card, /One of Eastern Oregon’s largest/, path)
+	}
+})
 
 test('a facility with no photo gets the placeholder, and one with a photo gets a lazy <img>', () => {
 	for (const [path, html] of listPages()) {

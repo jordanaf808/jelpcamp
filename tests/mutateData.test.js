@@ -108,68 +108,48 @@ const summaryOf = (html) =>
 	mutateData([{...source('233115'), FacilityDescription: html}]).recData[0]
 		.summary
 
-test(
-	'summary is the description as plain text, with no tags',
-	{todo: 'mutateData has no summary yet'},
-	() => {
-		assert.strictEqual(
-			facility('900001').summary,
-			'A trailhead with no photos and no parent area.',
-		)
-		const summary = facility('233115').summary
-		assert.strictEqual(typeof summary, 'string')
-		assert.doesNotMatch(summary, /<\/?[a-z][^>]*>/i)
-		assert.match(summary, /^One of Eastern Oregon’s largest/)
-	},
-)
+test('summary is the description as plain text, with no tags', () => {
+	assert.strictEqual(
+		facility('900001').summary,
+		'A trailhead with no photos and no parent area.',
+	)
+	const summary = facility('233115').summary
+	assert.strictEqual(typeof summary, 'string')
+	assert.doesNotMatch(summary, /<\/?[a-z][^>]*>/i)
+	assert.match(summary, /^One of Eastern Oregon’s largest/)
+})
 
-test(
-	'summary drops links, keeping their text',
-	{todo: 'mutateData has no summary yet'},
-	() => {
-		assert.strictEqual(
-			summaryOf('<p>See <a href="https://example.com">this site</a>.</p>'),
-			'See this site.',
-		)
-	},
-)
+test('summary drops links, keeping their text', () => {
+	assert.strictEqual(
+		summaryOf('<p>See <a href="https://example.com">this site</a>.</p>'),
+		'See this site.',
+	)
+})
 
-test(
-	'summary puts a space between blocks and drops the headings',
-	{todo: 'mutateData has no summary yet'},
-	() => {
-		assert.strictEqual(
-			summaryOf(
-				'<h2>Overview</h2><p>One.</p><p>Two<br>lines.</p><ul><li>a</li><li>b</li></ul>',
-			),
-			'One. Two lines. a b',
-		)
-	},
-)
+test('summary puts a space between blocks and drops the headings', () => {
+	assert.strictEqual(
+		summaryOf(
+			'<h2>Overview</h2><p>One.</p><p>Two<br>lines.</p><ul><li>a</li><li>b</li></ul>',
+		),
+		'One. Two lines. a b',
+	)
+})
 
 // The view escapes summary with <%= %>, so an entity left in it would show
 // as text, e.g. "&amp;amp;".
-test(
-	'summary decodes entities, so the view escapes them only once',
-	{todo: 'mutateData has no summary yet'},
-	() => {
-		assert.strictEqual(
-			summaryOf(
-				'<p>Fish &amp; hike &lt;2 miles&gt; &quot;Union&quot; caf&eacute;</p>',
-			),
-			'Fish & hike <2 miles> "Union" café',
-		)
-	},
-)
+test('summary decodes entities, so the view escapes them only once', () => {
+	assert.strictEqual(
+		summaryOf(
+			'<p>Fish &amp; hike &lt;2 miles&gt; &quot;Union&quot; caf&eacute;</p>',
+		),
+		'Fish & hike <2 miles> "Union" café',
+	)
+})
 
-test(
-	'summary is empty with no description',
-	{todo: 'mutateData has no summary yet'},
-	() => {
-		assert.strictEqual(summaryOf(undefined), '')
-		assert.strictEqual(summaryOf(''), '')
-	},
-)
+test('summary is empty with no description', () => {
+	assert.strictEqual(summaryOf(undefined), '')
+	assert.strictEqual(summaryOf(''), '')
+})
 
 test('FacilityDescription stays the sanitized HTML', () => {
 	const sanitizeDescription = require('../utils/sanitizeDescription')

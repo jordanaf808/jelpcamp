@@ -129,6 +129,7 @@ map.on('load', function () {
 		// Styled in public/stylesheets/campsites.css. data-campsites is lower
 		// case, so the CSS sets the name and type in capitals.
 		const content = document.createElement('div')
+		content.className = 'map-popup__body'
 
 		const title = document.createElement('p')
 		title.className = 'map-popup__name'

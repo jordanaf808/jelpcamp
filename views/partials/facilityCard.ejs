@@ -1,8 +1,8 @@
 <%#
-  One facility in the list pages' grid. Local: facility, a recData item from
-  utils/mutateData.js. photo, state and recAreaName may each be null.
-  The heading's link covers the whole card (see campsites.css), so the card
-  is not wrapped in an <a>: the description can hold links of its own.
+  Local: facility, a recData item from utils/mutateData.js. photo, state and
+  recAreaName may each be null. summary is plain text, escaped here.
+  The heading's link covers the whole card (see campsites.css), so the
+  link's name is the facility's name, not the whole card's text.
 %>
 <article class="facility-card">
   <div class="facility-card__media">
@@ -25,8 +25,7 @@
     <h3 class="facility-card__name">
       <a class="facility-card__link" href="/campsites/show/<%= facility.FacilityID %>"><%= facility.FacilityName %></a>
     </h3>
-    <%# Unescaped on purpose: sanitized in utils/mutateData.js. %>
-    <div class="facility-card__desc"><%- facility.FacilityDescription %></div>
+    <p class="facility-card__desc"><%= facility.summary %></p>
     <span class="facility-card__more" aria-hidden="true">More information →</span>
   </div>
 </article>
