@@ -1,8 +1,7 @@
 // Dismiss buttons on flash messages (views/partials/header.ejs).
 //
-// The buttons have no data-dismiss="alert", so Bootstrap's alert plugin, still
-// loaded by the footer, ignores them. The CSS shows the buttons only once this
-// script marks the list as enhanced.
+// The CSS shows the buttons only once this script marks the list as
+// enhanced.
 ;(() => {
 	const list = document.querySelector('[data-flash-list]')
 	if (!list) return

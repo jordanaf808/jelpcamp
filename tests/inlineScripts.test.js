@@ -75,7 +75,6 @@ const PAGES = [
 	{
 		name: '/campsites/1/comments/:comment_id/edit',
 		path: () => `/campsites/1/comments/${commentId}/edit`,
-		todo: 'views/comments/edit.ejs loads validateForms.js with #104',
 	},
 	{
 		name: '/campsites/show/2',

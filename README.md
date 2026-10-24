@@ -20,7 +20,7 @@ rebuilt around that API.
 | Auth | Passport, local username and password |
 | Security | helmet with a Content Security Policy, rate limits on login and register |
 | Maps | Mapbox GL JS on the search pages, Google Maps on a facility's page |
-| Front end | Bootstrap 4, plain JavaScript in `public/js/` |
+| Front end | Plain CSS in `public/stylesheets/`, plain JavaScript in `public/js/` |
 
 ## Run it locally
 

@@ -75,10 +75,13 @@ test('script-src allows no public CDN as a whole host', async () => {
 	)
 })
 
-// One page per set of script tags: /login gets the layout's, /campsites adds
-// Mapbox, and the campsite page adds the Google map's and the Flickr embed.
-test('every external script on /login is allowed by script-src', async () => {
-	assertScriptsAllowed(await request(app).get('/login'))
+// One page per set of script tags. The layout's own are all on this site, so
+// /login has none from elsewhere. /campsites adds Mapbox, and the campsite page
+// adds the Google map's and the Flickr embed.
+test('/login, with only the layout, loads no external script', async () => {
+	const res = await request(app).get('/login')
+	assert.strictEqual(res.status, 200)
+	assert.deepStrictEqual(externalScripts(res.text), [])
 })
 
 test('every external script on /campsites is allowed by script-src', async () => {
@@ -110,4 +113,30 @@ test('the script check reads a src that has no scheme', async () => {
 		),
 		`the check found: ${externalScripts(res.text).join(', ')}`,
 	)
+})
+
+// The sources this app listed for Bootstrap, jQuery, Popper and Font Awesome:
+// four whole hosts, in one directive or another, and Popper's one file on
+// jsDelivr. No page loads them any more, so no directive names them. Another
+// file on jsDelivr or cdnjs, listed by its full URL as app.js says, is not one
+// of these.
+const REMOVED_SOURCES = [
+	'https://code.jquery.com',
+	'https://stackpath.bootstrapcdn.com',
+	'https://cdnjs.cloudflare.com',
+	'https://cdn.jsdelivr.net',
+	'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js',
+]
+
+test('the CSP names none of the removed CDN sources, in any directive', async () => {
+	const res = await request(app).get('/login')
+	const named = res.headers['content-security-policy']
+		.split(';')
+		.flatMap((directive) => {
+			const [name, ...sources] = directive.trim().split(/\s+/)
+			return sources
+				.filter((source) => REMOVED_SOURCES.includes(source))
+				.map((source) => `${name} ${source}`)
+		})
+	assert.deepStrictEqual(named, [])
 })

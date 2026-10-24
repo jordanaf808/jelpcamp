@@ -2,11 +2,9 @@
  * WANDUR: tokens, base elements and the shared layout (nav, flash, footer).
  * Values come from the design, project/WANDUR Redesign.dc.html.
  *
- * Loaded after Bootstrap and main.css, which stay until the cleanup PR. So:
- * - No class here shares a name with Bootstrap 4, and new views use these
- *   classes, never Bootstrap's.
- * - Sizes are in px. main.css sets the root font size from 10px to 20px with
- *   !important, so rem means a different size at each screen width.
+ * Each page adds its own stylesheet after this one. There is no framework
+ * underneath: the base layer below sets what the pages need from a reset.
+ * Sizes are in px.
  *
  * Responsive rule for every page: below 900px, one column, the nav becomes
  * the menu, and the gutter is 16px. Use var(--gutter) for side padding and
@@ -74,18 +72,103 @@
 
 /* Base */
 
+/* The first rules keep what Bootstrap 4's Reboot and the old main.css gave
+   every page, where the pages still rely on it. Their rem values are written
+   in px at 1280px wide, where main.css made 1rem 20px. */
+
+/* main.css: border-box from <html> down, inherited, so a library box that
+   sets content-box (Mapbox's compact attribution) keeps it for its children.
+   Every padded or bordered box here with a set width or height assumes it. */
+html {
+	box-sizing: border-box;
+	/* Reboot: iOS doesn't enlarge the text in landscape, and a tap doesn't
+	   flash a grey box. */
+	-webkit-text-size-adjust: 100%;
+	-webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: inherit;
+}
+
+/* main.css: a list has no bullets unless its own rule gives it some. */
+ul {
+	list-style: none;
+}
+
+/* Reboot: square buttons (iOS Safari rounds them), and form controls in the
+   page's font with no margin. The site's own controls set these too; the map
+   libraries' buttons may not. */
+button {
+	border-radius: 0;
+}
+
+button,
+input,
+optgroup,
+select,
+textarea {
+	margin: 0;
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+/* Reboot: images and SVGs sit on the middle of the line, not the baseline.
+   The site's own images are blocks or absolutely placed; the map libraries'
+   markers and controls were drawn with this, so it stays. */
+img,
+svg {
+	vertical-align: middle;
+}
+
+/* Reboot: a link with no href reads as plain text. RIDB's markup can hold
+   one: the sanitizer drops an href it doesn't allow and keeps the <a>. */
+a:not([href]):not([class]),
+a:not([href]):not([class]):hover {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* Reboot: an <hr> in RIDB's markup (allowed, not yet seen) is a faint line
+   with 1rem above and below. */
+hr {
+	height: 0;
+	margin: 20px 0;
+	border: 0;
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Reboot: the Google map's info window shows the facility's name in an <h5>
+   (gmap.js), which Google draws inside #map. 1.25rem. :where() keeps the
+   specificity at Reboot's bare h5, so any rule of Google's still wins. */
+:where(#map) h5 {
+	margin: 0 0 10px;
+	font-size: 25px;
+	font-weight: 500;
+	line-height: 1.2;
+}
+
 [hidden] {
 	display: none !important;
 }
 
 body {
 	min-height: 100vh;
+	/* main.css: the narrowest the page gets, and no sideways scroll. The
+	   overflow may hide something wider than a phone's screen. */
+	min-width: 252px;
+	overflow-x: hidden;
 	display: flex;
 	flex-direction: column;
 	margin: 0;
 	background-color: var(--bg);
 	color: var(--text);
 	font: 400 16px/1.5 var(--font-body);
+	/* main.css: a faint shadow inside the page's edges. 2rem. */
+	box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.1);
 }
 
 main {
@@ -129,7 +212,7 @@ a:hover {
 	text-decoration: none;
 }
 
-/* Higher specificity than main.css's button:focus, which removes the outline. */
+/* The keyboard focus ring, on everything that takes focus. */
 :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
@@ -199,11 +282,9 @@ a:hover {
 	color: var(--text);
 }
 
-/* Buttons. Each rule names :focus too, because main.css greys every focused
-   button with button:focus. */
+/* Buttons */
 
-.button,
-.button:focus {
+.button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -229,8 +310,7 @@ a:hover {
 	color: var(--on-accent);
 }
 
-.button--outline,
-.button--outline:focus {
+.button--outline {
 	border-color: var(--line-3);
 	background-color: var(--bg);
 	color: var(--text);
@@ -242,8 +322,7 @@ a:hover {
 	color: var(--text);
 }
 
-.button--danger,
-.button--danger:focus {
+.button--danger {
 	border-color: rgba(217, 103, 74, 0.5);
 	background-color: transparent;
 	color: var(--danger);
@@ -255,8 +334,7 @@ a:hover {
 	color: var(--danger);
 }
 
-.button--sm,
-.button--sm:focus {
+.button--sm {
 	padding: 7px 13px;
 	font: 600 13px/1.2 var(--font-body);
 	letter-spacing: 0;
@@ -402,8 +480,7 @@ textarea.input {
 	color: var(--text);
 }
 
-.site-nav__cta,
-.site-nav__cta:focus {
+.site-nav__cta {
 	padding: 9px 18px;
 	background-color: var(--accent);
 	color: var(--on-accent);
@@ -416,8 +493,7 @@ textarea.input {
 }
 
 /* Shown by nav.js, below 900px only. */
-.site-nav__toggle,
-.site-nav__toggle:focus {
+.site-nav__toggle {
 	display: none;
 	padding: 8px 12px;
 	border: 1px solid var(--line-2);
@@ -508,8 +584,7 @@ textarea.input {
 }
 
 /* Shown by flash.js. */
-.flash__close,
-.flash__close:focus {
+.flash__close {
 	display: none;
 	flex: none;
 	align-items: center;
@@ -563,23 +638,4 @@ textarea.input {
 		flex-direction: column;
 		align-items: flex-start;
 	}
-}
-
-/* Legacy: pages not yet redesigned put Bootstrap's white cards on this dark
-   page, and those cards take their text colour from <body>. This keeps their
-   text, headings and links dark. Remove with Bootstrap in the cleanup PR. */
-
-.card,
-.search-description,
-.favorites-list {
-	color: #212529;
-}
-
-/* Beats the base h1-h3 colour above, which is light. */
-:is(.card, .search-description, .favorites-list) :is(h1, h2, h3, h4) {
-	color: inherit;
-}
-
-:is(.card, .search-description, .favorites-list) a:not(.btn) {
-	color: #0056b3;
 }

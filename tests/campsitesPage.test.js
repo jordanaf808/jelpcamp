@@ -226,9 +226,9 @@ test('mapbox-gl.js and map.js are both deferred', () => {
 	}
 })
 
-// Bootstrap 4 and Font Awesome go in the cleanup PR, which must not need to
-// touch these views. The flash list in <main> comes from the layout and uses
-// none either.
+// Bootstrap 4 and Font Awesome are gone, so a class of theirs in a view would
+// style nothing. The flash list in <main> comes from the layout and uses none
+// either.
 const BOOTSTRAP_OR_FA = new RegExp(
 	'^(' +
 		[

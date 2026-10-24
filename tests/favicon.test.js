@@ -1,9 +1,8 @@
 // Regression test: the favicon is served, and every page family links it.
 //
-// Every view includes partials/header.ejs or partials/headerBack.ejs, and
-// headerBack.ejs includes header.ejs. A page without the link makes the browser
-// ask for /favicon.ico, which does not exist, so that page logs a 404 on every
-// load.
+// Every view includes partials/header.ejs. A page without the link makes the
+// browser ask for /favicon.ico, which does not exist, so that page logs a 404
+// on every load.
 const test = require('node:test')
 const assert = require('node:assert')
 const request = require('supertest')
@@ -24,7 +23,6 @@ test.before(async () => {
 		.query(true)
 		.reply(200, list)
 
-	// Every view that uses headerBack.ejs sits behind a login or the RIDB API.
 	// The new-comment form needs a logged-in session and a campsite document.
 	const res = await agent
 		.post('/register')
@@ -60,7 +58,7 @@ const FAVICON_LINK =
 const pages = {
 	'/campsites': 'partials/header.ejs',
 	'/login': 'partials/header.ejs',
-	'/campsites/1/comments/new': 'partials/headerBack.ejs',
+	'/campsites/1/comments/new': 'partials/header.ejs',
 }
 
 for (const [path, template] of Object.entries(pages)) {
