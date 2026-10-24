@@ -1,10 +1,8 @@
 /*
  * The campsite page, /campsites/show/:id (design 1d).
  *
- * Loaded after Bootstrap, main.css and wandur.css. Bootstrap's reboot still
- * gives headings, p, ul, dl and figure margins in rem, and main.css sets rem
- * to 20px on wide screens, so every element here sets its own margins. Class
- * names start with detail-, which neither Bootstrap 4 nor main.css uses.
+ * Loaded after wandur.css. Every element here sets its own margins. Class
+ * names start with detail-.
  */
 
 /* Header */
@@ -48,7 +46,6 @@
 	gap: 8px;
 }
 
-/* Beats main.css's h1, which sets Paytone One at 2rem in white. */
 .detail-hero__name {
 	margin: 0;
 	font: 700 var(--fs-h1) / 0.92 var(--font-display);
@@ -152,11 +149,9 @@
 	color: var(--text);
 }
 
-/* Each names :focus too, because main.css greys every focused button. Both
-   use --text, not the design's muted PREV: over a white photo, muted on the
-   bar is 4.23:1. */
-.detail-gallery__step,
-.detail-gallery__step:focus {
+/* Both use --text, not the design's muted PREV: over a white photo, muted on
+   the bar is 4.23:1. */
+.detail-gallery__step {
 	padding: 10px 8px;
 	border: 0;
 	background: none;
@@ -173,8 +168,7 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.detail-gallery__thumb,
-.detail-gallery__thumb:focus {
+.detail-gallery__thumb {
 	position: relative;
 	display: block;
 	min-width: 0;
@@ -283,7 +277,7 @@
 	padding-left: 1.2em;
 }
 
-/* main.css removes the bullets from every ul. */
+/* wandur.css's base layer removes the bullets from every ul. */
 .detail-prose ul {
 	list-style: disc;
 }
@@ -413,8 +407,7 @@
 	margin: 0;
 }
 
-.detail-comment__delete,
-.detail-comment__delete:focus {
+.detail-comment__delete {
 	padding: 0;
 	border: 0;
 	background: none;
@@ -471,8 +464,7 @@
 	color: var(--muted);
 }
 
-.detail-comment-form__submit,
-.detail-comment-form__submit:focus {
+.detail-comment-form__submit {
 	padding: 10px 18px;
 	font-size: var(--fs-ui);
 }
@@ -520,13 +512,10 @@
 	border-bottom: 1px solid var(--line);
 }
 
-/* main.css gives #map a 400px minimum height and a margin. isolation keeps
-   Google's z-indexes inside the map, under the sticky nav. */
+/* isolation keeps Google's z-indexes inside the map, under the sticky nav. */
 #map {
 	isolation: isolate;
 	height: 280px;
-	min-height: 0;
-	margin: 0;
 	border-bottom: 1px solid var(--line);
 	background: var(--deep);
 }

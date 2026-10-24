@@ -16,7 +16,7 @@ module.exports = defineConfig([
 	{
 		// Browser scripts, loaded with <script src>. Not modules, so their
 		// top-level names are globals, and so are the libraries the views load
-		// from CDNs before them: Google Maps, Mapbox GL and jQuery.
+		// from CDNs before them: Google Maps and Mapbox GL.
 		files: ['public/js/**/*.js'],
 		languageOptions: {
 			sourceType: 'script',
@@ -24,7 +24,6 @@ module.exports = defineConfig([
 				...globals.browser,
 				google: 'readonly',
 				mapboxgl: 'readonly',
-				$: 'readonly',
 			},
 		},
 	},

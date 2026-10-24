@@ -114,10 +114,10 @@ test(
 	},
 )
 
-// The footer loads jQuery and Bootstrap for every page. The campsite page also
-// loaded its own copies first, so each click on the photo carousel or the
-// accordion was handled by two Bootstraps.
-test('the campsite page loads jQuery and Bootstrap once each', async () => {
+// The campsite page once loaded its own jQuery and Bootstrap as well as the
+// footer's, so each click on the photo carousel or the accordion was handled
+// by two Bootstraps. The redesigned page uses neither.
+test('the campsite page loads neither jQuery nor Bootstrap', async () => {
 	nock(RIDB)
 		.get('/api/v1/facilities/5')
 		.query({full: 'true'})
@@ -126,16 +126,13 @@ test('the campsite page loads jQuery and Bootstrap once each', async () => {
 	const res = await request(app).get('/campsites/show/5')
 	assert.strictEqual(res.status, 200)
 
-	const scripts = [...res.text.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(
-		([, src]) => src,
-	)
+	// Script tags and stylesheet links: Bootstrap came as both.
+	const urls = [
+		...res.text.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g),
+	].map(([, url]) => url)
 	for (const library of ['jquery', 'bootstrap']) {
-		const found = scripts.filter((src) => src.includes(library))
-		assert.strictEqual(
-			found.length,
-			1,
-			`${library} is loaded ${found.length} times: ${found.join(', ')}`,
-		)
+		const found = urls.filter((url) => url.includes(library))
+		assert.deepStrictEqual(found, [], `${library} is loaded`)
 	}
 })
 

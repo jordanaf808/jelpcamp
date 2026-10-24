@@ -1,8 +1,6 @@
 /*
- * Loaded after Bootstrap 4, main.css and wandur.css. None of the class names
- * here is styled by Bootstrap 4 or main.css. Where those style the elements
- * themselves (h1-h3, p, ul, label, button:focus, #map), the rules below set
- * the property again. Sizes are in px: main.css changes the root font size.
+ * The list pages, /campsites and /campsites/search. Loaded after wandur.css,
+ * so these rules win at equal specificity. Sizes are in px.
  */
 
 /* Hero */
@@ -118,9 +116,7 @@ select.search-bar__control {
 	color: var(--text);
 }
 
-/* :focus too, because main.css greys every focused button. */
-.search-bar__submit,
-.search-bar__submit:focus {
+.search-bar__submit {
 	padding: 0 32px;
 	border: 0;
 	border-radius: 0;
@@ -148,8 +144,7 @@ select.search-bar__control {
 		border-right: 0;
 	}
 
-	.search-bar__submit,
-	.search-bar__submit:focus {
+	.search-bar__submit {
 		grid-column: 1 / -1;
 		padding: 16px 32px;
 	}
@@ -204,12 +199,9 @@ select.search-bar__control {
 	isolation: isolate;
 }
 
-/* Beats main.css's #map, which adds a min-height and a margin. */
 .map-panel #map {
 	width: 100%;
 	height: 100%;
-	min-height: 0;
-	margin: 0;
 }
 
 /* The overlays let clicks through to the map. */
@@ -300,11 +292,9 @@ select.search-bar__control {
 }
 
 /* One focus ring, wandur.css's orange :focus-visible outline. Mapbox adds a
-   blue box-shadow, and main.css's button:focus a grey background that stays
-   after a click. */
+   blue box-shadow. */
 .map-panel .mapboxgl-ctrl-group button:focus {
 	box-shadow: none;
-	background-color: transparent;
 }
 
 .map-panel .mapboxgl-ctrl-group button:not(:disabled):hover {
@@ -353,8 +343,7 @@ select.search-bar__control {
 	border-left-color: var(--surface-2);
 }
 
-.map-popup .mapboxgl-popup-close-button,
-.map-popup .mapboxgl-popup-close-button:focus {
+.map-popup .mapboxgl-popup-close-button {
 	width: 28px;
 	height: 28px;
 	background-color: transparent;
