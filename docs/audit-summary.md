@@ -218,8 +218,9 @@ list, with what was and was not checked, is under
   by the owner, 2026-10-15: "defer until further notice".
 - A development Maps key and a browser smoke script (critique 1). Until they exist,
   every map change is verified on the live site.
-- No test for: search and the index page when RIDB answers, comment edit,
-  register error paths, the CSP beyond `script-src`, cookie flags, any browser code.
+- No test for (checked 2026-10-27): updating a comment, `checkCommentOwnership`
+  rejecting a non-owner, register when the username is taken, the CSP beyond
+  `script-src`, cookie flags, any browser code. Search and the index page are covered.
 - The narrow `script-src` from #82 has not been tried in a browser against a script that
   is not on its list (owner's choice, 2026-10-09). The four hosts in `script-src`
   (Mapbox, Google Maps and two Flickr) are still whole hosts. They were reviewed on

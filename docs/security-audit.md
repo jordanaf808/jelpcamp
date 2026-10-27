@@ -1584,16 +1584,29 @@ and dotenv fills any variable that is not already set — so forgetting to set
 | `comments.test.js`: a comment is not left behind when the campsite write fails | #80 — a `comments` field stored as one id makes MongoDB refuse the `$push` |
 | `startup.test.js`: `server.js` exits with one clear line, without listening, when the database is unreachable | #88 — runs `server.js` in a child process, against a loopback port nothing listens on |
 
-60 tests as of #88.
+60 tests as of #88. The suite is 156 tests as of 2026-10-27. The table stops at #88; the
+tests the redesign added after it are not listed here.
 
-**Not covered:** editing a comment; `checkCommentOwnership` rejecting a
-user who does not own the comment; search and the index page when RIDB answers; register
-error paths; the CSP's directives other than `script-src`; cookie flags; any browser
-code. **Never checked:** that #34's four new tests fail without their fixes.
+**Not covered**, checked against the tests on 2026-10-27:
 
-`campsiteShow.test.js` still gives three of its tests a 10-second timeout, with a
-comment that says the route sends no response. #78 removed that reason, so the comment
-is out of date.
+- Updating a comment (`PUT`). The edit page is tested only for its markup
+  (`accountPages.test.js`) and its logged-out redirect (`redirects.test.js`).
+- `checkCommentOwnership` rejecting a user who does not own the comment, for the edit
+  page, the update and the delete. Only deleting an owned comment is tested. Favorites
+  do have other-user tests (`favorites.test.js`).
+- `POST /register` when the username is taken, and when `User.register` fails some other
+  way and the error goes to `next(err)`. A rejected registration (Joi validation) is
+  tested in `flash.test.js`.
+- The CSP's directives other than `script-src`.
+- Cookie flags (`HttpOnly`, `Secure`, `SameSite`). Only the absence of a session cookie
+  for a visitor who is not logged in is tested.
+- Any browser code. `mapContract.test.js` pins the data the map scripts read, but
+  nothing runs `gmap.js`, `map.js`, `gallery.js`, `nav.js` or `flash.js`.
+
+**Covered since the list was written:** search and the index page when RIDB answers
+(`campsiteList.test.js`, `campsitesPage.test.js`).
+
+**Never checked:** that #34's four new tests fail without their fixes.
 
 ---
 
@@ -1648,10 +1661,11 @@ Earlier, and still true:
 - **`min-release-age=7` and `npm ci`.** Whether `npm ci` enforces the age gate or skips
   it because it installs straight from the lockfile was **not checked**. #42, which
   raised the question, merged 2026-09-22 without answering it.
-- **Error cases in `POST /register` are untested.** The suite exercises registration
-  that succeeds. A duplicate username (`UserExistsError`) re-rendering the form is
-  inferred from the code, not run. Since #43 there is a second untested path: any other
-  error going to `next(err)`.
+- **Two error cases in `POST /register` are untested.** The suite exercises registration
+  that succeeds, and a rejected one (Joi validation, `flash.test.js`). A duplicate
+  username (`UserExistsError`) re-rendering the form is inferred from the code, not
+  run. Since #43 there is a second untested path: any other error going to
+  `next(err)`.
 - **A restored cache can hide a regression of #30.** The postinstall checks
   `~/.cache/mongodb-binaries` before downloading, so while a restored cache holds the
   right binary, deleting the `config` block changes nothing visible — no download, no
