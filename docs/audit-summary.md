@@ -221,8 +221,9 @@ list, with what was and was not checked, is under
 - No test for: search and the index page when RIDB answers, comment edit,
   register error paths, the CSP beyond `script-src`, cookie flags, any browser code.
 - The narrow `script-src` from #82 has not been tried in a browser against a script that
-  is not on its list (owner's choice, 2026-10-09). The other hosts in `script-src` are
-  still whole hosts and were not reviewed.
+  is not on its list (owner's choice, 2026-10-09). The four hosts in `script-src`
+  (Mapbox, Google Maps and two Flickr) are still whole hosts. They were reviewed on
+  2026-10-27 and kept (owner's choice); see Decisions in security-audit.md.
 - Moving from npm to pnpm is deferred (owner, 2026-10-05): the project stays on npm for
   now. If it is picked up again, check Dependabot first. On 2026-10-01 GitHub listed
   support for pnpm 7 to 10 only.

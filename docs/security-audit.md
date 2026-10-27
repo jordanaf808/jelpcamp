@@ -1459,6 +1459,14 @@ Since 2026-10-05:
   the repo read it. (#85)
 - **The campsite page uses the footer's jQuery and Bootstrap**, like every other page.
   (#84)
+- **The four `script-src` hosts stay whole hosts** (owner, 2026-10-27). Two could be
+  pinned to the one file the views load: `api.mapbox.com` to
+  `/mapbox-gl-js/v3.30.0/mapbox-gl.js` (header.ejs) and `embedr.flickr.com` to
+  `/assets/client-code.js` (campsite page). That would make every Mapbox version
+  bump a second edit, for a small gain. `maps.googleapis.com` and
+  `widgets.flickr.com` cannot be pinned without seeing what the Google loader and the
+  Flickr embed fetch next, and a wrong pin fails silently: the page renders and the
+  map or embed never runs.
 - **The Flickr hosts stay in `script-src`** (owner, 2026-10-09). The photo gallery on the
   campsite page uses Flickr's embed script.
 - **The browser check of #82 was skipped for now** (owner, 2026-10-09: "if I see
@@ -1605,9 +1613,12 @@ Since 2026-10-05:
   back as `text/html`. It was not tried in a browser.
 - **What RIDB answers for an id it does not know.** Either way this app answers with a
   500, not a 404.
-- **The other hosts in `script-src`** are whole hosts and were not reviewed:
-  `code.jquery.com`, `stackpath.bootstrapcdn.com`, `api.mapbox.com`,
-  `maps.googleapis.com` and the two Flickr hosts.
+- **The four hosts in `script-src`** are whole hosts: `api.mapbox.com`,
+  `maps.googleapis.com`, `embedr.flickr.com` and `widgets.flickr.com`. They
+  were reviewed on 2026-10-27 and kept (see Decisions). The jQuery and Bootstrap hosts
+  that used to be on this list went with the redesign. Which scripts Google's
+  loader and the Flickr embed fetch after the first one was **not observed**: no one
+  has loaded the campsite page with DevTools open and read the requests.
 - **Dead code:** the `if (!madeCampsite)` branch in the campsite page's route cannot
   run. `Campsite.create` returns a document or throws.
 
