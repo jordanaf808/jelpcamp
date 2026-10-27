@@ -5,8 +5,8 @@ const mongoose = require('mongoose')
 // The danger here is one line wide. app.js calls `require('dotenv').config()`,
 // and dotenv fills any variable that is not ALREADY set. Forget to set
 // MONGO_URI before requiring the app and it silently loads .env — which points
-// at mongodb+srv://…/storybooks on Atlas. That database is shared by v12, v13
-// AND NodeAppFromScratch, so a `deleteMany({})` against it erases all three.
+// at a real database on Atlas, so a `deleteMany({})` against it erases real
+// data.
 // Nothing about the failure looks like a failure: the tests pass.
 //
 // So this deliberately checks the LIVE CONNECTION rather than the env var. The
