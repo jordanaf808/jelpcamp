@@ -12,6 +12,12 @@ module.exports = defineConfig([
 		plugins: {js},
 		extends: ['js/recommended'],
 		languageOptions: {sourceType: 'commonjs', globals: globals.node},
+		rules: {
+			// Not in js/recommended. Catches a name used above its definition, such
+			// as a const read before its line runs. The repo had no such use when
+			// this was switched on, so it guards new code and changes none.
+			'no-use-before-define': 'error',
+		},
 	},
 	{
 		// Browser scripts, loaded with <script src>. Not modules, so their
