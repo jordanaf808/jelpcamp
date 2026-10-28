@@ -30,13 +30,15 @@ const start = async () => {
 	process.env.SESSION_STORE_SECRET = 'a'.repeat(128)
 	process.env.NODE_ENV = 'test'
 
-	// 4. Only now. app.js builds MongoStore at require time off MONGO_URI.
-	app = require('../app')
-
-	// 5. The models connect through mongoose, which server.js normally opens.
-	//    Tests do it here because they deliberately never require server.js.
+	// 4. Connect mongoose, which server.js normally does. Tests do it here
+	//    because they deliberately never require server.js. It comes BEFORE the
+	//    app because app.js builds its session store on this connection's client
+	//    at require time.
 	await mongoose.connect(uri)
 	assertEphemeralDb()
+
+	// 5. Only now.
+	app = require('../app')
 
 	return {app, uri}
 }
@@ -64,22 +66,19 @@ const resetRateLimiters = () => {
 	stores.forEach((s) => s.resetAll())
 }
 
-// Teardown order matters: the session store holds its own MongoClient and will
-// keep the event loop open. connect-mongo also starts building its TTL index the
-// moment that client connects, and close() does not wait for it — closing
-// mid-build rejects with MongoExpiredSessionError. Awaiting collectionP waits
-// the build out. The catch keeps a failed build from skipping close() and
-// leaving the client open.
+// Teardown order matters: connect-mongo starts building its TTL index the moment
+// its client connects, and closing the client does not wait for it — closing
+// mid-build rejects with MongoClientClosedError. Awaiting collectionP waits
+// the build out. The catch keeps a failed build from skipping the close and
+// leaving the connection open. The store shares mongoose's client, so closing
+// mongoose's connection closes the store's too.
 //
 // rateLimit.test.js never hit this only because its requests write sessions,
 // and every store operation awaits collectionP first. A test file that sends no
 // requests hit it 20 times in 20 runs (2026-09-11).
 const stop = async () => {
 	const store = app?.get('sessionStore')
-	if (store) {
-		await store.collectionP.catch(() => {})
-		await store.close()
-	}
+	if (store) await store.collectionP.catch(() => {})
 	await mongoose.connection.close()
 	if (mongod) await mongod.stop()
 }

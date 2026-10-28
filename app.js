@@ -3,15 +3,16 @@
 // those side effects out means a test can `require('./app')` without starting a
 // server or binding a port, which was impossible before 2026-09-08.
 //
-// Note that `sessionStore` below is constructed at module load from mongoUri()
-// (MONGO_URI, or PREVIEW_MONGO_URI on a Render preview), so any caller (a test,
-// in particular) must set its environment BEFORE requiring this file. dotenv
-// does not overwrite variables that are already set, so an explicit value
-// always wins.
+// Note that `sessionStore` below is constructed at module load on mongoose's
+// MongoClient, so mongoose must already be connected when this file is
+// required: server.js connects first, and a test does the same in
+// tests/setup.js. The URI is chosen in utils/connectDB.js (MONGO_URI, or
+// PREVIEW_MONGO_URI on a Render preview), so any caller (a test, in particular)
+// must set its environment BEFORE connecting. dotenv does not overwrite
+// variables that are already set, so an explicit value always wins.
 //
 // Also note dotenv resolves `.env` relative to the CURRENT WORKING DIRECTORY,
-// not to this file. Requiring this module from elsewhere without setting the
-// environment first fails at the MongoStore constructor, not at the require.
+// not to this file.
 require('dotenv').config()
 const express = require('express')
 const app = express()
@@ -22,9 +23,9 @@ const session = require('express-session')
 // connect-mongo 6 ships dual ESM/CJS and no longer default-exports the class to
 // CJS callers: require() returns a namespace object, so this must be destructured.
 const {MongoStore} = require('connect-mongo')
+const mongoose = require('mongoose')
 const sanitizeRequest = require('./middleware/sanitize')
 const flash = require('./middleware/flash')
-const mongoUri = require('./utils/mongoUri')
 const helmet = require('helmet')
 
 // Models
@@ -124,8 +125,27 @@ app.use(
 // throw. connect-mongo 6 pins kruptein 3.0.8, which has neither. Keep this
 // secret mixed-case with digits and symbols anyway: it costs nothing and
 // survives the pin being loosened again.
+// Running this file directly does nothing useful. Say so, rather than let the
+// next check blame mongoose, which nobody connected because nobody ran server.js.
+if (require.main === module) {
+	console.error(
+		'app.js builds the app but does not start a server.\n' +
+			'Run `npm start` (which runs server.js) instead.',
+	)
+	process.exit(1)
+}
+
+// The store shares mongoose's MongoClient, so the app holds one connection pool
+// and the URI is chosen in one place. getClient() is undefined until
+// mongoose.connect() has been called.
+const client = mongoose.connection.getClient()
+if (!client) {
+	throw new Error(
+		'mongoose must connect before app.js is loaded: the session store uses its connection.',
+	)
+}
 const sessionStore = new MongoStore({
-	mongoUrl: mongoUri(),
+	client,
 	touchAfter: 24 * 60 * 60,
 	crypto: {
 		secret: process.env.SESSION_STORE_SECRET,
@@ -246,28 +266,15 @@ app.use((err, req, res, next) => {
 		.send(statusCode >= 500 ? 'Something went wrong.' : err.message)
 })
 
-// The session store opens its own MongoClient at construction, which keeps the
-// event loop alive — `node --test` hangs on it otherwise. Expose it so a test
-// teardown can close it; nothing in the request path uses this.
+// Expose the store so a test teardown can wait on it; nothing in the request
+// path uses this.
 //
 // Teardown ordering matters: connect-mongo starts building its TTL index as soon
-// as its client connects, with no request needed, and close() does not wait for
-// it. Closing mid-build makes the in-flight createIndex reject with
-// MongoExpiredSessionError. Await `sessionStore.collectionP` before closing —
-// tests/setup.js stop() does. Production never hits this because production
-// never closes the store.
+// as its client connects, with no request needed, and closing the client does
+// not wait for it. Closing mid-build makes the in-flight createIndex reject with
+// MongoClientClosedError. Await `sessionStore.collectionP` before closing
+// mongoose's connection — tests/setup.js stop() does. Production never hits
+// this because production never closes the connection.
 app.set('sessionStore', sessionStore)
 
 module.exports = app
-
-// Running this file directly does nothing useful and — worse — does not fail.
-// The session store holds the event loop open, so `node app.js` hangs forever
-// without binding a port. On Render that surfaces as a port-scan timeout, which
-// points nowhere near the cause. Fail loudly instead.
-if (require.main === module) {
-	console.error(
-		'app.js builds the app but does not start a server.\n' +
-			'Run `npm start` (which runs server.js) instead.',
-	)
-	process.exit(1)
-}
