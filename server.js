@@ -15,10 +15,10 @@ const connectDB = require('./utils/connectDB')
 
 const port = process.env.PORT || 3000
 
-// The database first, then app.js. app.js builds its session store from the
-// same URI as it loads, and the store leaves a failed connection unhandled, so
-// connecting first makes a bad URI, or a preview with no PREVIEW_MONGO_URI,
-// exit here with one line instead.
+// The database first, then app.js. app.js builds its session store on
+// mongoose's connection as it loads, so mongoose has to be connected by then.
+// Connecting first also makes a bad URI, or a preview with no PREVIEW_MONGO_URI,
+// exit here with one line.
 const start = async () => {
 	try {
 		await connectDB()
