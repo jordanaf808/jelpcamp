@@ -122,9 +122,21 @@ Commit one step group at a time. `npm test`, `npm run lint` and `npm run format:
 
 ### 2. Port the scene element
 
-File: `public/js/wandur-campsite.js`, from the mockup's `project/wandur-campsite.js`.
+Files, from the mockup's `project/wandur-campsite.js`. The names are camelCase, like the rest of `public/js/`. The mockup's one file is split so each file stays under 300 lines:
 
-- Read the three.js URL from a `data-three-src` attribute that the view renders. No hard-coded URL in the script.
+| File | Kind | Does |
+| --- | --- | --- |
+| `public/js/wandurCampsite.js` | classic script | the element: pins, the motion gate, camera, render loop |
+| `public/js/campsiteScene.mjs` | ES module | puts the scene together: lights, pin anchors, framing |
+| `public/js/campsiteLand.mjs` | ES module | ground, mountains, paths, pond, shared helpers |
+| `public/js/campsiteForest.mjs` | ES module | trees and rocks, from the seeded random sequence |
+| `public/js/campsiteCamp.mjs` | ES module | fire, people, tent, 4x4, sign, ram |
+
+The element `import()`s the scene modules with three.js, so a visitor without the live scene downloads neither. ESLint lints `public/js/*.mjs` as browser modules.
+
+- Read the three.js and scene URLs from `data-three-src` and `data-scene-src`, which the view renders. No hard-coded URL in the scripts.
+- The element always shows pins, so there is no `pins` attribute.
+- Until step 5 adds the still, still mode shows no image and no pins.
 - Keep only the `full` layout at night. Remove the `tile` and `wide` presets, the dusk lights, the `layout`, `time` and `motion` attributes, and drag-to-rotate along with its `touch-action: none` and grab cursors.
 - Remove `preserveDrawingBuffer: true`. Use `PCFShadowMap`.
 - Two modes, one set of pin buttons:
@@ -153,9 +165,9 @@ File: `public/js/heroSearch.js`, about 15 lines.
 
 `views/campsites/index.ejs`. The header becomes `landing-hero landing-hero--scene`. Its layers, in DOM order:
 
-1. topo texture at opacity 0.12
-2. `<wandur-campsite pins data-three-src="/vendor/three/three.module.js">`, filling the header. The still `<picture>` sits inside it.
-3. dark left-side gradient, with `pointer-events: none` so pins under it stay clickable
+1. topo texture at opacity 0.12 (the header's `::before`)
+2. `<wandur-campsite data-three-src="/vendor/three/three.module.js" data-scene-src="/js/campsiteScene.mjs">`, filling the header. Step 5 puts the still `<picture>` inside it.
+3. dark left-side gradient (the header's `::after`), with `pointer-events: none` so pins under it stay clickable
 4. text block: eyebrow, headline, intro, and the "Pick a spot" hint. `pointer-events: none`, so clicks reach the scene. Trade-off: the headline can't be selected with the mouse.
 5. the existing `searchForm` partial, unchanged
 
@@ -170,7 +182,7 @@ File: `public/js/heroSearch.js`, about 15 lines.
 Done once live mode works in the owner's browser.
 
 - **Owner, at `http://localhost:3335`:** open the homepage with the hero at 900px wide, the narrowest width. A wider hero then crops the still top and bottom, as the live scene does, never at the sides. First check the hero's tallest height at 900px; the capture must be at least that tall.
-- Run a console snippet written in step 2's commit. It freezes time at 0, zeroes the mouse offset, renders one frame at 1280, 1920 and 2560px wide, and downloads each as WebP. It also downloads the pin positions as percentages.
+- Run a console snippet, added to this plan when step 5 starts. It freezes time at 0, zeroes the mouse offset, renders one frame at 1280, 1920 and 2560px wide, and downloads each as WebP. It also downloads the pin positions as percentages.
 - The browser saves the files on the Mac. The owner puts them in a new folder in the Mac's `v12/docs`, such as `hero-still/` (not `hero-3d-model/`). The container reads them from the docs mount and copies them into `public/images/hero-scene/`. Record their sizes here.
 - In still mode the image and the pins sit in a box with the still's aspect ratio. The box is anchored 60% of the way down the hero. The live camera puts the scene's center at that same height at every width (`lift: -0.1`), so still and live line up and the fade doesn't jump.
 - If the scene changes, capture the still again.
@@ -179,8 +191,10 @@ Done once live mode works in the owner's browser.
 
 Two new tests:
 
-- The homepage has `<wandur-campsite` with `pins` and `data-three-src`, the still `<picture>` has a `(min-width: 900px)` source, and `wandur-campsite.js` and `heroSearch.js` load with `defer` from this site.
-- The homepage's `data-three-src` URL returns 200 with a JavaScript content type, and so does `three.core.js` in the same folder. The test reads the URL from the page, so the server route and the element can't drift apart. In CI it also proves the `postinstall` build ran.
+In `tests/heroScene.test.js`:
+
+- The homepage has `<wandur-campsite>` with `data-three-src` and `data-scene-src` paths on this site, and `wandurCampsite.js` and `heroSearch.js` load with `defer` from this site. Step 5 adds: the still `<picture>` has a `(min-width: 900px)` source.
+- Every module the scene imports is served with a JavaScript content type. The test starts from the two URLs on the page and follows each `import`, so `three.core.js` and the scene modules are covered, and the URLs can't drift from what the server serves. In CI it also proves the `postinstall` build ran.
 
 The existing tests, `csp.test.js` and `inlineScripts.test.js` included, must pass without edits.
 
