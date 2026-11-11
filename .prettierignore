@@ -16,6 +16,9 @@ package-lock.json
 # Google's Maps loader, kept exactly as Google publishes it.
 public/js/gmapLoader.js
 
+# three.js, minified by the postinstall script. Not in git.
+public/vendor/
+
 .vscode/
 
 # Claude Code's local settings: machine-specific, not formatted.

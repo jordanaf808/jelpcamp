@@ -4,6 +4,9 @@
 # Ignore node_modules folder
 node_modules
 
+# three.js, minified from node_modules by `npm ci` (the postinstall script)
+public/vendor/
+
 # Ignore files related to API keys
 .env
 

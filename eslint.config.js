@@ -5,8 +5,10 @@ const js = require('@eslint/js')
 const globals = require('globals')
 
 module.exports = defineConfig([
-	// Google's Maps loader, kept exactly as Google publishes it.
-	globalIgnores(['public/js/gmapLoader.js']),
+	// Google's Maps loader, kept exactly as Google publishes it. And three.js,
+	// minified into public/vendor/ by the postinstall script: ES modules, which
+	// the browser-script rules below would refuse to parse.
+	globalIgnores(['public/js/gmapLoader.js', 'public/vendor/']),
 	{
 		files: ['**/*.js'],
 		plugins: {js},
