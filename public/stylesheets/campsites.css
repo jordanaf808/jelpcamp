@@ -52,7 +52,8 @@
 /* The scene hero, on the homepage only (design mockup 1c). Below 900px it is
    the camo hero above: the scene, its shade and the hint are hidden, and
    wandurCampsite.js loads nothing. Layers, bottom to top: the topo texture
-   (::before), the scene, the shade (::after), the text, the form. */
+   (::before), the scene's canvas, the shade (::after), the text and the
+   form, then the scene's pins (z-index 3, set in wandurCampsite.js). */
 
 .landing-hero__hint {
 	display: none;
@@ -81,8 +82,8 @@
 		opacity: 0.12;
 	}
 
-	/* Darkens the left side so the text reads over the scene. Above the
-	   scene, so clicks must pass through it to the pins. */
+	/* Darkens the left side so the text reads over the scene. The pointer
+	   passes through it to the scene, which tilts toward the mouse. */
 	.landing-hero--scene::after {
 		z-index: 1;
 		background: linear-gradient(
@@ -98,14 +99,14 @@
 		inset: 0;
 	}
 
-	/* Clicks pass through the text to the pins behind it. The cost: the
-	   headline can't be selected with the mouse. */
+	/* The pins sit at fixed fractions of the hero's width (the scene fits
+	   the width), the leftmost at about 56%. A cap in % keeps the text clear
+	   of them at every width; at 1280px it is the design's 660px. */
 	.landing-hero--scene .landing-hero__text {
 		position: relative;
 		z-index: 2;
-		max-width: 660px;
+		max-width: min(660px, 54%);
 		padding-right: 0;
-		pointer-events: none;
 	}
 
 	.landing-hero--scene .search-bar {
@@ -127,7 +128,7 @@
 		visibility: hidden;
 	}
 
-	wandur-campsite:defined ~ .landing-hero__text .landing-hero__hint {
+	.landing-hero--scene:has(wandur-campsite:defined) .landing-hero__hint {
 		visibility: visible;
 	}
 

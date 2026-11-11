@@ -4,14 +4,10 @@
   The scene hero (design mockup 1c). From 900px up, the campsite scene fills
   the header behind the text, and its pins set the form's Activity
   (heroSearch.js). Below 900px the scene is hidden and the camo hero shows,
-  as on the results page.
+  as on the results page. The scene comes after the text, so a screen reader
+  meets the headline and the hint before the pins; CSS layers it behind.
 %>
 <header class="landing-hero landing-hero--scene camo">
-  <wandur-campsite
-    class="landing-hero__scene"
-    data-three-src="/vendor/three/three.module.js"
-    data-scene-src="/js/campsiteScene.mjs"
-  ></wandur-campsite>
   <div class="landing-hero__text">
     <p class="eyebrow">Welcome to WANDUR.</p>
     <h1 class="landing-hero__title">Find a new adventure.</h1>
@@ -22,6 +18,11 @@
     </p>
     <p class="landing-hero__hint"><span class="landing-hero__hint-dot"></span>Pick a spot in the scene to set the activity</p>
   </div>
+  <wandur-campsite
+    class="landing-hero__scene"
+    data-three-src="/vendor/three/three.module.js"
+    data-scene-src="/js/campsiteScene.mjs"
+  ></wandur-campsite>
   <%- include("../partials/searchForm") %>
 </header>
 <script src="/js/wandurCampsite.js" defer></script>

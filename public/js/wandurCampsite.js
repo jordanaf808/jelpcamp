@@ -5,12 +5,11 @@
 // a bubbling, composed `wandur-activity` event with {value, label}.
 // heroSearch.js keeps the dropdown and `active` in step.
 //
-// The live scene runs only at 900px and up, with motion allowed. Only then
-// does the element import three.js (data-three-src) and the scene
-// (data-scene-src), both URLs from the view. Without the live scene (reduced
-// motion, no WebGL, a failed import) the element shows no scene and no pins.
-// The pins are one set of buttons for the element's whole life, so focus
-// stays put when the live scene starts or stops.
+// The live scene runs at 900px and up with motion allowed. Only then, after
+// page load, does the element import three.js and the scene, from the view's
+// data-three-src and data-scene-src. Without it (reduced motion, no WebGL, a
+// failed import) there is no scene and no pins. The pins are one set of
+// buttons, so pressed state and tab order survive a start or stop.
 ;(() => {
 	if (customElements.get('wandur-campsite')) return
 
@@ -22,13 +21,16 @@
 		{value: '14', label: 'Hiking'},
 		{value: '7', label: 'Climbing'},
 	]
-	// Shadow DOM sees the page's custom properties, so the pins use the site's
-	// tokens. It doesn't see the page's focus ring, so .pin restates it.
+	const PIN_PARTS =
+		'<span class="label"></span><span class="stem"></span><span class="dot"></span>'
+	// Shadow DOM sees the page's custom properties but not its focus ring, so
+	// .pin restates the ring. The host makes no stacking context, so .pins'
+	// z-index lifts the pins over the hero's shade and text; the canvas stays.
 	const CSS = `
 :host{display:block;position:relative;overflow:hidden}
 canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;transition:opacity .6s}
 :host([data-live]) canvas{opacity:1}
-.pins{position:absolute;inset:0;pointer-events:none}
+.pins{position:absolute;inset:0;z-index:3;pointer-events:none}
 .pin{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;will-change:transform}
 .pin[hidden]{display:none}
 .label{padding:6px 9px;border:1px solid var(--line-3);background:var(--surface-2);color:var(--text);font:500 var(--fs-mono-xs)/1.2 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;transition:background-color .2s,border-color .2s,color .2s}
@@ -37,21 +39,19 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 .pin:hover .label{border-color:var(--sage)}
 .pin:focus-visible{outline:none}
 .pin:focus-visible .label{outline:2px solid var(--accent);outline-offset:2px}
+.pin[aria-pressed="true"]:focus-visible .label{outline-color:var(--text)}
 .pin[aria-pressed="true"] .label{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .pin[aria-pressed="true"] .dot{background:var(--accent);box-shadow:0 0 0 4px rgba(232,121,43,.3)}
-.pin[aria-pressed="true"] .stem{background:var(--accent)}`
+.pin[aria-pressed="true"] .stem{background:var(--accent)}
+@media (forced-colors:active){.pin[aria-pressed="true"] .label{forced-color-adjust:none;background:Highlight;border-color:Highlight;color:HighlightText}}`
 
-	const span = (className, text) => {
-		const el = document.createElement('span')
-		el.className = className
-		if (text) el.textContent = text
-		return el
-	}
+	const pageLoaded = new Promise((resolve) => {
+		if (document.readyState === 'complete') resolve()
+		else addEventListener('load', resolve, {once: true})
+	})
 
 	class WandurCampsite extends HTMLElement {
-		static get observedAttributes() {
-			return ['active']
-		}
+		static observedAttributes = ['active']
 
 		constructor() {
 			super()
@@ -93,7 +93,8 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 			button.className = 'pin'
 			button.dataset.value = value
 			button.hidden = true
-			button.append(span('label', label), span('stem'), span('dot'))
+			button.innerHTML = PIN_PARTS
+			button.firstChild.textContent = label
 			button.addEventListener('click', () => {
 				const next = this.getAttribute('active') === value ? '' : value
 				this.setAttribute('active', next)
@@ -120,6 +121,10 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 			this._live = true
 			const run = ++this._run
 			try {
+				// After load, so three.js doesn't compete with what the page
+				// needs first: fonts, styles, the map.
+				await pageLoaded
+				if (run !== this._run) return
 				const [T, scene] = await Promise.all([
 					import(this.dataset.threeSrc),
 					import(this.dataset.sceneSrc),
@@ -140,7 +145,7 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 
 		_stopLive() {
 			this._run++
-			this._live = false
+			this._live = this._looping = false
 			cancelAnimationFrame(this._frameId)
 			this._resize?.disconnect()
 			this._onScreen?.disconnect()
@@ -161,35 +166,42 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 			this.removeAttribute('data-live')
 		}
 
-		// The renderer comes first: without WebGL it throws, before the scene
-		// is built for nothing.
-		_build(T, {buildScene, VIEW}) {
-			this._T = T
-			this._view = VIEW
+		// The context comes first: without WebGL 2, which three.js needs, this
+		// throws before building the scene, and before three's console.error.
+		_build(T, {buildScene}) {
 			this._canvas = document.createElement('canvas')
 			this._canvas.setAttribute('aria-hidden', 'true')
 			this._pinLayer.before(this._canvas)
-			const renderer = new T.WebGLRenderer({
+			const options = {antialias: true, alpha: true}
+			const gl = this._canvas.getContext('webgl2', options)
+			if (!gl) throw new Error('WebGL 2 is unavailable.')
+			const renderer = (this._renderer = new T.WebGLRenderer({
 				canvas: this._canvas,
-				antialias: true,
-				alpha: true,
-			})
-			this._renderer = renderer
+				context: gl,
+				...options,
+			}))
 			renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
 			renderer.setClearColor(0x000000, 0)
 			renderer.shadowMap.enabled = true
 			renderer.shadowMap.type = T.PCFShadowMap
-			const {scene, center, framePoints, anchors, tick} = buildScene(T)
-			this._scene = scene
-			this._center = center
-			this._framePoints = framePoints
-			this._tick = tick
+			// Nothing that casts a shadow moves, so the shadow map is drawn once.
+			renderer.shadowMap.autoUpdate = false
+			renderer.shadowMap.needsUpdate = true
+			this._world = buildScene(T)
+			this._scene = this._world.scene
 			this._anchors = this._pins.map((pin) => ({
 				pin,
-				point: anchors[pin.dataset.value],
+				point: this._world.anchors[pin.dataset.value],
 			}))
 			this._cam = new T.OrthographicCamera(-1, 1, 1, -1, 1, 160)
 			this._v = new T.Vector3()
+			this._watch()
+			this._fit()
+		}
+
+		// The mouse (for the tilt), the element's size, and whether it's on
+		// screen. _stopLive undoes all of it.
+		_watch() {
 			this._onPointerMove = (e) => {
 				if (e.pointerType === 'touch') return
 				const r = this.getBoundingClientRect()
@@ -208,90 +220,77 @@ canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0;
 				this._visible = entry.isIntersecting
 			})
 			this._onScreen.observe(this)
-			this._fit()
 		}
 
-		_pose(az, el) {
-			const c = this._center
-			const d = 60
-			this._cam.position.set(
-				c.x + d * Math.cos(el) * Math.sin(az),
-				c.y + d * Math.sin(el),
-				c.z + d * Math.cos(el) * Math.cos(az),
-			)
-			this._cam.lookAt(c)
-			this._cam.updateMatrixWorld()
-		}
-
-		// Frames the scene to the element's width; the height crops. The frame
-		// box's center sits (0.5 + shift) across and (0.5 - lift) down.
 		_fit() {
 			if (!this._renderer) return
-			const w = Math.max(1, this.clientWidth)
-			const h = Math.max(1, this.clientHeight)
-			this._renderer.setSize(w, h, false)
-			this._w = w
-			this._h = h
-			const {az, el, shift, lift} = this._view
-			this._pose(az, el)
-			let minX = Infinity
-			let maxX = -Infinity
-			let minY = Infinity
-			let maxY = -Infinity
-			for (const p of this._framePoints) {
-				const v = this._v.copy(p).applyMatrix4(this._cam.matrixWorldInverse)
-				minX = Math.min(minX, v.x)
-				maxX = Math.max(maxX, v.x)
-				minY = Math.min(minY, v.y)
-				maxY = Math.max(maxY, v.y)
+			this._w = Math.max(1, this.clientWidth)
+			this._h = Math.max(1, this.clientHeight)
+			this._renderer.setSize(this._w, this._h, false)
+			this._world.frame(this._cam, this._w, this._h)
+			// setSize clears the canvas, so draw now rather than leave it blank
+			// until the next frame.
+			if (this._looping) {
+				this._choosePins()
+				this._frame(0)
 			}
-			const hw = (maxX - minX) / 2
-			const hh = hw / (w / h)
-			const cx = (minX + maxX) / 2 - shift * hw * 2
-			const cy = (minY + maxY) / 2 - lift * hh * 2
-			Object.assign(this._cam, {
-				left: cx - hw,
-				right: cx + hw,
-				top: cy + hh,
-				bottom: cy - hh,
-			})
-			this._cam.updateProjectionMatrix()
 		}
 
+		_project(point) {
+			const v = this._v.copy(point).project(this._cam)
+			return {x: ((v.x + 1) / 2) * this._w, y: ((1 - v.y) / 2) * this._h}
+		}
+
+		// Shows each pin whose whole box fits in the canvas, judged once per
+		// size from the camera at rest, so drift can't make a pin blink. A
+		// focused pin stays, so focus never drops.
+		_choosePins() {
+			for (const pin of this._pins) pin.hidden = false
+			// Every size is read before any pin hides: one layout, not five.
+			const sizes = this._pins.map((pin) => [pin.offsetWidth, pin.offsetHeight])
+			this._world.aim(this._cam)
+			this._anchors.forEach(({pin, point}, i) => {
+				const [width, height] = sizes[i]
+				const {x, y} = this._project(point)
+				const fits =
+					x - width / 2 >= 0 &&
+					x + width / 2 <= this._w &&
+					y - height >= 0 &&
+					y <= this._h
+				pin.hidden = !fits && this._root.activeElement !== pin
+			})
+		}
+
+		// The first frame is drawn at once, so the pins never show unplaced.
 		_loop() {
+			this._looping = true
+			this._choosePins()
+			this._frame(0)
+			this.setAttribute('data-live', '')
 			let last = performance.now()
 			const step = (now) => {
 				this._frameId = requestAnimationFrame(step)
 				const dt = Math.min(0.05, (now - last) / 1000)
 				last = now
-				if (!this._visible) return
-				this._frame(dt)
-				if (!this.hasAttribute('data-live')) this.setAttribute('data-live', '')
+				if (this._visible) this._frame(dt)
 			}
 			this._frameId = requestAnimationFrame(step)
 		}
 
-		// One frame: a slow drift, a tilt toward the mouse, the fire, then the
-		// pins over the points they mark.
+		// One frame: drift and mouse tilt, the fire, then the pins over it.
 		_frame(dt) {
 			const m = this._mouse
 			this._t += dt
 			m.easedX += (m.x - m.easedX) * 0.06
 			m.easedY += (m.y - m.easedY) * 0.06
-			const {az, el} = this._view
 			const drift = Math.sin(this._t * 0.18) * 0.03
-			this._pose(az + m.easedX * 0.07 + drift, el - m.easedY * 0.05)
-			this._tick(this._t)
+			this._world.aim(this._cam, m.easedX * 0.07 + drift, -m.easedY * 0.05)
+			this._world.tick(this._t)
 			this._renderer.render(this._scene, this._cam)
 			for (const {pin, point} of this._anchors) {
-				const v = this._v.copy(point).project(this._cam)
-				const x = ((v.x + 1) / 2) * this._w
-				const y = ((1 - v.y) / 2) * this._h
-				const off = x < 0 || x > this._w || y < 0 || y > this._h
-				if (pin.hidden !== off) pin.hidden = off
-				if (!off) {
-					pin.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`
-				}
+				if (pin.hidden) continue
+				const {x, y} = this._project(point)
+				pin.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`
 			}
 		}
 	}

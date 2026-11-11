@@ -2,7 +2,7 @@
 // three people around it, the tent, the 4x4, the trailhead sign and the ram.
 // Every number is design mockup 1c's. See campsiteScene.mjs for how the scene
 // is put together.
-import {SITE, FX, FZ, VIEW, heightAt} from './campsiteLand.mjs'
+import {SITE, FX, FZ, VIEW, NO_SHADOW, heightAt} from './campsiteLand.mjs'
 
 // The props are drawn a touch larger than life, so they read at hero size.
 const S = 1.25
@@ -65,7 +65,7 @@ const addFirePit = ({T, M, add, disc}, fire) => {
 		add(fire, geo, M('#7d7e6c'), x, 0.04, z).rotation.set(i, i * 2, 0)
 	}
 	const coals = new T.MeshBasicMaterial({color: '#a8481a'})
-	add(fire, disc(0.23, 8), coals, 0, 0.012, 0, false)
+	add(fire, disc(0.23, 8), coals, 0, 0.012, 0, NO_SHADOW)
 	for (let i = 0; i < 3; i++) {
 		const log = new T.Group()
 		log.rotation.y = (i / 3) * Math.PI * 2
@@ -186,7 +186,7 @@ export const addTent = ({T, scene, M, add, Box}) => {
 		flatShading: true,
 	})
 	const doorGeo = new T.CircleGeometry(door, 3, Math.PI / 2)
-	add(tent, doorGeo, glow, 0, door * 0.5, 0.652, false)
+	add(tent, doorGeo, glow, 0, door * 0.5, 0.652, NO_SHADOW)
 	add(tent, Box(0.03, 0.03, 1.5), M('#5c4831'), 0, r * 1.5 - 0.005, 0)
 	tent.rotation.y = VIEW.az - 0.65
 }
@@ -199,7 +199,7 @@ const addWheels = ({T, M, add}, truck) => {
 	for (const x of [-0.55, 0.55]) {
 		for (const z of [-0.42, 0.42]) {
 			add(truck, wheel, M('#14170f'), x, 0.24, z)
-			add(truck, hub, M('#8b9074'), x, 0.24, z, false)
+			add(truck, hub, M('#8b9074'), x, 0.24, z, NO_SHADOW)
 		}
 	}
 	const spare = new T.CylinderGeometry(0.22, 0.22, 0.14, 14).rotateZ(
@@ -224,9 +224,9 @@ export const addTruck = (kit) => {
 		M('#e9e7da', {emissive: '#f2e6c4', emissiveIntensity: glow})
 	add(truck, Box(1.7, 0.42, 0.82), body, 0, 0.45, 0)
 	add(truck, Box(1.15, 0.42, 0.78), body, -0.22, 0.87, 0)
-	add(truck, Box(1.0, 0.24, 0.79), glass, -0.22, 0.9, 0, false)
-	add(truck, Box(0.02, 0.26, 0.66), glass, 0.36, 0.9, 0, false)
-	add(truck, Box(0.02, 0.22, 0.5), glass, -0.8, 0.9, 0, false)
+	add(truck, Box(1.0, 0.24, 0.79), glass, -0.22, 0.9, 0, NO_SHADOW)
+	add(truck, Box(0.02, 0.26, 0.66), glass, 0.36, 0.9, 0, NO_SHADOW)
+	add(truck, Box(0.02, 0.22, 0.5), glass, -0.8, 0.9, 0, NO_SHADOW)
 	add(truck, Box(1.7, 0.1, 0.86), trim, 0, 0.27, 0)
 	add(truck, Box(0.1, 0.13, 0.92), trim, 0.88, 0.32, 0)
 	add(truck, Box(1.12, 0.04, 0.8), trim, -0.22, 1.1, 0)
@@ -234,7 +234,7 @@ export const addTruck = (kit) => {
 	add(truck, Box(0.06, 0.05, 0.7), lamp(0.35), 0.31, 1.14, 0)
 	add(truck, Box(0.05, 0.55, 0.05), trim, 0.48, 0.82, 0.43)
 	for (const z of [-0.3, 0.3]) {
-		add(truck, Box(0.02, 0.07, 0.11), lamp(0.25), 0.86, 0.52, z, false)
+		add(truck, Box(0.02, 0.07, 0.11), lamp(0.25), 0.86, 0.52, z, NO_SHADOW)
 	}
 	addWheels(kit, truck)
 	return V(tx, truck.position.y + 1.4 * S, tz)
@@ -263,7 +263,7 @@ export const addRam = ({T, scene, M, add, Box}, ledge) => {
 	const horn = M('#cdbf9c')
 	const leg = M('#6b5a44')
 	add(ram, Box(0.42, 0.2, 0.2), fur, 0, 0.3, 0)
-	add(ram, Box(0.02, 0.15, 0.16), M('#d6c9a8'), -0.215, 0.31, 0, false)
+	add(ram, Box(0.02, 0.15, 0.16), M('#d6c9a8'), -0.215, 0.31, 0, NO_SHADOW)
 	add(ram, Box(0.12, 0.2, 0.14), fur, 0.2, 0.42, 0).rotation.z = -0.35
 	add(ram, Box(0.15, 0.1, 0.1), fur, 0.3, 0.5, 0).rotation.z = -0.25
 	for (const z of [-0.065, 0.065]) {
