@@ -10,7 +10,7 @@ module.exports = defineConfig([
 	// the browser-script rules below would refuse to parse.
 	globalIgnores(['public/js/gmapLoader.js', 'public/vendor/']),
 	{
-		files: ['**/*.js'],
+		files: ['**/*.{js,mjs}'],
 		plugins: {js},
 		extends: ['js/recommended'],
 		languageOptions: {sourceType: 'commonjs', globals: globals.node},
@@ -34,5 +34,11 @@ module.exports = defineConfig([
 				mapboxgl: 'readonly',
 			},
 		},
+	},
+	{
+		// Browser ES modules, loaded with import() by a browser script: the
+		// hero's campsite scene, which wandurCampsite.js imports.
+		files: ['public/js/**/*.mjs'],
+		languageOptions: {sourceType: 'module', globals: globals.browser},
 	},
 ])
