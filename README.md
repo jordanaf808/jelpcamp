@@ -108,8 +108,9 @@ models/        Mongoose models: user, campsite, comment, campground
 utils/         small helpers
 views/         EJS templates
 public/        browser JavaScript, stylesheets, images
+public/vendor/ three.js, minified by `npm ci` (the postinstall script); not in git
 tests/         node:test and supertest
-docs/          the security audit and its summary
+docs/          the security audit, its summary, and feature plans
 ```
 
 ## More

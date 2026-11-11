@@ -1,6 +1,6 @@
 # Hero 3D model: implementation plan
 
-This plan covers the homepage hero from design mockup 1c: a live 3D campsite scene whose pins set the activity search. Nothing is built yet. This file records the decisions, the problems that shaped them, the steps, and what is still open.
+This plan covers the homepage hero from design mockup 1c: a live 3D campsite scene whose pins set the activity search. Steps 1–4 and 6 are built and reviewed. Step 5 (the still render) waits on the owner's first browser check. This file records the decisions, the problems that shaped them, the steps, and what is still open.
 
 - [Hero 3D model: implementation plan](#hero-3d-model-implementation-plan)
   - [Status](#status)
@@ -17,7 +17,7 @@ This plan covers the homepage hero from design mockup 1c: a live 3D campsite sce
 
 - Updated: 2026-11-11, after a review against the repo and the owner's answers. Approved. Building on `feat/hero-scene`, from `main` at `e0214e0`.
 - Source: Claude Design mockup "1c" (`Homepage Hero Options.dc.html`). Read from its published code. Not run in a browser.
-- Waiting on: the owner's compression check (see [Open questions](#open-questions)).
+- Waiting on the owner (see [Open questions](#open-questions)): the pause control decision, the compression check, and the first browser check at `localhost:3335`.
 - The owner's Mac clone has an untracked copy of this file at the same path. Move or delete it before pulling a commit that contains this file, or git refuses to pull.
 
 ## What 1c is
@@ -181,10 +181,17 @@ File: `public/js/heroSearch.js`, about 15 lines.
 
 Done once live mode works in the owner's browser.
 
-- **Owner, at `http://localhost:3335`:** open the homepage with the hero at 900px wide, the narrowest width. A wider hero then crops the still top and bottom, as the live scene does, never at the sides. First check the hero's tallest height at 900px; the capture must be at least that tall.
-- Run a console snippet, added to this plan when step 5 starts. It freezes time at 0, zeroes the mouse offset, renders one frame at 1280, 1920 and 2560px wide, and downloads each as WebP. It also downloads the pin positions as percentages.
+- **How still and live line up.** The live camera's framing (`frame()` in `campsiteScene.mjs`) fits the frame box's width up to an aspect of 2.4 (`VIEW.maxAspect`), cropping the height around a line 60% down. Wider than that, it holds the height and shows more land at the sides. Still mode applies the same rule in 2D:
+  - the capture records, in the camera's view coordinates at rest, the image's rectangle, each pin's point, and the frame box's extents
+  - still mode maps those to pixels for the element's size, so the image and the pins sit where the live scene puts them at every width, and the fade doesn't jump
+  - this needs a handful of recorded numbers and no three.js
+- **The capture covers every hero from 900px to 2560px:** wide enough for the widest (height-fitted) view, and tall enough for the tallest 900px hero. Measure the hero's tallest height at 900px first.
+- **Bytes.** One large image is mostly cropped on a 2560×700 hero, yet it downloads at `fetchpriority="high"`. Offer two or three widths in `srcset` and measure. If most of the bytes go unseen, capture one still per breakpoint instead.
+- **Owner, at `http://localhost:3335`:** run a console snippet, added to this plan when step 5 starts. It freezes time at 0, zeroes the mouse offset, renders the capture rectangle, and downloads it as WebP with the recorded numbers as JSON.
 - The browser saves the files on the Mac. The owner puts them in a new folder in the Mac's `v12/docs`, such as `hero-still/` (not `hero-3d-model/`). The container reads them from the docs mount and copies them into `public/images/hero-scene/`. Record their sizes here.
-- In still mode the image and the pins sit in a box with the still's aspect ratio. The box is anchored 60% of the way down the hero. The live camera puts the scene's center at that same height at every width (`lift: -0.1`), so still and live line up and the fade doesn't jump.
+- The shadow root gets a `<slot>`, or the `<picture>` placed inside `<wandur-campsite>` won't render once the element upgrades.
+- Pins stay shown in still mode, so a focused pin keeps focus when the live scene starts or stops.
+- Gate the hint on the pins being shown, not on `:defined`.
 - If the scene changes, capture the still again.
 
 ### 6. Tests
@@ -210,10 +217,17 @@ The container serves the branch on port 3335. The Mac clone doesn't need the bra
 - **WebGL unavailable** (`canvas.getContext` overridden to return `null`): the still with working pins, and no error.
 - **Pins:** each pin sets the dropdown, the dropdown sets the pin, and clearing the dropdown clears the pin.
 - **Keyboard:** Tab goes nav, pins, form. Pins show a focus ring. A pin focused during the still keeps focus when live mode starts.
-- **Widths** 900, 1024, 1100, 1280, 1920 and 2560: the text block doesn't cover the camp, no pin sits off-canvas, and the intro text stays readable over the scene.
+- **Widths** 900, 1024, 1100, 1280, 1680, 1920, 2560 and 3440:
+  - the text block doesn't cover the camp or a pin
+  - every pin shows whole, Climbing included
+  - the intro text stays readable where the shade fades out
+  - above 1680px, the extra land at the sides shows no hard edge
+- **Back:** choose an activity, follow a facility link, press Back. The pin and the dropdown match.
+- **Forced colors** (Windows high contrast, or DevTools' forced-colors emulation): a pressed pin still looks pressed.
+- **Frame cost:** on a 120Hz display, in Safari and Firefox as well as Chrome. Look for a long task at the first frame, where shaders compile without `KHR_parallel_shader_compile`. Decide from the numbers whether to cap the pixel density at 1.5, cap the frame rate, or merge static meshes.
 - **Touch** (an iPad, or touch emulation at 1024px or wider): swiping on the hero scrolls the page.
 - **Fade:** no visible jump from still to live.
-- **GPU:** smooth on the Mac's display. If it isn't, cap pixel density at 1.5 or halve the shadow map, then measure again.
+- **GPU:** smooth on the Mac's display. The shadow map is drawn once, since nothing that casts a shadow moves.
 - **Console:** no errors.
 
 ## Review
@@ -232,9 +246,12 @@ The author writes the code. Fresh subagents review each step group's diff. They 
 
 The author is Opus 5.5. Correctness goes to a different, stronger model because that review is the main check on code no test covers and the container can't run. No reviewer runs the scene. The owner's check at `localhost:3335` is the real test of steps 2–5.
 
-The PR opens after round 1 is triaged.
+The PR opens after round 1 is triaged, as a draft: until step 5, reduced-motion and no-WebGL visitors at 900px and up get an empty hero. Round 1's findings and how each was handled are in the PR description.
 
 ## Open questions
+
+**A pause control (WCAG 2.2.2, Level A).** The live scene moves on its own for more than 5 seconds, beside the search form. 2.2.2 asks for a way on the page to pause it; the reduced-motion OS setting doesn't count. The design has no such control. Waiting on the owner: whether to add one, where, and how it's labelled. Pausing would show the still from step 5.
+
 
 **Does Render compress responses?** Express has no compression middleware. The container can't reach the live site, so the owner runs this on the Mac. The first request can take about a minute while the free instance wakes.
 
