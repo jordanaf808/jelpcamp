@@ -1,6 +1,17 @@
 <%- include("../partials/header", {stylesheets: ['/stylesheets/campsites.css']}) %>
 
-<header class="landing-hero camo">
+<%#
+  The scene hero (design mockup 1c). From 900px up, the campsite scene fills
+  the header behind the text, and its pins set the form's Activity
+  (heroSearch.js). Below 900px the scene is hidden and the camo hero shows,
+  as on the results page.
+%>
+<header class="landing-hero landing-hero--scene camo">
+  <wandur-campsite
+    class="landing-hero__scene"
+    data-three-src="/vendor/three/three.module.js"
+    data-scene-src="/js/campsiteScene.mjs"
+  ></wandur-campsite>
   <div class="landing-hero__text">
     <p class="eyebrow">Welcome to WANDUR.</p>
     <h1 class="landing-hero__title">Find a new adventure.</h1>
@@ -9,9 +20,12 @@
       adventure, or select a facility from the map below! Sign up to save your
       favorites and share your comments!
     </p>
+    <p class="landing-hero__hint"><span class="landing-hero__hint-dot"></span>Pick a spot in the scene to set the activity</p>
   </div>
   <%- include("../partials/searchForm") %>
 </header>
+<script src="/js/wandurCampsite.js" defer></script>
+<script src="/js/heroSearch.js" defer></script>
 
 <div class="landing-notes">
   <p>Test login — user: <span class="landing-notes__value">elmer</span> | password: <span class="landing-notes__value">fudd</span></p>

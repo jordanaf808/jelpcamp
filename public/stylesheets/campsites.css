@@ -49,6 +49,104 @@
 	}
 }
 
+/* The scene hero, on the homepage only (design mockup 1c). Below 900px it is
+   the camo hero above: the scene, its shade and the hint are hidden, and
+   wandurCampsite.js loads nothing. Layers, bottom to top: the topo texture
+   (::before), the scene, the shade (::after), the text, the form. */
+
+.landing-hero__hint {
+	display: none;
+}
+
+@media (min-width: 900px) {
+	.landing-hero--scene {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		min-height: 700px;
+		background: var(--deep);
+	}
+
+	.landing-hero--scene::before,
+	.landing-hero--scene::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.landing-hero--scene::before {
+		background: url('/images/topo.png') center / cover no-repeat;
+		opacity: 0.12;
+	}
+
+	/* Darkens the left side so the text reads over the scene. Above the
+	   scene, so clicks must pass through it to the pins. */
+	.landing-hero--scene::after {
+		z-index: 1;
+		background: linear-gradient(
+			90deg,
+			rgba(12, 15, 8, 0.92) 0%,
+			rgba(12, 15, 8, 0.6) 32%,
+			rgba(12, 15, 8, 0) 54%
+		);
+	}
+
+	.landing-hero__scene {
+		position: absolute;
+		inset: 0;
+	}
+
+	/* Clicks pass through the text to the pins behind it. The cost: the
+	   headline can't be selected with the mouse. */
+	.landing-hero--scene .landing-hero__text {
+		position: relative;
+		z-index: 2;
+		max-width: 660px;
+		padding-right: 0;
+		pointer-events: none;
+	}
+
+	.landing-hero--scene .search-bar {
+		position: relative;
+		z-index: 2;
+	}
+
+	/* Holds its line from the first paint and shows once the scene's element
+	   is defined, so nothing below it moves. */
+	.landing-hero--scene .landing-hero__hint {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 4px 0 0;
+		font: 500 var(--fs-mono-sm) / 1.2 var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--sage);
+		visibility: hidden;
+	}
+
+	wandur-campsite:defined ~ .landing-hero__text .landing-hero__hint {
+		visibility: visible;
+	}
+
+	.landing-hero__hint-dot {
+		flex: none;
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--sage);
+		box-shadow: 0 0 0 3px rgba(201, 212, 160, 0.22);
+	}
+}
+
+@media (max-width: 899px) {
+	.landing-hero__scene {
+		display: none;
+	}
+}
+
 /* Search bar. It hangs 40px below the hero, as in the design. */
 
 .search-bar {
