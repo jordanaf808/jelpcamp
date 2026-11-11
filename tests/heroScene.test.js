@@ -70,7 +70,11 @@ test('every module the scene imports is served as JavaScript', async () => {
 		assert.strictEqual(res.status, 200, path)
 		assert.match(res.headers['content-type'], /javascript/, path)
 		const source = res.text ?? res.body.toString()
-		for (const [, spec] of source.matchAll(/\bfrom\s*["']([^"']+)["']/g)) {
+		// `from './x.js'`, a bare `import './x.js'`, and `import('./x.js')`.
+		// Only relative module paths, the only kind these modules use: a
+		// looser match finds strings inside minified three.js.
+		const imports = /\b(?:from|import)\s*\(?\s*["'](\.{1,2}\/[^"']+\.m?js)["']/g
+		for (const [, spec] of source.matchAll(imports)) {
 			queue.push(new URL(spec, `http://site${path}`).pathname)
 		}
 	}
