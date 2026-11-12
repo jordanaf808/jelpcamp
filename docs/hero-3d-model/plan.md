@@ -118,7 +118,9 @@ Commit one step group at a time. `npm test`, `npm run lint` and `npm run format:
   | 1280px (desktop) | 2.61 s | 0 | 10 ms | 2,489 kB |
   | 390px (mobile) | 1.90 s | 0.006 | 0 ms | 1,478 kB |
 
-  The desktop LCP is above the 2.5 s target before any change. Step 7 must not be worse than these. The mobile JS figure is the one a phone must not grow, since phones should not load three.js at all. The gap between desktop and mobile JS (about 1 MB) is not explained yet; it is Mapbox or another script that loads only on desktop, to check in the Network panel.
+  The desktop LCP is above the 2.5 s target before any change. Step 7 must not be worse than these. The mobile JS figure is the one a phone must not grow, since phones should not load three.js at all. The gap between desktop and mobile JS (about 1 MB) is not explained. An earlier guess that it was Mapbox was wrong: Mapbox loads on the list pages for every visitor. The 2,489 kB figure may also be all bytes transferred, not JS only, since it came from the Network panel's total. Lighthouse reports JS alone; see the note below.
+
+  Lighthouse, same server, reported separately (owner, 2026-11-12, which build is not yet confirmed): LCP 1.72 s, CLS 0.005, TBT 0, JS 1,216 kB. Lighthouse simulates throttling, so its LCP is not comparable to the Performance panel's. Compare like with like: one tool, one build, before and after.
 
 ### 1. Serve three.js from this app
 
@@ -258,10 +260,10 @@ The PR opens after round 1 is triaged, as a draft: until step 5, reduced-motion 
 
 ## Open questions
 
-**A pause control (WCAG 2.2.2, Level A).** The live scene moves on its own for more than 5 seconds, beside the search form. 2.2.2 asks for a way on the page to pause it; the reduced-motion OS setting doesn't count. The design has no such control. Waiting on the owner: whether to add one, where, and how it's labelled. Pausing would show the still from step 5.
+**A pause control (WCAG 2.2.2, Level A): decided, left out.** The live scene moves on its own for more than 5 seconds, beside the search form. 2.2.2 asks for a way on the page to pause it; the reduced-motion OS setting doesn't count. The owner chose not to add a control. This leaves a known Level A gap for visitors at 900px and wider without reduced motion. Reduced-motion visitors get no motion at all, so they are not affected.
 
 
-**Does Render compress responses?** Express has no compression middleware. The container can't reach the live site, so the owner runs this on the Mac. The first request can take about a minute while the free instance wakes.
+**Does Render compress responses? Answered: yes, Brotli.** Express has no compression middleware, but the owner's check of the live site returned `encoding=[br]` and 4,620 bytes for `wandur.css` (13,775 bytes raw). So Render compresses static files. The check, for reference:
 
 ```sh
 curl -s -o /dev/null --max-time 120 -H 'Accept-Encoding: br, gzip' \
@@ -269,7 +271,7 @@ curl -s -o /dev/null --max-time 120 -H 'Accept-Encoding: br, gzip' \
   https://wandur.onrender.com/stylesheets/wandur.css
 ```
 
-`wandur.css` is 13,775 bytes uncompressed. `encoding=[br]` or `[gzip]` with fewer bytes means Render compresses. `encoding=[]` with 13,775 bytes means it doesn't. Then three.js goes out at 766 KB instead of 195 KB, and adding compression to the app becomes its own small PR.
+Measured on the minified three.js files: 766 KB raw, 196 KB gzip, **162 KB Brotli** (`three.module.js` 76 KB and `three.core.js` 86 KB). Brotli is what Render sends, so the download is 162 KB, not 766 KB. No compression change to the app is needed.
 
 ## Done means
 
@@ -286,7 +288,7 @@ curl -s -o /dev/null --max-time 120 -H 'Accept-Encoding: br, gzip' \
 
 ## Not verified yet
 
-- **Compression on Render.** See [Open questions](#open-questions).
+- **Compression on Render.** Answered: Brotli. See [Open questions](#open-questions).
 - **Render runs the `postinstall`.** Its build command is not written down anywhere in the repo or the docs. The `[render preview]` PR answers it.
 - **Mockup behavior.** Read the code only. Not run in a browser.
 - **Layout from 900px to 1280px and on wide screens.** From reading `_fit()`, not from running it.
