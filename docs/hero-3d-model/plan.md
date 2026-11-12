@@ -111,6 +111,14 @@ Commit one step group at a time. `npm test`, `npm run lint` and `npm run format:
 - First commit: this plan at `docs/hero-3d-model/plan.md`.
 - **Baseline, before any code change:** the container serves `main` on port 3335 from a separate worktree, so the build can go on meanwhile. The owner records LCP, CLS, Total Blocking Time and JavaScript transferred on `/campsites` at 1280px and 390px, at `http://localhost:3335`. Add the numbers here.
 - Localhost numbers are for before/after comparison only. Express doesn't compress, so transfer sizes are raw bytes. Load times are faster than over the network to Render.
+- **Baseline, `main` (`e0214e0`), on `localhost:3335`, owner's Mac, cache disabled, 2026-11-12:**
+
+  | Viewport | LCP | CLS | Total Blocking Time | JS transferred |
+  | --- | --- | --- | --- | --- |
+  | 1280px (desktop) | 2.61 s | 0 | 10 ms | 2,489 kB |
+  | 390px (mobile) | 1.90 s | 0.006 | 0 ms | 1,478 kB |
+
+  The desktop LCP is above the 2.5 s target before any change. Step 7 must not be worse than these. The mobile JS figure is the one a phone must not grow, since phones should not load three.js at all. The gap between desktop and mobile JS (about 1 MB) is not explained yet; it is Mapbox or another script that loads only on desktop, to check in the Network panel.
 
 ### 1. Serve three.js from this app
 
