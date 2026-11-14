@@ -120,7 +120,7 @@ Commit one step group at a time. `npm test`, `npm run lint` and `npm run format:
 
   The desktop LCP is above the 2.5 s target before any change. Step 7 must not be worse than these. The mobile JS figure is the one a phone must not grow, since phones should not load three.js at all. The gap between desktop and mobile JS (about 1 MB) is not explained. An earlier guess that it was Mapbox was wrong: Mapbox loads on the list pages for every visitor. The 2,489 kB figure may also be all bytes transferred, not JS only, since it came from the Network panel's total. Lighthouse reports JS alone; see the note below.
 
-  Lighthouse, same server, reported separately (owner, 2026-11-12, which build is not yet confirmed): LCP 1.72 s, CLS 0.005, TBT 0, JS 1,216 kB. Lighthouse simulates throttling, so its LCP is not comparable to the Performance panel's. Compare like with like: one tool, one build, before and after.
+  The table above is `main`, measured in DevTools. Separately, the owner ran Lighthouse on the branch (2026-11-12): LCP 1.72 s, CLS 0.005, TBT 0, JS 1,216 kB. The two sets cannot be compared: different tools, and Lighthouse simulates throttling. The branch's JS total is below the baseline's although the branch adds about 766 kB of three.js, so either the baseline figure was all bytes transferred, or Lighthouse stopped measuring before three.js loaded (it loads after the `load` event). Whether the scene appeared during that run is unconfirmed. For a valid comparison, run one tool on both builds.
 
 ### 1. Serve three.js from this app
 
